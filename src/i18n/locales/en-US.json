@@ -7,9 +7,10 @@
     "installNow": "Restart & Install",
     "goDownload": "Go to Download",
     "goStore": "Update in Store",
-    "upToDate": "You're on the latest version",
+    "upToDate": "No newer version is available on this channel",
     "readyToast": "Update ready — restart to install",
-    "failed": "Update failed, please try again later"
+    "failed": "Update failed, please try again later",
+    "installing": "Starting installer"
   },
   "onboarding": {
     "next": "Next",
@@ -106,6 +107,7 @@
     "delete": "Delete",
     "enable": "Enable",
     "enabled": "Enabled",
+    "disabled": "Disabled",
     "active": "Active",
     "saveAndRelaunch": "Save & Relaunch",
     "reset": "Reset",
@@ -404,6 +406,7 @@
     }
   },
   "streaming": {
+    "favoritesOnly": "Favorites only",
     "hint": "Connect to Media Source",
     "hintDetail": "Add a personal streaming server with encrypted configuration",
     "errorCode": {
@@ -419,6 +422,7 @@
       "playlists": "Playlists"
     },
     "empty": {
+      "noFavorites": "No favorite songs on this server",
       "noServer": "No streaming server configured",
       "addHint": "Click the button at the top right to add one",
       "goToSettings": "Go to settings",
@@ -463,6 +467,7 @@
   "player": {
     "prev": "Previous",
     "next": "Next",
+    "transitioning": "Transition",
     "heartMode": {
       "needLogin": "Sign in to use Heart Mode",
       "noSeed": "No seed track available for Heart Mode",
@@ -518,6 +523,7 @@
   "songList": {
     "title": "Title",
     "album": "Album",
+    "genre": "Genre",
     "actions": "Actions",
     "size": "Size",
     "duration": "Duration",
@@ -544,6 +550,7 @@
       "play": "Play",
       "playNext": "Play Next",
       "showInExplorer": "Open Location",
+      "copyFile": "Copy Song File",
       "copyPath": "Copy File Path",
       "editTags": "Edit Metadata",
       "download": "Download Song",
@@ -574,7 +581,11 @@
     }
   },
   "quality": {
-    "details": "Audio Quality",
+    "outputInfo": "Output Information",
+    "outputSection": "Output Information",
+    "outputMode": "Output Mode",
+    "dspSection": "Audio Processing",
+    "details": "Audio Details",
     "codec": "Codec",
     "sampleRate": "Sample Rate",
     "bitDepth": "Bit Depth",
@@ -582,7 +593,10 @@
     "channels": "Channels",
     "stereo": "Stereo",
     "mono": "Mono",
-    "multiChannel": "Multi-channel"
+    "multiChannel": "Multi-channel",
+    "tempoPitch": "Speed & Pitch",
+    "limiter": "Output Limiter",
+    "resampling": "Resampling"
   },
   "playlist": {
     "title": "Playlist",
@@ -746,6 +760,7 @@
       "update": "Update",
       "language": "Language",
       "playControl": "Playback Control",
+      "playbackTransition": "Playback Transition",
       "audioSource": "Audio Source",
       "scrobble": "Scrobble",
       "lyricContent": "Lyric Content",
@@ -870,6 +885,19 @@
       "label": "Loudness Normalization",
       "description": "Automatically balance volume levels between tracks"
     },
+    "transitionMode": {
+      "label": "Transition mode",
+      "description": "Adjust how songs sound when they change",
+      "none": "No transition",
+      "crossfade": "Crossfade"
+    },
+    "transitionPreference": {
+      "label": "Handoff preference",
+      "description": "Adjust when the transition starts and how long songs overlap; Eager starts earlier and lasts longer",
+      "conservative": "Conservative",
+      "standard": "Standard",
+      "eager": "Eager"
+    },
     "songLevel": {
       "label": "Online Audio Quality",
       "description": "Preferred quality for online tracks; the actual level depends on what your account supports",
@@ -888,7 +916,7 @@
     },
     "preloadNextTrack": {
       "label": "Preload next track",
-      "description": "Fetch the next track's playback info in advance, which may increase network usage"
+      "description": "Cache and decode the next track in advance, which may increase network usage"
     },
     "outputDevice": {
       "label": "Output Device",
@@ -1073,7 +1101,8 @@
         "closePlayer": "Close player view",
         "togglePlaylist": "Show / hide playlist",
         "openSearch": "Open search",
-        "searchInPage": "Search in page"
+        "searchInPage": "Search in page",
+        "openSettings": "Open settings"
       }
     },
     "engine": {
@@ -1086,6 +1115,8 @@
     },
     "confirm": {
       "highResourceTitle": "Resource-Intensive Feature",
+      "enableTitle": "Confirm enabling",
+      "scrobbleRiskContent": "Scrobbling is still experimental. Reported listening records are not guaranteed to count as valid plays, and the associated risks are not yet fully understood.\nEnabling it may trigger account risk controls or other account security issues. Consider the potential risks carefully before enabling this feature.",
       "highResourceContent": "Enabling it may noticeably increase memory and CPU usage, and could cause stuttering on lower-end devices. Enable it anyway?",
       "restartRequiredTitle": "Restart Required",
       "restartRequiredContent": "This setting requires an app restart. Save and relaunch now?",
@@ -1094,7 +1125,9 @@
       "kugouLoginVersionTitle": "Switch KG Login Version",
       "kugouLoginVersionContent": "After switching, the current credentials will not match the new version. You must log out and scan the QR code again, or VIP privileges and high-quality playback will stop working. Switch anyway?",
       "exclusiveModeTitle": "Switch to Exclusive Mode",
-      "exclusiveModeContent": "Exclusive mode bypasses the system mixer and prefers the source sample rate and bit depth, making it suitable for external DACs / Hi-Fi gear. Player volume, EQ and other processing still apply, so bit-perfect output is not guaranteed. Other apps may be unable to play audio while exclusive. If exclusive mode is unavailable, shared mode will be attempted; it may also fail if another app holds the device exclusively. Switch anyway?"
+      "exclusiveModeContent": "Exclusive mode bypasses the system mixer and prefers the source sample rate and bit depth, making it suitable for external DACs / Hi-Fi gear. Player volume, EQ and other processing still apply, so bit-perfect output is not guaranteed. Other apps may be unable to play audio while exclusive. If exclusive mode is unavailable, shared mode will be attempted; it may also fail if another app holds the device exclusively. Switch anyway?",
+      "preloadCacheTitle": "Enable the caches required for preloading?",
+      "preloadCacheContent": "Preloading requires caching the next track's audio. Continuing will enable both song caching and streaming caching, which may increase network traffic and disk usage"
     },
     "useAMSpring": {
       "label": "Spring Animation Debug Switch",
@@ -1164,6 +1197,10 @@
       "label": "Font Size",
       "description": "Effective when adaptive is off"
     },
+    "translationFontSize": {
+      "label": "Translation Font Size",
+      "description": "Font size of translated/romanized sub-lines; used as the base size (1080p) when adaptive is on"
+    },
     "fontWeight": {
       "label": "Font Weight",
       "description": "Lyric text weight"
@@ -1202,6 +1239,14 @@
     "enableScale": {
       "label": "Lyric Scale",
       "description": "Scale down inactive lines slightly to highlight current line"
+    },
+    "lyricAlignment": {
+      "label": "Lyric Alignment",
+      "description": "Automatically place singers on opposite sides, or align all lines left, center, or right",
+      "auto": "Auto",
+      "left": "Left",
+      "center": "Center",
+      "right": "Right"
     },
     "bgAlwaysBelow": {
       "label": "Background Lyrics Always Below",
@@ -1260,7 +1305,7 @@
     },
     "inactiveAlpha": {
       "label": "Inactive Opacity",
-      "description": "Base opacity for non-active lines"
+      "description": "Base opacity for non-active lines, also applied to translations and romanizations"
     },
     "desktopLyricEnabled": {
       "label": "Enable Desktop Lyric",
@@ -1726,15 +1771,11 @@
     },
     "updateChannel": {
       "label": "Update Channel",
-      "description": "Choose between Stable, Beta preview, Alpha internal, or Nightly updates",
+      "description": "Choose which releases to receive. Switching channels never automatically downgrades the app.",
       "stable": "Stable",
       "beta": "Beta Preview",
       "alpha": "Alpha Experimental",
       "nightly": "Nightly Build"
-    },
-    "checkUpdate": {
-      "label": "Check for Updates",
-      "description": "Check for a new version now"
     },
     "showPerformanceMonitor": {
       "label": "Performance Monitor",
@@ -1783,12 +1824,12 @@
     },
     "neteaseScrobbleEnabled": {
       "label": "Enable scrobble",
-      "description": "Automatically report listening records to NCM after a track has played long enough"
+      "description": "Sync NCM listening records using actual playback time"
     },
     "neteaseScrobbleMode": {
       "label": "NCM scrobble method",
-      "description": "Choose which reporting interface is used for automatic NCM listening records",
-      "legacy": "Legacy log API",
+      "description": "Choose the reporting protocol for syncing listening records",
+      "legacy": "Web log API",
       "ncbl": "NCBL encrypted API"
     },
     "orpheusProtocol": {
@@ -2163,6 +2204,7 @@
     "viewIntroduction": "View full description",
     "album": "Album",
     "playlist": "Playlist",
+    "genre": "Genre",
     "radio": "Radio",
     "scope": {
       "local": "Local",
@@ -2200,6 +2242,11 @@
         "copyId": "Copy Playlist ID",
         "copyUrl": "Share Playlist Link"
       },
+      "genre": {
+        "copyTitle": "Copy Genre Name",
+        "copyId": "Copy Genre ID",
+        "copyUrl": "Share Genre Link"
+      },
       "radio": {
         "copyTitle": "Copy Radio Title",
         "copyId": "Copy Radio ID",
@@ -2221,6 +2268,11 @@
   "album": {
     "label": "Albums"
   },
+  "genre": {
+    "label": "Genres",
+    "totalGenres": "{count} genres",
+    "unknown": "Unknown genre"
+  },
   "folder": {
     "label": "Folders",
     "totalFolders": "{count} folders"
@@ -2230,6 +2282,7 @@
     "songs": "Songs",
     "albums": "Albums",
     "artists": "Artists",
+    "genres": "Genres",
     "totalDuration": "Total Duration",
     "totalSize": "Total Size",
     "topSongs": "Most Played Songs",
@@ -2254,6 +2307,7 @@
     "last90Days": "Last 90 days"
   },
   "errors": {
+    "PERMISSION_DENIED": "This account does not have permission to perform this action",
     "dialogTitle": "Something went wrong",
     "deviceHint": "No audio output device detected. Please connect headphones or speakers and try again.",
     "DEVICE_NOT_FOUND": "No audio output device found",

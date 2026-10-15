@@ -1,9 +1,11 @@
 import type { LyricFormat } from "@shared/types/lyrics";
 import { DEFAULT_LYRIC_FORMAT_ORDER as DEFAULT_LYRIC_FORMAT_ORDER_SHARED } from "@shared/types/lyrics";
 import type { Platform } from "@shared/types/platform";
+import type { TransitionPreference } from "@shared/types/player";
 import { ALL_PLATFORMS } from "@shared/types/platform";
 import type { CjkTransformMode } from "@shared/types/opencc";
 import type { QualityLevel } from "@/utils/quality";
+import type { LyricAlignment } from "lyric-dom";
 
 /** 播放器背景类型 */
 export type PlayerBgType = "blur" | "solid" | "animation";
@@ -98,12 +100,36 @@ export interface SidebarPlaylistOrder {
   subscribed: string[];
 }
 
+/** 导航项默认位置校正记录 */
+export interface SidebarNavPlacementFix {
+  /** 校正记录 id：调整校正规则时换一个新 id 即可再执行一次 */
+  id: string;
+  /** 待校正的导航项 key */
+  key: string;
+}
+
+/**
+ * 需要做一次默认位置校正的新增导航项
+ * 老版本存档会把新增项追加到末组，这里把它们移回默认布局中的相邻位置
+ */
+export const SIDEBAR_NAV_PLACEMENT_FIXES: SidebarNavPlacementFix[] = [
+  { id: "genres-under-albums", key: "/genres/local" },
+];
+
 /** 侧边栏导航项默认分组 */
 export const DEFAULT_SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
   {
     name: "",
     showName: false,
-    keys: ["/", "/library", "/artists/local", "/albums/local", "/folders", "/stats"],
+    keys: [
+      "/",
+      "/library",
+      "/artists/local",
+      "/albums/local",
+      "/genres/local",
+      "/folders",
+      "/stats",
+    ],
   },
   {
     name: "",
@@ -132,6 +158,8 @@ export interface LyricSettings {
   adaptiveFontSize: boolean;
   /** 歌词字号（px，自适应关闭时生效） */
   fontSize: number;
+  /** 歌词翻译/音译副行字号（px，自适应关闭时生效） */
+  translationFontSize: number;
   /** 歌词字重（100~900） */
   fontWeight: number;
   /** 歌词混合模式 */
@@ -178,6 +206,8 @@ export interface LyricSettings {
   springStiffness: number;
   /** 激活行对齐位置（0~1） */
   alignPosition: number;
+  /** 歌词水平对齐方式 */
+  alignment: LyricAlignment;
   /** 逐字掩码渐变宽度 */
   wordFadeWidth: number;
   /** 非激活行透明度 */
@@ -266,6 +296,10 @@ export interface PlayerSettings {
   showLyricInBar: boolean;
   /** 播放时提前获取下一首的播放数据 */
   preloadNextTrack: boolean;
+  /** 相邻曲目的播放过渡方式 */
+  transitionMode: "none" | "crossfade";
+  /** 曲尾交接时机与淡化时长偏好 */
+  transitionPreference: TransitionPreference;
   /** 搜索页播放行为 */
   searchPlayBehavior: SearchPlayBehavior;
 }
@@ -284,6 +318,8 @@ export interface AppearanceSettings {
   sidebarNavGroups: SidebarNavGroup[];
   /** 侧边栏隐藏的导航项与歌单分组 */
   sidebarHiddenKeys: string[];
+  /** 已完成的导航项位置校正记录 id（每条只执行一次，之后尊重用户排序） */
+  sidebarNavPlacementFixes: string[];
   /** 无可见项的分组是否保留分隔线（留白） */
   sidebarKeepEmptyDivider: boolean;
   /** 显示分组名时是否叠加分隔线 */

@@ -42,8 +42,8 @@ importers:
         specifier: ^4.13.0
         version: 4.13.0
       lyric-kit:
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.6.1
+        version: 0.6.1
       undici:
         specifier: ^8.10.0
         version: 8.10.0
@@ -157,8 +157,8 @@ importers:
         specifier: ^1.10.0
         version: 1.10.0
       lyric-dom:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
       marked:
         specifier: ^18.0.9
         version: 18.0.9
@@ -3846,11 +3846,11 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
-  lyric-dom@0.2.0:
-    resolution: {integrity: sha512-ubIRNnLL0vnTn0LtLsPIq8sjpEG3jMspQPzi5gQPIGFFrYedwxyTzZUho6lWCV2Zzz6aedwmED7ZDRGA0iICLg==}
+  lyric-dom@0.2.1:
+    resolution: {integrity: sha512-Vg1UU+7jIcRvllqpvq2FLB9S+9tn9jjP7YkGWfYq2K1ZzEOF2/oi5WW8BH0HcBwPkOQ6lzoR4RyMsqZvt6g+lg==}
 
-  lyric-kit@0.6.0:
-    resolution: {integrity: sha512-kINhwn8MHU8dr1sG0wd26EumsC6xUSxABNilHzTK0vUbbuZ91Sa6jVEn/USok+vNi4qfAgtMUz0YC9B0wpZP2g==}
+  lyric-kit@0.6.1:
+    resolution: {integrity: sha512-/Qi3kJtLzlw5+oi5yEPpBPSzK5FW0CFHZCXtApvnv6QOjUeDnrF9p2G3heKCVesLWJi122YmWWNgVAdZhiljlA==}
 
   magic-regexp@0.10.0:
     resolution: {integrity: sha512-Uly1Bu4lO1hwHUW0CQeSWuRtzCMNO00CmXtS8N6fyvB3B979GOEEeAkiTUDsmbYLAbvpUS/Kt5c4ibosAzVyVg==}
@@ -8975,9 +8975,9 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lyric-dom@0.2.0: {}
+  lyric-dom@0.2.1: {}
 
-  lyric-kit@0.6.0: {}
+  lyric-kit@0.6.1: {}
 
   magic-regexp@0.10.0:
     dependencies:

@@ -46,7 +46,7 @@ const handleQuickAddFolder = async (): Promise<void> => {
 // 播放全部
 const handlePlayAll = (): void => {
   if (tracks.value.length === 0) return;
-  player.playFrom(tracks.value, 0, playbackContext.value);
+  player.playFrom(tracks.value, { context: playbackContext.value });
 };
 
 // 扫描进度百分比
@@ -202,6 +202,7 @@ onUnmounted(() => {
         :search-query="searchQuery"
         :playback-context="playbackContext"
         enable-sort
+        show-genre
         show-size
       />
     </div>

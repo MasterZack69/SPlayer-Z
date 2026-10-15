@@ -75,7 +75,10 @@ onMounted(() => {
 
       <!-- 菜单 -->
       <Transition name="fade">
-        <div v-show="!isSearchActive" class="flex-1 min-h-0 overflow-y-auto -mr-5 pr-5">
+        <div
+          v-show="!isSearchActive"
+          class="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] -mr-5 pr-5"
+        >
           <SettingsMenu
             :categories="settingsSchema"
             :active-id="activeId"
@@ -96,9 +99,16 @@ onMounted(() => {
     </div>
 
     <!-- 右侧 -->
-    <div ref="scrollRef" class="flex-1 overflow-y-auto bg-surface py-6 px-8">
+    <div
+      ref="scrollRef"
+      class="flex-1 overflow-y-auto [scrollbar-gutter:stable] bg-surface py-6 px-8"
+    >
       <div v-if="activeCategory" :key="activeCategory.id" class="animate-fade-in">
-        <component :is="activeCategory.component" v-if="activeCategory.component" />
+        <component
+          :is="activeCategory.component"
+          v-if="activeCategory.component"
+          :highlight-key="highlightKey"
+        />
         <template v-else>
           <SettingsSection
             v-for="(sec, si) in activeCategory.sections"

@@ -52,17 +52,19 @@ const handleListScroll = (event: Event) => {
   }
 };
 
-/** 加载数据 */
+/** 加载当前服务器的合集详情，并作废上一轮请求 */
 const loadCollection = async (): Promise<void> => {
   collapsed.value = false;
   loadAbort?.abort();
   const myAbort = new AbortController();
   loadAbort = myAbort;
   loading.value = true;
+  collection.value = null;
   error.value = "";
 
   try {
     await loadCollectionService(source, type, id, {
+      serverId: typeof route.query.serverId === "string" ? route.query.serverId : undefined,
       fallbackName: typeof route.query.name === "string" ? route.query.name : undefined,
       signal: myAbort.signal,
       onUpdate: (next) => {
@@ -97,6 +99,7 @@ const typeLabel = computed(() => {
   const map: Record<CollectionType, string> = {
     album: t("collection.album"),
     playlist: t("collection.playlist"),
+    genre: t("collection.genre"),
     radio: t("collection.radio"),
     cloud: t("cloud.title"),
   };
@@ -145,7 +148,7 @@ const playbackContext = computed<PlaybackContext | undefined>(() => {
 
 const handlePlayAll = () => {
   if (!collection.value?.tracks.length) return;
-  player.playFrom(collection.value.tracks, 0, playbackContext.value);
+  player.playFrom(collection.value.tracks, { context: playbackContext.value });
 };
 
 const searchQuery = ref("");
@@ -232,9 +235,7 @@ const handleMoreMenu = (key: string) => {
   }
 };
 
-onMounted(() => {
-  loadCollection();
-});
+watch(() => route.query.serverId, loadCollection, { immediate: true });
 
 onBeforeUnmount(() => {
   loadAbort?.abort();
@@ -285,6 +286,7 @@ onBeforeUnmount(() => {
                     class="inline-flex size-6 cursor-default items-center justify-center text-primary/65"
                   >
                     <IconLucideDisc3 v-if="type === 'album'" class="size-4" />
+                    <IconLucideGuitar v-else-if="type === 'genre'" class="size-4" />
                     <IconLucideListMusic v-else-if="type === 'playlist'" class="size-4" />
                     <IconLucideRadio v-else-if="type === 'radio'" class="size-4" />
                     <IconLucideCloud v-else class="size-4" />
@@ -314,7 +316,8 @@ onBeforeUnmount(() => {
                     {{ collection.description }}
                   </span>
                 </SButton>
-                <p v-else class="text-sm text-on-surface-variant/70 truncate">
+                <!-- 流派按标签聚合，没有简介概念，不显示占位文案 -->
+                <p v-else-if="type !== 'genre'" class="text-sm text-on-surface-variant/70 truncate">
                   {{ t("collection.noDescription") }}
                 </p>
                 <div
