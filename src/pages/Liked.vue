@@ -2,31 +2,14 @@
 defineOptions({ name: "Liked" });
 
 import type { PlaybackContext, Track } from "@shared/types/player";
-import type { ContentScope } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { useLibraryStore } from "@/stores/library";
-import { useUserStore } from "@/stores/user";
-import { useStatusStore } from "@/stores/status";
 import SongList from "@/components/list/SongList.vue";
 import * as player from "@/core/player";
 import IconLucideListChecks from "~icons/lucide/list-checks";
-import IconLucideRefreshCw from "~icons/lucide/refresh-cw";
 
 const { t } = useI18n();
 const library = useLibraryStore();
-const user = useUserStore();
-const status = useStatusStore();
-
-/** 当前 tab */
-const tab = computed({
-  get: () => status.likedPageTab,
-  set: (v: ContentScope) => (status.likedPageTab = v),
-});
-
-const tabs = computed(() => [
-  { key: "local", label: t("liked.tabs.local") },
-  { key: "online", label: t("liked.tabs.online") },
-]);
 
 const searchQuery = ref("");
 
@@ -41,36 +24,13 @@ const localTracks = computed<Track[]>(() => {
   return list;
 });
 
-watch(
-  () => [tab.value, user.isLoggedIn, user.likedPlaylistId] as const,
-  ([nextTab, loggedIn, plId]) => {
-    if (nextTab !== "online" || !loggedIn || !plId) return;
-    user.ensureLikedPlaylist();
-  },
-  { immediate: true },
-);
-
-/** 当前 tab 的曲目 */
-const currentTracks = computed<Track[]>(() =>
-  tab.value === "local" ? localTracks.value : user.likedPlaylistTracks,
-);
-
-const playbackContext = computed<PlaybackContext | undefined>(() => {
-  if (tab.value === "local") {
-    return {
-      originId: "liked",
-      originType: "page",
-      originName: t("liked.title"),
-    };
-  }
-  if (!user.likedPlaylistId) return undefined;
-  return {
-    provider: "netease",
-    originId: user.likedPlaylistId,
-    originType: "playlist",
-    originName: t("liked.title"),
-  };
-});
+/** 仅展示本地收藏 */
+const currentTracks = localTracks;
+const playbackContext = computed<PlaybackContext>(() => ({
+  originId: "liked",
+  originType: "page",
+  originName: t("liked.title"),
+}));
 
 const handlePlayAll = (): void => {
   if (currentTracks.value.length === 0) return;
@@ -86,13 +46,6 @@ const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 /** 更多菜单 */
 const moreMenuItems = computed<DropdownMenuItem[]>(() => {
   const items: DropdownMenuItem[] = [];
-  if (tab.value === "online") {
-    items.push({
-      key: "refresh",
-      label: t("common.refreshCache"),
-      icon: markRaw(IconLucideRefreshCw),
-    });
-  }
   items.push({
     key: "batch",
     label: t("songList.batch.manage"),
@@ -101,12 +54,12 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => {
   return items;
 });
 
+/**
+ * 打开本地收藏批量管理
+ * @param key - 菜单项标识
+ */
 const handleMoreMenu = (key: string): void => {
-  if (key === "refresh") {
-    user.ensureLikedPlaylist(true);
-  } else if (key === "batch") {
-    songListRef.value?.enterBatch();
-  }
+  if (key === "batch") songListRef.value?.enterBatch();
 };
 </script>
 
@@ -163,16 +116,13 @@ const handleMoreMenu = (key: string): void => {
               <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
             </template>
           </SInput>
-          <div class="w-48">
-            <STabs v-model="tab" :tabs="tabs" type="segment" round />
-          </div>
         </div>
       </div>
     </div>
     <!-- 列表 -->
     <Transition name="fade" mode="out-in" :duration="150">
       <!-- 本地 tab -->
-      <div v-if="tab === 'local' && localTracks.length > 0" key="local-list" class="flex-1 min-h-0">
+      <div v-if="localTracks.length > 0" key="local-list" class="flex-1 min-h-0">
         <SongList
           ref="songListRef"
           :items="localTracks"
@@ -182,57 +132,10 @@ const handleMoreMenu = (key: string): void => {
           enable-sort
         />
       </div>
-      <div
-        v-else-if="tab === 'local'"
-        key="local-empty"
-        class="flex-1 flex items-center justify-center"
-      >
+      <div v-else key="local-empty" class="flex-1 flex items-center justify-center">
         <div class="text-center text-on-surface-variant/50">
           <IconMaterialSymbolsFavoriteOutlineRounded class="size-12 mx-auto mb-3 opacity-30" />
           <div class="text-sm">{{ t("liked.empty.local") }}</div>
-        </div>
-      </div>
-      <!-- 在线 tab -->
-      <div
-        v-else-if="tab === 'online' && !user.isLoggedIn"
-        key="online-login"
-        class="flex-1 flex items-center justify-center"
-      >
-        <div class="text-center text-on-surface-variant/50">
-          <IconMaterialSymbolsFavoriteOutlineRounded class="size-12 mx-auto mb-3 opacity-30" />
-          <div class="text-sm">{{ t("liked.needLogin") }}</div>
-        </div>
-      </div>
-      <div
-        v-else-if="tab === 'online' && user.likedPlaylistTracks.length > 0"
-        key="online-list"
-        class="flex-1 min-h-0"
-      >
-        <SongList
-          ref="songListRef"
-          :items="user.likedPlaylistTracks"
-          :search-query="searchQuery"
-          source="netease"
-          :collection-id="user.likedPlaylistId ?? undefined"
-          :playback-context="playbackContext"
-          collection-type="playlist"
-          enable-sort
-        />
-      </div>
-      <div
-        v-else-if="tab === 'online' && user.likedPlaylistLoading"
-        key="online-loading"
-        class="flex-1 flex items-center justify-center"
-      >
-        <div class="text-center text-on-surface-variant/60">
-          <SLoading class="text-4xl text-primary/70 mb-4 mx-auto block" />
-          <div class="text-sm">{{ t("common.loading") }}</div>
-        </div>
-      </div>
-      <div v-else key="online-empty" class="flex-1 flex items-center justify-center">
-        <div class="text-center text-on-surface-variant/50">
-          <IconMaterialSymbolsFavoriteOutlineRounded class="size-12 mx-auto mb-3 opacity-30" />
-          <div class="text-sm">{{ t("liked.empty.online") }}</div>
         </div>
       </div>
     </Transition>

@@ -18,7 +18,6 @@ import { consumePendingOrpheusUrl } from "@main/services/orpheus";
 import { consumePendingAudioFiles } from "@main/services/externalFile";
 import { testNetworkProxy } from "@main/utils/proxy";
 import { store } from "@main/store";
-import { lookupDownloadedFile } from "@main/services/downloadManager";
 
 /**
  * 注册系统相关的 IPC 事件
@@ -48,10 +47,7 @@ export const registerSystemIpc = (): void => {
 
   ipcMain.handle("system:copyTrackFile", async (_event, track: Track): Promise<boolean> => {
     try {
-      const filePath =
-        track.source === "local"
-          ? (track.cueAudioPath ?? track.path)
-          : await lookupDownloadedFile(track);
+      const filePath = track.source === "local" ? (track.cueAudioPath ?? track.path) : undefined;
       if (!filePath) return false;
       if (track.source === "local") {
         const file = await stat(filePath);

@@ -59,12 +59,14 @@ vi.mock("@/i18n", () => ({
 const tracks: Track[] = ["current", "next", "last"].map((id) => ({
   id,
   title: id,
-  source: "netease",
+  source: "streaming",
+  serverId: "server",
+  originalId: id,
   artists: [{ name: "测试歌手" }],
   duration: 180000,
 }));
 const oldUrl = "https://music.example/current?token=expired";
-const newUrl = "https://music.example/current?token=fresh";
+const newUrl = "streaming://server/current";
 const resumePosition = 42000;
 
 let player: typeof import("./index");
@@ -124,88 +126,32 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("在线歌曲暂停后地址失效恢复", () => {
-  it("暂停数小时后恢复，重新获取官方地址并从原进度续播当前歌曲", async () => {
-    await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000);
-    expect(playback.getCurrentTime()).toBe(resumePosition);
-    expect(mocks.request).not.toHaveBeenCalled();
-
-    await player.play();
-    let finish!: (result: unknown) => void;
-    mocks.request.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
-    const recovery = events.handleEvent({ type: "sourceError" });
-    await vi.advanceTimersByTimeAsync(0);
-    expect(status.trackLoading).toBe(true);
-    await events.handleEvent({
-      type: "status",
-      data: {
-        state: "stopped",
-        position: resumePosition,
-        duration: 180000,
-        volume: 1,
-        speed: 1,
-        isFinished: false,
-      },
-    });
-    finish({ data: [{ url: newUrl, freeTrialInfo: null }] });
-    await recovery;
-
-    expect(mocks.request).toHaveBeenCalledExactlyOnceWith(
-      "song_url",
-      { id: "current", level: "exhigh" },
-      { notifyAuthFailure: false },
-    );
-    expect(mocks.load).toHaveBeenCalledExactlyOnceWith(
-      newUrl,
+describe("自托管歌曲的音源恢复", () => {
+  it("服务器重新鉴权由主进程完成，渲染端只重传身份并恢复暂停位置", async () => {
+    await events.handleEvent({ type: "sourceError" });
+    expect(mocks.load).toHaveBeenCalledWith(
+      "streaming://server/current",
       expect.objectContaining({ autoPlay: false }),
     );
-    expect(mocks.seek).toHaveBeenCalledExactlyOnceWith(resumePosition);
-    expect(mocks.load.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.seek.mock.invocationCallOrder[0]!,
+    expect(mocks.seek).toHaveBeenCalledWith(resumePosition);
+    expect(mocks.play).not.toHaveBeenCalled();
+    expect(mocks.request).not.toHaveBeenCalled();
+    expect(status.state).toBe("paused");
+  });
+  it("播放时恢复服务器音源并继续播放", async () => {
+    await player.play();
+    await events.handleEvent({ type: "sourceError" });
+    expect(mocks.load).toHaveBeenCalledWith(
+      "streaming://server/current",
+      expect.objectContaining({ autoPlay: false }),
     );
-    expect(mocks.seek.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.play.mock.invocationCallOrder[1]!,
-    );
-    expect(mocks.play).toHaveBeenCalledTimes(2);
-    expect(media.track?.id).toBe("current");
-    expect(status.playIndex).toBe(0);
-    expect(status.currentSource).toBe(newUrl);
+    expect(mocks.seek).toHaveBeenCalledWith(resumePosition);
+    expect(mocks.request).not.toHaveBeenCalled();
     expect(status.state).toBe("playing");
-    expect(status.position).toBe(resumePosition);
-    expect(playback.getCurrentTime()).toBe(resumePosition);
-    expect(status.trackLoading).toBe(false);
-    expect(mocks.toast).not.toHaveBeenCalled();
   });
-
-  it("保持暂停时收到源失效，刷新地址和进度但不自动播放", async () => {
-    await events.handleEvent({ type: "sourceError" });
-    expect(status.state).toBe("paused");
-    expect(status.position).toBe(resumePosition);
-    expect(media.track?.id).toBe("current");
-    expect(mocks.seek).toHaveBeenCalledExactlyOnceWith(resumePosition);
-    expect(mocks.play).not.toHaveBeenCalled();
-  });
-
-  it.each([false, true])("重新取址仍无音源时只跳一首，恢复播放=%s", async (resume) => {
-    if (resume) await player.play();
-    mocks.request.mockResolvedValueOnce({ data: [{ url: null, fee: 0 }] });
-    await events.handleEvent({ type: "sourceError" });
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(media.track?.id).toBe("next");
-    expect(status.state).toBe(resume ? "playing" : "paused");
-    expect(mocks.request.mock.calls.map((call) => call[1].id)).toEqual(["current", "next"]);
-    expect(mocks.seek).not.toHaveBeenCalled();
-  });
-
-  it.each(["停止", "切歌"])("取址期间手动%s，旧地址返回后不复活旧歌曲", async (action) => {
-    await player.play();
+  it("恢复期间停止后迟到的加载响应不能重启播放", async () => {
     let finish!: (result: unknown) => void;
-    mocks.request.mockImplementationOnce(
+    mocks.load.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           finish = resolve;
@@ -213,59 +159,12 @@ describe("在线歌曲暂停后地址失效恢复", () => {
     );
     const recovery = events.handleEvent({ type: "sourceError" });
     await vi.advanceTimersByTimeAsync(0);
-    if (action === "停止") await player.stop();
-    else await player.nextTrack();
-    mocks.load.mockClear();
-    mocks.play.mockClear();
-    finish({ data: [{ url: newUrl, freeTrialInfo: null }] });
-    await recovery;
-    expect(mocks.load).not.toHaveBeenCalled();
-    expect(mocks.seek).not.toHaveBeenCalled();
-    expect(mocks.play).not.toHaveBeenCalled();
-    expect(status.state).toBe(action === "停止" ? "stopped" : "playing");
-    expect(media.track?.id).toBe(action === "停止" ? "current" : "next");
-  });
-
-  it("恢复进度期间手动停止，迟到的 seek 响应不能重新播放", async () => {
-    await player.play();
-    let finish!: (result: unknown) => void;
-    mocks.seek.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
-    const recovery = events.handleEvent({ type: "sourceError" });
-    await vi.advanceTimersByTimeAsync(0);
-    expect(mocks.seek).toHaveBeenCalledOnce();
     await player.stop();
-    mocks.load.mockClear();
     mocks.play.mockClear();
-    finish({ success: true });
+    finish({ success: true, data: { detail: {}, mediaInfo: { duration: 180000 } } });
     await recovery;
-    expect(mocks.load).not.toHaveBeenCalled();
     expect(mocks.play).not.toHaveBeenCalled();
+    expect(mocks.seek).not.toHaveBeenCalled();
     expect(status.state).toBe("stopped");
-  });
-
-  it.each([false, true])("重新取址期间用户暂停，音源可用=%s 时仍保持暂停", async (available) => {
-    await player.play();
-    let finish!: (result: unknown) => void;
-    mocks.request.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
-    const recovery = events.handleEvent({ type: "sourceError" });
-    await vi.advanceTimersByTimeAsync(0);
-    await player.pause();
-    mocks.play.mockClear();
-    finish({ data: [{ url: available ? newUrl : null, freeTrialInfo: null }] });
-    await recovery;
-    expect(mocks.play).not.toHaveBeenCalled();
-    expect(status.state).toBe("paused");
-    expect(status.position).toBe(available ? resumePosition : 0);
-    expect(media.track?.id).toBe(available ? "current" : "next");
   });
 });

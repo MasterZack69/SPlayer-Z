@@ -38,26 +38,6 @@ const router = createRouter({
           component: () => import("@/pages/History.vue"),
         },
         {
-          path: "download",
-          name: "download",
-          component: () => import("@/pages/Download.vue"),
-        },
-        {
-          path: "daily",
-          name: "daily",
-          component: () => import("@/pages/Daily.vue"),
-        },
-        {
-          path: "favorites",
-          name: "favorites",
-          component: () => import("@/pages/Favorites.vue"),
-        },
-        {
-          path: "cloud",
-          name: "cloud",
-          component: () => import("@/pages/Cloud.vue"),
-        },
-        {
           path: "collection/:source/:type/:id",
           name: "collection",
           component: () => import("@/pages/Collection.vue"),
@@ -126,7 +106,18 @@ const router = createRouter({
         },
       ],
     },
+    { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
+});
+
+router.beforeEach((to) => {
+  if (
+    (to.name === "artist" || to.name === "collection") &&
+    to.params.source !== "local" &&
+    to.params.source !== "streaming"
+  )
+    return { name: "home" };
+  return true;
 });
 
 export default router;

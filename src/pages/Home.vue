@@ -1,16 +1,10 @@
 <script setup lang="ts">
 defineOptions({ name: "Home" });
-
 import type { Track } from "@shared/types/player";
-import type { CoverItem } from "@/types/artist";
+
 import { useHomeHeader } from "@/composables/home/useHomeHeader";
 import { useDailyRecommend } from "@/composables/home/useDailyRecommend";
-import { useContinueListening } from "@/composables/home/useContinueListening";
-import { useQuickActions } from "@/composables/home/useQuickActions";
-import { useHomeDiscover } from "@/composables/home/useHomeDiscover";
 import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
-import { navigateToPlaylist, navigateToArtist, navigateToAlbum } from "@/utils/navigate";
-import * as player from "@/core/player";
 
 const { t } = useI18n();
 const { isFloatingBar } = useFloatingPlayerBar();
@@ -26,32 +20,9 @@ const {
   addToQueue: addHeroToQueue,
   load: loadHero,
 } = useDailyRecommend();
-/** 快捷入口 */
-const { quickActions } = useQuickActions();
-/** 继续聆听 / 反复聆听 */
-const {
-  items: continueItems,
-  title: continueTitle,
-  subtitle: continueSubtitle,
-  load: loadContinue,
-} = useContinueListening();
-
-/** 推荐内容：推荐歌单 / 雷达 / 歌手 / 新碟 */
-const {
-  recommendPlaylists,
-  recommendTitle,
-  recommendSubtitle,
-  radarPlaylists,
-  artists,
-  newAlbums,
-  load: loadDiscover,
-} = useHomeDiscover();
-
 onMounted(() => {
   void loadHeader();
   void loadHero();
-  void loadContinue();
-  void loadDiscover();
 });
 
 /** 拼接歌手名 */
@@ -59,21 +30,6 @@ const artistName = (track: Track): string => track.artists.map((artist) => artis
 
 /** 序号补零为两位 */
 const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
-
-/** 打开歌单详情 */
-const openPlaylist = (item: CoverItem): void => {
-  navigateToPlaylist(item.id, { source: "netease", name: item.title });
-};
-
-/** 打开歌手页 */
-const openArtist = (item: CoverItem): void => {
-  navigateToArtist(item.title, { source: "netease", artistId: item.id });
-};
-
-/** 打开专辑页 */
-const openAlbum = (item: CoverItem): void => {
-  navigateToAlbum(item.title, { source: "netease", albumId: item.id });
-};
 </script>
 
 <template>
@@ -144,116 +100,6 @@ const openAlbum = (item: CoverItem): void => {
           </ul>
         </div>
       </SCard>
-      <!-- 快捷入口 -->
-      <section class="grid grid-cols-4 gap-3">
-        <SCard
-          v-for="action in quickActions"
-          :key="action.title"
-          radius="xl"
-          hoverable
-          class="flex items-center gap-3"
-          @click="action.run()"
-        >
-          <div
-            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-          >
-            <component :is="action.icon" class="size-5" />
-          </div>
-          <div class="min-w-0">
-            <div class="truncate text-sm font-medium text-on-surface">{{ action.title }}</div>
-            <div class="truncate text-xs text-on-surface-variant/50">{{ action.desc }}</div>
-          </div>
-        </SCard>
-      </section>
-      <!-- 继续聆听 / 反复聆听 -->
-      <section class="flex flex-col gap-3">
-        <div>
-          <h3 class="text-lg font-semibold text-on-surface">{{ continueTitle }}</h3>
-          <p v-if="continueSubtitle" class="mt-0.5 text-xs text-on-surface-variant/50">
-            {{ continueSubtitle }}
-          </p>
-        </div>
-        <div v-if="continueItems.length > 0" class="grid grid-cols-3 gap-3">
-          <SCard
-            v-for="(item, index) in continueItems"
-            :key="`${item.track.source}:${item.track.id}`"
-            radius="xl"
-            size="small"
-            hoverable
-            class="group flex items-center gap-3"
-            @click="player.playNow(item.track)"
-          >
-            <span
-              class="w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-on-surface-variant/30"
-            >
-              {{ trackNo(index) }}
-            </span>
-            <div class="relative size-12 shrink-0">
-              <SImg :src="item.track.cover" :alt="item.track.title" class="size-12 rounded-lg" />
-              <div
-                class="absolute inset-0 flex items-center justify-center rounded-lg bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-              >
-                <IconLucidePlay class="size-5 text-white" />
-              </div>
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="truncate text-sm text-on-surface">{{ item.track.title }}</div>
-              <div class="truncate text-xs text-on-surface-variant/50">
-                {{ artistName(item.track) }}
-              </div>
-            </div>
-            <span class="shrink-0 text-xs tabular-nums text-on-surface-variant/45">
-              {{ t("home.continue.playCount", { count: item.playCount }, item.playCount) }}
-            </span>
-          </SCard>
-        </div>
-        <div
-          v-else
-          class="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-on-surface/12 py-10 text-on-surface-variant/40"
-        >
-          <IconLucideHeadphones class="size-7" />
-          <span class="text-sm">{{ t("home.continue.empty") }}</span>
-        </div>
-      </section>
-      <!-- 推荐歌单 / 专属歌单 -->
-      <section v-if="recommendPlaylists.length > 0" class="flex flex-col gap-3">
-        <div>
-          <h3 class="text-lg font-semibold text-on-surface">{{ recommendTitle }}</h3>
-          <p class="mt-0.5 text-xs text-on-surface-variant/50">{{ recommendSubtitle }}</p>
-        </div>
-        <CoverList :items="recommendPlaylists" :virtual="false" :gap="16" @click="openPlaylist" />
-      </section>
-      <!-- 雷达歌单 -->
-      <section v-if="radarPlaylists.length > 0" class="flex flex-col gap-3">
-        <div>
-          <h3 class="text-lg font-semibold text-on-surface">{{ t("home.radar.title") }}</h3>
-          <p class="mt-0.5 text-xs text-on-surface-variant/50">{{ t("home.radar.subtitle") }}</p>
-        </div>
-        <CoverList :items="radarPlaylists" :virtual="false" :gap="16" @click="openPlaylist" />
-      </section>
-      <!-- 歌手推荐 -->
-      <section v-if="artists.length > 0" class="flex flex-col gap-3">
-        <div>
-          <h3 class="text-lg font-semibold text-on-surface">{{ t("home.artists.title") }}</h3>
-          <p class="mt-0.5 text-xs text-on-surface-variant/50">{{ t("home.artists.subtitle") }}</p>
-        </div>
-        <CoverList
-          :items="artists"
-          type="artist"
-          :min-size="120"
-          :virtual="false"
-          :gap="16"
-          @click="openArtist"
-        />
-      </section>
-      <!-- 新碟上架 -->
-      <section v-if="newAlbums.length > 0" class="flex flex-col gap-3">
-        <div>
-          <h3 class="text-lg font-semibold text-on-surface">{{ t("home.albums.title") }}</h3>
-          <p class="mt-0.5 text-xs text-on-surface-variant/50">{{ t("home.albums.subtitle") }}</p>
-        </div>
-        <CoverList :items="newAlbums" :virtual="false" :gap="16" @click="openAlbum" />
-      </section>
     </div>
   </div>
 </template>

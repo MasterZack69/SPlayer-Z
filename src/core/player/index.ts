@@ -8,14 +8,11 @@ import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { useStreamingStore } from "@/stores/streaming";
-import { usePluginsStore } from "@/stores/plugins";
 import { useHistoryStore } from "@/stores/history";
 import { useLibraryStore } from "@/stores/library";
 import * as queue from "@/stores/queue";
-import * as fm from "./fm";
 import * as playback from "@/services/playback";
 import * as lyricLoader from "@/services/lyric/loader";
-import * as coverLoader from "@/services/coverLoader";
 import * as abLoop from "@/services/abLoop";
 import * as autoClose from "@/services/autoClose";
 import * as cacheScheduler from "@/services/cacheScheduler";
@@ -166,13 +163,6 @@ export const load = async (
   seekTarget = null;
   playback.setSeeking(false);
   resetForLoad(meta?.duration ?? 0, options.transitionResult?.data?.playback);
-  // 非本地并行歌词与取色
-  const isOnline = meta?.source !== "local";
-  if (isOnline) {
-    void lyricLoader.loadForTrack(null);
-    extractColorFromUrl(meta?.cover ?? meta?.coverOriginal ?? null);
-    if (meta) void coverLoader.loadCoverForTrack(meta);
-  }
   try {
     const result =
       options.transitionResult ??
@@ -195,12 +185,9 @@ export const load = async (
       if (enriched) {
         queue.updateQueueTracks([enriched]);
       }
-      // 避免重复请求
-      if (!isOnline) {
-        lyricLoader.loadForTrack(detail);
-        extractColorFromUrl(enriched?.cover ?? null);
-        if (enriched) void coverLoader.loadCoverForTrack(enriched);
-      }
+      // 音频详情就绪后统一加载，服务器缺少歌词时仍可回退内嵌标签
+      void lyricLoader.loadForTrack(detail);
+      extractColorFromUrl(enriched?.cover ?? null);
       const dur = enriched?.duration ?? mediaInfo.duration;
       status.duration = dur;
       status.state = result.data.playback?.state ?? (autoPlay ? "playing" : "paused");
@@ -925,29 +912,17 @@ export const exitHeartMode = (): void => {
 };
 
 /**
- * 启动私人 FM 播放
- * @param options - 可选的 FM 模式与场景选项
- * @returns 是否成功进入并开始播放
+ * 拒绝已移除的私人 FM 入口
+ * @param _options - 旧版 FM 参数
+ * @returns false
  */
-export const playPersonalFm = async (options?: PersonalFmOptions): Promise<boolean> => {
-  const status = useStatusStore();
-  const track = await fm.start(options);
-  if (!track) return false;
-  status.fmMode = true;
-  // 心动 / FM 互斥
-  status.heartMode = false;
-  await loadTrack(track);
-  return true;
+export const playPersonalFm = async (_options?: PersonalFmOptions): Promise<boolean> => {
+  return false;
 };
 
-/**
- * 标记当前私人 FM 曲目为不喜欢并切到下一首
- */
+/** 已移除私人 FM，不再提交云端反馈 */
 export const dislikeFmTrack = async (): Promise<void> => {
-  if (!useStatusStore().fmMode) return;
-  const playedSec = Math.max(0, Math.round(playback.getCurrentTime() / 1000));
-  const next = await fm.dislikeCurrent(playedSec);
-  if (next) await loadTrack(next);
+  useStatusStore().fmMode = false;
 };
 
 /**
@@ -956,12 +931,6 @@ export const dislikeFmTrack = async (): Promise<void> => {
  */
 export const nextTrack = async (autoPlay = true): Promise<void> => {
   const status = useStatusStore();
-  // 私人 FM
-  if (status.fmMode) {
-    const next = await fm.next();
-    if (next) await loadTrack(next, undefined, autoPlay);
-    return;
-  }
   if (queue.queueLength.value === 0) return;
   // 到末尾了
   if (status.playIndex >= queue.queueLength.value - 1) {
@@ -1379,10 +1348,10 @@ export const initPlayer = async (): Promise<void> => {
   await settings.syncSystem();
   // 流媒体 store 必须在恢复队列前就绪，否则队列里的 streaming track 拿不到 cfg
   await useStreamingStore().init();
-  // 插件 store 同理：在线歌曲 URL 兜底走插件，列表必须在 loadTrack 前就绪
-  void usePluginsStore().load();
   await queue.restoreQueue();
   const status = useStatusStore();
+  status.fmMode = false;
+  status.heartMode = false;
   // 兼容移除“不循环”前持久化的旧状态
   if ((status.repeatMode as string) === "off") status.repeatMode = "list";
   // 恢复上次的音量和播放模式到主进程

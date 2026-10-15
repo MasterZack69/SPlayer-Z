@@ -5,10 +5,8 @@ import type { SortField } from "@/types/list";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
-import { useDownloadStore } from "@/stores/download";
 import { useTrackMenu } from "@/composables/useTrackMenu";
 import { useMultiSelect } from "@/composables/useMultiSelect";
-import { useDownload } from "@/composables/useDownload";
 import { useFavorite } from "@/composables/useFavorite";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
@@ -23,7 +21,6 @@ import IconArrowUpAz from "~icons/lucide/arrow-up-az";
 import IconLucideListEnd from "~icons/lucide/list-end";
 import IconLucideListPlus from "~icons/lucide/list-plus";
 import IconLucideListMinus from "~icons/lucide/list-minus";
-import IconLucideDownload from "~icons/lucide/download";
 import IconLucideTrash2 from "~icons/lucide/trash-2";
 import IconLucideArrowLeftRight from "~icons/lucide/arrow-left-right";
 import IconLucideX from "~icons/lucide/x";
@@ -88,7 +85,6 @@ const route = useRoute();
 const media = useMediaStore();
 const status = useStatusStore();
 const settings = useSettingsStore();
-const downloadStore = useDownloadStore();
 const fav = useFavorite();
 
 const { isFloatingBar: isFloatingPlayerBar, PLAYER_BAR_GAP } = useFloatingPlayerBar();
@@ -281,7 +277,6 @@ const tagEditorOpen = ref(false);
 const tagEditorTrack = shallowRef<Track | null>(null);
 
 /** 下载 */
-const { enqueue: enqueueDownload } = useDownload();
 
 /** 右键菜单 */
 const contextTrack = shallowRef<Track | undefined>();
@@ -297,7 +292,6 @@ const { items: contextMenuItems, handleSelect: onContextMenu } = useTrackMenu(co
     tagEditorTrack.value = track;
     tagEditorOpen.value = true;
   },
-  onDownload: (track, quality) => void enqueueDownload(track, { quality }),
 });
 
 /** 仅当右键命中歌曲行时放行上下文菜单 */
@@ -417,16 +411,6 @@ defineExpose({
               >
                 <template #icon><IconLucideListEnd class="size-3.5" /></template>
                 <span>{{ t("songList.batch.addToQueue") }}</span>
-              </SButton>
-              <SButton
-                v-if="source !== 'local' && settings.system.download.enabled"
-                variant="ghost"
-                size="small"
-                :disabled="batch.selectedCount.value === 0"
-                @click="batch.batchDownload"
-              >
-                <template #icon><IconLucideDownload class="size-3.5" /></template>
-                <span>{{ t("songList.batch.download") }}</span>
               </SButton>
               <SButton
                 v-if="source === 'local' || source === 'netease'"
@@ -653,16 +637,6 @@ defineExpose({
                     class="text-sm mt-1 truncate flex items-center gap-1"
                     :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface-variant'"
                   >
-                    <STag
-                      v-if="downloadStore.isDownloaded(item)"
-                      type="primary"
-                      variant="soft"
-                      size="tiny"
-                      circle
-                      class="shrink-0"
-                    >
-                      <IconLucideCheck class="size-3" aria-hidden="true" />
-                    </STag>
                     <STag
                       v-if="item.quality && !settings.preset.hideQualityTag"
                       :type="isLosslessQuality(item.quality) ? 'warning' : 'default'"

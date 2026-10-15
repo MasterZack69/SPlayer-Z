@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ContentScope } from "@/types/collection";
 import { usePlaylistStore } from "@/stores/playlist";
-import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
 
 const props = defineProps<{
@@ -19,26 +18,20 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const playlistStore = usePlaylistStore();
-const userStore = useUserStore();
 
-const scope = ref<ContentScope>(props.mode);
+const scope = ref<ContentScope>("local");
 const name = ref("");
-const privacy = ref<0 | 10>(0);
 const submitting = ref(false);
 
-const typeTabs = computed(() => [
-  { key: "local", label: t("collection.localPlaylist") },
-  { key: "online", label: t("collection.onlinePlaylist") },
-]);
+const typeTabs = computed(() => [{ key: "local", label: t("collection.localPlaylist") }]);
 const canSubmit = computed(() => Boolean(name.value.trim()));
 
 watch(
   () => props.open,
   (open) => {
     if (!open) return;
-    scope.value = props.mode;
+    scope.value = "local";
     name.value = props.initialName?.trim() ?? "";
-    privacy.value = 0;
     submitting.value = false;
   },
 );
@@ -49,11 +42,7 @@ const handleConfirm = async (): Promise<void> => {
   submitting.value = true;
   try {
     let id: string | undefined;
-    if (scope.value === "local") {
-      id = (await playlistStore.create(title)).id;
-    } else {
-      id = (await userStore.createPlaylist(title, privacy.value)).id;
-    }
+    id = (await playlistStore.create(title)).id;
     if (!id) {
       toast.error(t("liked.toast.failed"));
       return;
@@ -92,31 +81,6 @@ const handleConfirm = async (): Promise<void> => {
               @keyup.enter="handleConfirm"
             />
           </label>
-        </div>
-      </template>
-
-      <template #online>
-        <div class="flex flex-col gap-4 pt-4">
-          <label class="flex flex-col gap-1">
-            <span class="text-xs text-on-surface-variant">
-              {{ t("collection.name", { type: t("collection.playlist") }) }}
-            </span>
-            <SInput
-              v-model="name"
-              :placeholder="t('collection.playlistNamePlaceholder')"
-              :disabled="submitting"
-              clearable
-              @keyup.enter="handleConfirm"
-            />
-          </label>
-          <div class="flex items-center gap-2">
-            <span class="text-on-surface">{{ t("collection.privacy.private") }}</span>
-            <SSwitch
-              :model-value="privacy === 10"
-              :disabled="submitting"
-              @update:model-value="(value: boolean) => (privacy = value ? 10 : 0)"
-            />
-          </div>
         </div>
       </template>
     </STabs>

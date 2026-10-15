@@ -1,11 +1,9 @@
 import type { Track } from "@shared/types/player";
-import { useUserStore } from "@/stores/user";
-import { useDataStore } from "@/stores/data";
 import { toast } from "@/composables/useToast";
 import * as player from "@/core/player";
 
 /** hero 源类型 */
-type HeroKind = "daily" | "liked" | "local";
+type HeroKind = "local";
 
 /** hero 渲染内容 */
 export interface HeroContent {
@@ -42,16 +40,11 @@ const toSource = (kind: HeroKind, tracks: Track[]): HeroSource | null =>
   tracks.length > 0 ? { kind, featuredIndex: randomIndex(tracks.length), tracks } : null;
 
 /**
- * 首页 hero「每日推荐」
- *
- * 来源：每日推荐曲目 / 我喜欢的音乐 / 本地曲库随机
- * 每次进首页随机选一种展示，该来源无内容则顺延下一种。
- * 每日推荐数据由 data store 按天缓存（IndexedDB），此处不再额外缓存。
+ * 从本地曲库构建首页播放卡片
+ * @returns 卡片状态与播放操作
  */
 export const useDailyRecommend = () => {
   const { t } = useI18n();
-  const user = useUserStore();
-  const data = useDataStore();
 
   const slide = shallowRef<HeroSource | null>(null);
   const loading = ref(true);
@@ -83,8 +76,6 @@ export const useDailyRecommend = () => {
   /** 构建单个来源，失败返回 null */
   const tryBuild = async (kind: HeroKind): Promise<HeroSource | null> => {
     try {
-      if (kind === "daily") return toSource("daily", await data.ensureDailyRecommend());
-      if (kind === "liked") return toSource("liked", [...user.likedPlaylistTracks]);
       const res = await window.api.library.getRandomTracks(LOCAL_RANDOM_LIMIT);
       return toSource("local", res.success ? (res.data ?? []) : []);
     } catch (error) {
@@ -97,8 +88,6 @@ export const useDailyRecommend = () => {
   const load = async (): Promise<void> => {
     loading.value = true;
     const kinds: HeroKind[] = ["local"];
-    if (user.isLoggedIn) kinds.push("daily");
-    if (user.likedPlaylistTracks.length > 0) kinds.push("liked");
     const start = randomIndex(kinds.length);
     for (let offset = 0; offset < kinds.length; offset++) {
       const built = await tryBuild(kinds[(start + offset) % kinds.length]);

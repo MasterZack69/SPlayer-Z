@@ -1,7 +1,3 @@
-import * as player from "@/core/player";
-import { songsByIds } from "@/apis/song/netease";
-import { navigateToAlbum, navigateToPlaylist } from "@/utils/navigate";
-
 /** orpheus 解码后的载荷 */
 interface OrpheusPayload {
   type: string;
@@ -39,26 +35,7 @@ export const parseOrpheus = (url: string): OrpheusPayload | null => {
 };
 
 /**
- * 处理一次 orpheus 唤起：单曲立即播放，专辑/歌单跳应用内详情页
- * @param url - orpheus:// 链接
+ * 忽略旧版在线音乐协议，不再获取公开平台歌曲
+ * @param _url - 旧版 orpheus 链接
  */
-export const handleOrpheus = async (url: string): Promise<void> => {
-  const data = parseOrpheus(url);
-  if (!data) return;
-  switch (data.type) {
-    case "song": {
-      if (data.cmd !== "play") return;
-      const [track] = await songsByIds([data.id]);
-      if (track) await player.playNow(track);
-      break;
-    }
-    case "album":
-      navigateToAlbum(undefined, { source: "netease", albumId: data.id });
-      break;
-    case "playlist":
-      navigateToPlaylist(data.id, { source: "netease" });
-      break;
-    default:
-      break;
-  }
-};
+export const handleOrpheus = async (_url: string): Promise<void> => {};

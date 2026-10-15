@@ -10,7 +10,6 @@ import { invalidatePreloadedLyric, preloadLyricForTrack } from "@/services/lyric
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useStreamingStore } from "@/stores/streaming";
-import { usePluginsStore } from "@/stores/plugins";
 import { useMediaStore } from "@/stores/media";
 import * as queue from "@/stores/queue";
 
@@ -40,7 +39,6 @@ let stopContextWatch: (() => void) | null = null;
 const buildContextKey = (track: Track): string => {
   const settings = useSettingsStore();
   const streaming = useStreamingStore();
-  const plugins = usePluginsStore();
 
   const parts = [
     track.id,
@@ -51,21 +49,9 @@ const buildContextKey = (track: Track): string => {
     track.cueAudioPath ?? "",
     track.cueStartMs ?? "",
     track.cueEndMs ?? "",
-    settings.player.songLevel,
     settings.player.transitionMode,
     settings.player.transitionPreference,
-    settings.player.allowTrialPlay,
     streaming.activeServerId ?? "",
-    plugins.list
-      .map((plugin) =>
-        JSON.stringify([
-          plugin.manifest.id,
-          plugin.enabled,
-          plugin.status.state,
-          plugin.status.state === "ready" ? plugin.status.sources : null,
-        ]),
-      )
-      .join(";"),
   ];
 
   return parts.join("::");
@@ -321,7 +307,6 @@ export const installNextTrackPreloadWatchers = (): void => {
   const settings = useSettingsStore();
   const status = useStatusStore();
   const streaming = useStreamingStore();
-  const plugins = usePluginsStore();
   stopContextWatch = watch(
     () => [
       settings.player.preloadNextTrack,
@@ -329,8 +314,6 @@ export const installNextTrackPreloadWatchers = (): void => {
       settings.player.transitionPreference,
       settings.system.cache.songCache.enabled,
       settings.system.cache.songCache.cacheStreaming,
-      settings.player.songLevel,
-      settings.player.allowTrialPlay,
       status.playIndex,
       status.state,
       status.fmMode,
@@ -339,24 +322,9 @@ export const installNextTrackPreloadWatchers = (): void => {
       settings.preset.skipTrackKeywords.join(","),
       queue.queue.value,
       streaming.activeServerId,
-      settings.lyric.lyricSourcePreference,
-      settings.lyric.lyricSourceOrder.join(","),
       settings.lyric.lyricFormatOrder.join(","),
-      settings.lyric.smartPreferOnline,
-      settings.lyric.preferPluginLyric,
-      settings.system.lyric.enableOnlineTTMLLyric,
       settings.system.localLyric.enableLocalTTMLOverride,
       settings.system.localLyric.repoDir,
-      plugins.list
-        .map((plugin) =>
-          JSON.stringify([
-            plugin.manifest.id,
-            plugin.enabled,
-            plugin.status.state,
-            plugin.status.state === "ready" ? plugin.status.sources : null,
-          ]),
-        )
-        .join(";"),
     ],
     scheduleNextTrackPreload,
     { flush: "post" },

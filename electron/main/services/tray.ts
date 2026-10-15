@@ -5,12 +5,7 @@ import { appName, isWin } from "@main/utils/config";
 import { loadIcon, loadThemedIcon } from "@main/utils/icon";
 import { t } from "@main/utils/i18n";
 import { trayLog } from "@main/utils/logger";
-import {
-  toggleDesktopLyricWindow,
-  toggleDynamicIslandWindow,
-  toggleTaskbarLyricWindow,
-  focusMainWindow,
-} from "@main/window";
+import { toggleTaskbarLyricWindow, focusMainWindow } from "@main/window";
 
 type PlayState = "playing" | "paused";
 
@@ -109,16 +104,6 @@ const buildMenu = (): Menu => {
       ],
     },
     { type: "separator" },
-    {
-      label: desktopLyricOpen ? t("closeDesktopLyric") : t("openDesktopLyric"),
-      icon: menuIcon("lyric"),
-      click: () => toggleDesktopLyricWindow(),
-    },
-    {
-      label: dynamicIslandOpen ? t("closeDynamicIsland") : t("openDynamicIsland"),
-      icon: menuIcon("lyric"),
-      click: () => toggleDynamicIslandWindow(),
-    },
     // 任务栏歌词
     ...(isWin
       ? [

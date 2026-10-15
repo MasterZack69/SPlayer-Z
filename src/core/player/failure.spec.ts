@@ -423,29 +423,12 @@ describe("单曲失败自动跳曲", () => {
     expect(mocks.status.state).toBe("stopped");
   });
 
-  it.each([0, 1])("私人 FM 失败不受普通队列长度 %s 限制", async (length) => {
-    mocks.queue.value = mocks.tracks.slice(0, length);
-    mocks.fmStart.mockResolvedValue(mocks.tracks[0]);
-    mocks.fmNext.mockResolvedValue(mocks.tracks[1]);
-    mocks.load.mockResolvedValueOnce({ success: false, error: ErrorCode.FILE_DECODE_ERROR });
-    const { playPersonalFm } = await import("./index");
-    await playPersonalFm();
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(mocks.fmNext).toHaveBeenCalledOnce();
-    expect(mocks.media.track?.id).toBe("second");
-    expect(mocks.status.state).toBe("playing");
-  });
-
-  it("私人 FM 连续五首失败后停止", async () => {
-    mocks.queue.value = [];
-    mocks.fmStart.mockResolvedValue(mocks.tracks[0]);
-    mocks.fmNext.mockResolvedValue(mocks.tracks[1]);
-    mocks.load.mockResolvedValue({ success: false, error: ErrorCode.FILE_DECODE_ERROR });
-    const { playPersonalFm } = await import("./index");
-    await playPersonalFm();
-    await vi.advanceTimersByTimeAsync(10000);
-    expect(mocks.load).toHaveBeenCalledTimes(5);
-    expect(mocks.toast).toHaveBeenLastCalledWith("errors.MAX_CONSECUTIVE_FAILURES");
-    expect(mocks.status.state).toBe("stopped");
+  it("已移除的私人 FM 入口不会加载音源或发起推荐请求", async () => {
+    const { playPersonalFm, dislikeFmTrack } = await import("./index");
+    expect(await playPersonalFm()).toBe(false);
+    await dislikeFmTrack();
+    expect(mocks.fmStart).not.toHaveBeenCalled();
+    expect(mocks.fmNext).not.toHaveBeenCalled();
+    expect(mocks.load).not.toHaveBeenCalled();
   });
 });

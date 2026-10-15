@@ -115,15 +115,15 @@ const options = { meta: { id: "next", title: "Next", source: "local", artists: [
 const invoke = (name: string, ...args: unknown[]) => mocks.handlers.get(name)!(null, ...args);
 
 describe("交接响应的主进程竞态保护", () => {
-  it("单曲重播先开启两种统计轮次，普通跳转不重置轮次", async () => {
+  it("单曲重播仅重置保留的 Last.fm 统计轮次", async () => {
     expect(await invoke("player:seek", 0, true)).toEqual({ success: true });
-    expect(mocks.scrobbleRestart).toHaveBeenCalledOnce();
+    expect(mocks.scrobbleRestart).not.toHaveBeenCalled();
     expect(mocks.lastfmRestart).toHaveBeenCalledOnce();
-    expect(mocks.scrobbleRestart.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(mocks.lastfmRestart.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.seek.mock.invocationCallOrder[0]!,
     );
     expect(await invoke("player:seek", 1000)).toEqual({ success: true });
-    expect(mocks.scrobbleRestart).toHaveBeenCalledOnce();
+    expect(mocks.scrobbleRestart).not.toHaveBeenCalled();
     expect(mocks.lastfmRestart).toHaveBeenCalledOnce();
   });
   beforeEach(async () => {

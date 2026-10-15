@@ -4,9 +4,7 @@ import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { usePlaybackTime } from "@/composables/usePlaybackTime";
 import { getCurrentTime } from "@/services/playback";
-import type { QualityLevel } from "@/utils/quality";
 import { useFavorite } from "@/composables/useFavorite";
-import { useDownload, buildDownloadQualityItems } from "@/composables/useDownload";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useImmersiveMode } from "@/composables/useImmersiveMode";
 import { useTimeFormat } from "@/composables/useTimeFormat";
@@ -17,14 +15,11 @@ import * as player from "@/core/player";
 import IconFavorite from "~icons/material-symbols/favorite-rounded";
 import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 import IconLucideListPlus from "~icons/lucide/list-plus";
-import IconLucideDownload from "~icons/lucide/download";
 
 const status = useStatusStore();
 const media = useMediaStore();
 const settings = useSettingsStore();
 const fav = useFavorite();
-const { enqueue: enqueueDownload } = useDownload();
-const { t } = useI18n();
 const {
   isPlaying,
   isLoading,
@@ -151,22 +146,6 @@ const { immersive, onPlayerMouseEnter, onPlayerMouseLeave, onMainMove, onBarEnte
 
 const { isFullscreen, toggleFullscreen } = useWindowControls();
 
-const canDownload = computed(
-  () =>
-    !!displayTrack.value &&
-    displayTrack.value.source !== "local" &&
-    settings.system.download.enabled,
-);
-
-const downloadQualityItems = computed(() =>
-  buildDownloadQualityItems(t("download.qualityDefault")),
-);
-
-const onDownloadSelect = (key: string): void => {
-  if (!displayTrack.value) return;
-  void enqueueDownload(displayTrack.value, key ? { quality: key as QualityLevel } : {});
-};
-
 const collapse = (): void => {
   isPlayerExpanded.value = false;
 };
@@ -194,10 +173,6 @@ const toggleLyric = (): void => {
   } else {
     showLyric.value = !showLyric.value;
   }
-};
-
-const showComments = (): void => {
-  if (displayTrack.value) status.showComments(displayTrack.value);
 };
 </script>
 
@@ -396,16 +371,6 @@ const showComments = (): void => {
               </template>
             </SButton>
             <SButton
-              type="cover"
-              variant="ghost"
-              size="large"
-              circle
-              :disabled="!hasTrack"
-              @click="showComments"
-            >
-              <template #icon><IconLucideMessageCircle /></template>
-            </SButton>
-            <SButton
               v-if="displayTrack?.source === 'local' || displayTrack?.source === 'netease'"
               type="cover"
               variant="ghost"
@@ -415,20 +380,6 @@ const showComments = (): void => {
             >
               <template #icon><IconLucideListPlus /></template>
             </SButton>
-            <SDropdownMenu
-              v-if="canDownload"
-              :items="downloadQualityItems"
-              cover
-              side="top"
-              align="start"
-              @select="onDownloadSelect"
-            >
-              <template #trigger>
-                <SButton type="cover" variant="ghost" size="large" circle>
-                  <template #icon><IconLucideDownload /></template>
-                </SButton>
-              </template>
-            </SDropdownMenu>
           </div>
           <div class="shrink-0 flex flex-col items-center gap-1 w-[clamp(360px,35%,480px)]">
             <div class="flex items-center gap-3">

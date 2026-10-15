@@ -57,13 +57,7 @@ export const buildRegistry = (): void => {
   // 随机模式
   handlers.set("player.toggleShuffle", () => player.toggleShuffleMode());
   // 桌面歌词
-  handlers.set("window.toggleDesktopLyric", () => {
-    window.api.window.toggleDesktopLyric().catch(() => {});
-  });
   // 灵动岛
-  handlers.set("window.toggleDynamicIsland", () => {
-    window.api.window.toggleDynamicIsland().catch(() => {});
-  });
   // 任务栏歌词
   handlers.set("window.toggleTaskbarLyric", () => {
     window.api.window.toggleTaskbarLyric().catch(() => {});

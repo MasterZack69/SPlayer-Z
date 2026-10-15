@@ -1,5 +1,4 @@
 import type { PlayStatsSummary } from "@shared/types/stats";
-import { useUserStore } from "@/stores/user";
 import { useHistoryStore } from "@/stores/history";
 
 /** 单个统计卡片 */
@@ -32,7 +31,6 @@ const pickRandom = <T>(list: T[]): T => list[Math.floor(Math.random() * list.len
  */
 export const useHomeHeader = () => {
   const { t } = useI18n();
-  const user = useUserStore();
   const history = useHistoryStore();
 
   /** 时长格式化：X 小时 Y 分钟 */
@@ -55,12 +53,8 @@ export const useHomeHeader = () => {
     return "home.greeting.evening";
   });
 
-  /** 问候标题：登录时附用户名，未登录仅问候语 */
-  const greetingTitle = computed(() => {
-    const greeting = t(greetingKey.value);
-    const name = user.profile?.nickname;
-    return name ? t("home.greetingLine", { greeting, name }) : greeting;
-  });
+  /** 按本地时间显示问候语 */
+  const greetingTitle = computed(() => t(greetingKey.value));
 
   const stats = ref<PlayStatsSummary | null>(null);
 

@@ -36,13 +36,6 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "electron/main/index.ts"),
-          // 插件 host worker
-          "host.worker": resolve(__dirname, "electron/main/plugins/host.worker.ts"),
-          // 听歌识曲指纹 worker
-          "fingerprint.worker": resolve(
-            __dirname,
-            "electron/main/services/recognition/fingerprint.worker.ts",
-          ),
         },
       },
     },
@@ -91,8 +84,6 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "index.html"),
-          "desktop-lyric": resolve(__dirname, "windows/desktop-lyric/index.html"),
-          "dynamic-island": resolve(__dirname, "windows/dynamic-island/index.html"),
           "taskbar-lyric": resolve(__dirname, "windows/taskbar-lyric/index.html"),
         },
       },

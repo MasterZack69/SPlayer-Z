@@ -4,25 +4,17 @@ import Sortable from "sortablejs";
 import type { SidebarPlaylistOrder } from "@/types/settings";
 import type { ContentScope } from "@/types/collection";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
-import {
-  DEFAULT_SIDEBAR_NAV_GROUPS,
-  SIDEBAR_GROUP_MY_PLAYLISTS,
-  SIDEBAR_GROUP_SUBSCRIBED,
-} from "@/types/settings";
+import { DEFAULT_SIDEBAR_NAV_GROUPS, SIDEBAR_GROUP_MY_PLAYLISTS } from "@/types/settings";
 import { SIDEBAR_NAV_META, applySavedOrder } from "@/components/layout/sidebarNav";
 import { useSettingsStore } from "@/stores/settings";
-import { useStatusStore } from "@/stores/status";
 import { usePlaylistStore } from "@/stores/playlist";
-import { useUserStore } from "@/stores/user";
 import { dialog } from "@/composables/useDialog";
 
 defineOptions({ inheritAttrs: false });
 
 const { t } = useI18n();
 const settings = useSettingsStore();
-const status = useStatusStore();
 const playlistStore = usePlaylistStore();
-const userStore = useUserStore();
 const open = ref(false);
 
 interface EditorGroup {
@@ -41,7 +33,6 @@ const nameWithDivider = ref(false);
 const playlistOrder = ref<SidebarPlaylistOrder>({ myLocal: [], myOnline: [], subscribed: [] });
 /** 歌单分组卡片展开状态（默认收起） */
 const expandedMy = ref(false);
-const expandedSubscribed = ref(false);
 /** 「我的歌单」卡片内的来源切换 */
 const mySource = ref<ContentScope>("local");
 /** 数据变更后整体重建列表 DOM，避免 sortablejs 的 DOM 搬移与 Vue 渲染冲突 */
@@ -69,8 +60,7 @@ watch(open, (val) => {
     subscribed: [...settings.appearance.sidebarPlaylistOrder.subscribed],
   };
   expandedMy.value = false;
-  expandedSubscribed.value = false;
-  mySource.value = status.myPlaylistSource;
+  mySource.value = "local";
   if (!playlistStore.initialized) playlistStore.load();
   version.value++;
 });
@@ -166,13 +156,6 @@ const initSortables = (): void => {
       () => myOrderKey.value,
     );
   }
-  if (subscribedListEl.value) {
-    attachPlaylistSortable(
-      subscribedListEl.value,
-      () => subscribedRows.value,
-      () => "subscribed",
-    );
-  }
 };
 
 // version 变化会以 :key 重建列表 DOM，容器 ref 随之更新（含展开/收起歌单卡片），此时重建 sortable 实例
@@ -196,24 +179,25 @@ const editorGroups = computed(() =>
     id: group.id,
     name: group.name,
     showName: group.showName,
-    rows: group.keys.map((key): EditorRow => {
-      const entry = SIDEBAR_NAV_META[key];
-      return {
-        key,
-        label: entry ? t(entry.labelKey) : key,
-        icon: entry?.icon,
-        hideable: entry?.hideable ?? true,
-        featureOff:
-          (key === "/download" && !settings.system.download.enabled) ||
-          (key === "/streaming" && !settings.system.streaming.enabled),
-      };
-    }),
+    rows: group.keys
+      .filter((key) => SIDEBAR_NAV_META[key])
+      .map((key): EditorRow => {
+        const entry = SIDEBAR_NAV_META[key];
+        return {
+          key,
+          label: entry ? t(entry.labelKey) : key,
+          icon: entry?.icon,
+          hideable: entry?.hideable ?? true,
+          featureOff:
+            (key === "/download" && !settings.system.download.enabled) ||
+            (key === "/streaming" && !settings.system.streaming.enabled),
+        };
+      }),
   })),
 );
 
 const sourceOptions = computed<SSelectOption[]>(() => [
   { value: "local", label: t("collection.localPlaylist") },
-  { value: "online", label: t("collection.onlinePlaylist") },
 ]);
 
 const onMySourceChange = (value: unknown): void => {
@@ -226,29 +210,12 @@ const myOrderKey = computed<"myLocal" | "myOnline">(() =>
 
 /** 「我的歌单」当前来源的歌单行（应用工作副本顺序） */
 const myRows = computed(() => {
-  const rows =
-    mySource.value === "local"
-      ? playlistStore.playlists.map((pl) => ({
-          key: `/collection/local/playlist/${pl.id}`,
-          title: pl.title,
-        }))
-      : userStore.createdPlaylists.slice(1).map((pl) => ({
-          key: `/collection/netease/playlist/${pl.id}`,
-          title: pl.name,
-        }));
+  const rows = playlistStore.playlists.map((pl) => ({
+    key: `/collection/local/playlist/${pl.id}`,
+    title: pl.title,
+  }));
   return applySavedOrder(rows, playlistOrder.value[myOrderKey.value]);
 });
-
-/** 「收藏的歌单」行（应用工作副本顺序） */
-const subscribedRows = computed(() =>
-  applySavedOrder(
-    userStore.subscribedPlaylists.map((pl) => ({
-      key: `/collection/netease/playlist/${pl.id}`,
-      title: pl.name,
-    })),
-    playlistOrder.value.subscribed,
-  ),
-);
 
 const isHidden = (key: string): boolean => hidden.value.includes(key);
 
@@ -531,78 +498,6 @@ const handleReset = async (): Promise<void> => {
               </div>
               <div
                 v-if="myRows.length === 0"
-                class="flex items-center justify-center h-9 rounded-lg border border-dashed border-on-surface/15 text-xs text-on-surface-variant/50"
-              >
-                {{ t("settings.sidebarCustomize.noPlaylists") }}
-              </div>
-            </div>
-          </template>
-        </SCard>
-        <!-- 收藏的歌单 -->
-        <SCard flush class="flex flex-col gap-1.5 p-2">
-          <div
-            class="flex items-center gap-2 px-1 min-h-6.5 cursor-pointer select-none"
-            @click="expandedSubscribed = !expandedSubscribed"
-          >
-            <IconLucideChevronRight
-              class="size-4 shrink-0 text-on-surface-variant/60 transition-transform duration-200"
-              :class="expandedSubscribed ? 'rotate-90' : ''"
-            />
-            <IconLucideListMusic
-              class="size-4.5 shrink-0"
-              :class="isHidden(SIDEBAR_GROUP_SUBSCRIBED) ? 'opacity-40' : 'opacity-80'"
-            />
-            <span
-              class="text-sm flex-1 min-w-0 truncate"
-              :class="isHidden(SIDEBAR_GROUP_SUBSCRIBED) ? 'opacity-40' : ''"
-            >
-              {{ t("collection.subscribed", { type: t("collection.playlist") }) }}
-            </span>
-            <SButton
-              variant="tertiary"
-              :size="26"
-              :icon-size="15"
-              round
-              @click.stop="toggleHidden(SIDEBAR_GROUP_SUBSCRIBED)"
-            >
-              <template #icon>
-                <IconLucideEyeOff v-if="isHidden(SIDEBAR_GROUP_SUBSCRIBED)" />
-                <IconLucideEye v-else />
-              </template>
-            </SButton>
-          </div>
-          <template v-if="expandedSubscribed">
-            <div ref="subscribedListEl" class="flex flex-col gap-1.5">
-              <div
-                v-for="row in subscribedRows"
-                :key="row.key"
-                :data-playlist-key="row.key"
-                class="flex items-center gap-3 px-2.5 py-1.5 rounded-lg bg-on-surface/4"
-              >
-                <IconLucideGripVertical
-                  class="item-handle size-4 shrink-0 text-on-surface-variant/40 cursor-grab active:cursor-grabbing"
-                />
-                <span
-                  class="text-sm flex-1 min-w-0 truncate"
-                  :class="isHidden(row.key) ? 'opacity-40' : ''"
-                >
-                  {{ row.title }}
-                </span>
-                <SButton
-                  variant="tertiary"
-                  :size="26"
-                  :icon-size="15"
-                  round
-                  @click="toggleHidden(row.key)"
-                >
-                  <template #icon>
-                    <IconLucideEyeOff v-if="isHidden(row.key)" />
-                    <IconLucideEye v-else />
-                  </template>
-                </SButton>
-              </div>
-              <div
-                v-if="subscribedRows.length === 0"
                 class="flex items-center justify-center h-9 rounded-lg border border-dashed border-on-surface/15 text-xs text-on-surface-variant/50"
               >
                 {{ t("settings.sidebarCustomize.noPlaylists") }}

@@ -3,22 +3,17 @@ import type { SMenuItem } from "@/components/ui/SMenu.vue";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import type { ContentScope } from "@/types/collection";
-import { SIDEBAR_GROUP_MY_PLAYLISTS, SIDEBAR_GROUP_SUBSCRIBED } from "@/types/settings";
+import { SIDEBAR_GROUP_MY_PLAYLISTS } from "@/types/settings";
 import { SIDEBAR_NAV_META, applySavedOrder } from "@/components/layout/sidebarNav";
 import { useSettingsStore } from "@/stores/settings";
 import { useStatusStore } from "@/stores/status";
 import { usePlaylistStore } from "@/stores/playlist";
-import { useUserStore } from "@/stores/user";
-import { useDownloadStore } from "@/stores/download";
-import { useHeartMode } from "@/composables/useHeartMode";
 import { useSettingsDialog } from "@/settings/useSettingsDialog";
-import * as player from "@/core/player";
 import IconLucideListMusic from "~icons/lucide/list-music";
 import IconLucidePlus from "~icons/lucide/plus";
 import IconLucideChevronDown from "~icons/lucide/chevron-down";
 import IconLucideEyeOff from "~icons/lucide/eye-off";
 import IconLucideSettings2 from "~icons/lucide/settings-2";
-import IconSpHeartMode from "~icons/sp/heart-mode";
 import SButton from "@/components/ui/SButton.vue";
 import SPopselect from "@/components/ui/SPopselect.vue";
 
@@ -28,21 +23,12 @@ const route = useRoute();
 const { appearance, system: systemSettings } = useSettingsStore();
 const status = useStatusStore();
 const playlistStore = usePlaylistStore();
-const userStore = useUserStore();
-const downloadStore = useDownloadStore();
-const { enterHeartMode } = useHeartMode();
 const settingsDialog = useSettingsDialog();
-
-/** 心动模式 */
-const toggleHeartMode = useThrottleFn((): void => {
-  if (status.heartMode) player.exitHeartMode();
-  else void enterHeartMode();
-}, 800);
 
 const sourceOptions = computed<SSelectOption[]>(() => [
   { value: "local", label: t("collection.localPlaylist") },
-  { value: "online", label: t("collection.onlinePlaylist") },
 ]);
+status.myPlaylistSource = "local";
 
 const createDialogOpen = ref(false);
 const createMode = ref<ContentScope>("local");
@@ -92,86 +78,23 @@ const renderMyHeader = () =>
     ),
   ]);
 
-/** 「收藏的歌单」分组头部 */
-const renderSubscribedHeader = () =>
-  h("div", { class: "flex items-center px-3 min-h-10" }, [
-    h(
-      "span",
-      { class: "text-sm text-on-surface-variant/70" },
-      t("collection.subscribed", { type: t("collection.playlist") }),
-    ),
-  ]);
-
 const hiddenKeys = computed(() => new Set(appearance.sidebarHiddenKeys));
 
 /** 我的歌单 */
 const myPlaylistItems = computed<SMenuItem[]>(() => {
   const showCover = appearance.sidebarPlaylistCover;
   const hidden = hiddenKeys.value;
-  const local = status.myPlaylistSource === "local";
-  const items: SMenuItem[] = local
-    ? playlistStore.playlists.map((pl) => ({
-        key: `/collection/local/playlist/${pl.id}`,
-        label: pl.title,
-        icon: markRaw(IconLucideListMusic),
-        cover: pl.cover ?? "",
-        showCover,
-      }))
-    : userStore.createdPlaylists.slice(1).map((pl) => ({
-        key: `/collection/netease/playlist/${pl.id}`,
-        label: pl.name,
-        icon: markRaw(IconLucideListMusic),
-        cover: pl.cover ?? "",
-        showCover,
-      }));
-  const order = local
-    ? appearance.sidebarPlaylistOrder.myLocal
-    : appearance.sidebarPlaylistOrder.myOnline;
-  return applySavedOrder(items, order).filter((item) => !hidden.has(item.key));
-});
-
-/** 收藏的歌单 */
-const subscribedItems = computed<SMenuItem[]>(() => {
-  const showCover = appearance.sidebarPlaylistCover;
-  const hidden = hiddenKeys.value;
-  const items: SMenuItem[] = userStore.subscribedPlaylists.map((pl) => ({
-    key: `/collection/netease/playlist/${pl.id}`,
-    label: pl.name,
+  const items: SMenuItem[] = playlistStore.playlists.map((pl) => ({
+    key: `/collection/local/playlist/${pl.id}`,
+    label: pl.title,
     icon: markRaw(IconLucideListMusic),
     cover: pl.cover ?? "",
     showCover,
   }));
-  return applySavedOrder(items, appearance.sidebarPlaylistOrder.subscribed).filter(
+  return applySavedOrder(items, appearance.sidebarPlaylistOrder.myLocal).filter(
     (item) => !hidden.has(item.key),
   );
 });
-
-/** 「我喜欢」行尾的心动模式按钮 */
-const renderHeartModeTrailing = () =>
-  h(
-    SButton,
-    {
-      type: status.heartMode ? "primary" : "default",
-      variant: "tertiary",
-      size: 26,
-      iconSize: 16,
-      round: true,
-      onClick: toggleHeartMode,
-    },
-    { icon: () => h(IconSpHeartMode) },
-  );
-
-/** 下载任务角标 */
-const renderDownloadTrailing = () =>
-  h(
-    "span",
-    {
-      class:
-        "inline-flex items-center justify-center h-6 min-w-8.5 px-1.5 rounded-full bg-primary/16 text-primary text-xs font-medium tabular-nums leading-none cursor-pointer",
-      onClick: () => router.push("/download"),
-    },
-    String(downloadStore.activeCount),
-  );
 
 /** 固定导航区：按分组生成，组间以分隔线或分组名标题区分 */
 const navItems = computed<SMenuItem[]>(() => {
@@ -183,12 +106,8 @@ const navItems = computed<SMenuItem[]>(() => {
       if (hidden.has(key)) continue;
       const entry = SIDEBAR_NAV_META[key];
       if (!entry) continue;
-      if (key === "/download" && !systemSettings.download.enabled) continue;
       if (key === "/streaming" && !systemSettings.streaming.enabled) continue;
       const item: SMenuItem = { key, label: t(entry.labelKey), icon: markRaw(entry.icon) };
-      if (key === "/liked") item.trailing = renderHeartModeTrailing;
-      if (key === "/download" && downloadStore.activeCount > 0)
-        item.trailing = renderDownloadTrailing;
       items.push(item);
     }
     if (items.length === 0 && !appearance.sidebarKeepEmptyDivider) continue;
@@ -218,20 +137,11 @@ const menuItems = computed<SMenuItem[]>(() => {
   const hidden = hiddenKeys.value;
   const items = [...navItems.value];
   const showMy = !hidden.has(SIDEBAR_GROUP_MY_PLAYLISTS);
-  const showSubscribed =
-    !hidden.has(SIDEBAR_GROUP_SUBSCRIBED) &&
-    status.myPlaylistSource === "online" &&
-    subscribedItems.value.length > 0;
-  if ((showMy || showSubscribed) && items[items.length - 1]?.type !== "divider")
+  if (showMy && items[items.length - 1]?.type !== "divider")
     items.push({ key: "divider-playlist", type: "divider" });
   if (showMy) {
     items.push({ key: "my-playlist-group", type: "group", render: renderMyHeader });
     items.push(...myPlaylistItems.value);
-  }
-  if (showSubscribed) {
-    if (showMy) items.push({ key: "divider-subscribed", type: "divider" });
-    items.push({ key: "subscribed-group", type: "group", render: renderSubscribedHeader });
-    items.push(...subscribedItems.value);
   }
   return items;
 });
@@ -324,25 +234,18 @@ const prunePlaylistArchive = (existing: ReadonlySet<string>): void => {
   }
 };
 
-// 本地歌单加载完成后即可收敛
-// 在线部分仅在已登录且列表非空时清理
+// 本地歌单加载完成后清理旧在线歌单的侧边栏存档
 watch(
-  () => [playlistStore.playlists, userStore.isLoggedIn ? userStore.playlists : null] as const,
-  ([localLists, onlineLists]) => {
-    const existing = new Set<string>();
-    for (const pl of localLists) existing.add(`/collection/local/playlist/${pl.id}`);
-    if (onlineLists && onlineLists.length > 0) {
-      for (const pl of onlineLists) existing.add(`/collection/netease/playlist/${pl.id}`);
-    }
-    if (existing.size === 0) return;
-    prunePlaylistArchive(existing);
+  () => playlistStore.playlists,
+  (lists) => {
+    if (!playlistStore.initialized) return;
+    prunePlaylistArchive(new Set(lists.map((pl) => `/collection/local/playlist/${pl.id}`)));
   },
   { deep: false },
 );
 
 onMounted(() => {
   if (!playlistStore.initialized) playlistStore.load();
-  void downloadStore.init();
 });
 </script>
 

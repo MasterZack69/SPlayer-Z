@@ -1,134 +1,107 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Track } from "@shared/types/player";
 import { ErrorCode } from "@shared/types/errors";
-
 const mocks = vi.hoisted(() => ({
-  netease: vi.fn(),
-  qqmusic: vi.fn(),
-  kugou: vi.fn(),
   error: vi.fn(),
   lookup: vi.fn(),
-  cacheLookup: vi.fn(),
-  settings: {
-    player: { songLevel: "hq", allowTrialPlay: false },
-    system: { cache: { songCache: { enabled: false } } },
-  },
+  fetch: vi.fn(),
+  download: vi.fn(),
+  online: vi.fn(),
+  settings: { system: { cache: { songCache: { enabled: false, cacheStreaming: true } } } },
 }));
-vi.mock("@/stores/settings", () => ({
-  useSettingsStore: () => mocks.settings,
-}));
-vi.mock("@/stores/plugins", () => ({ usePluginsStore: () => ({ list: [] }) }));
-vi.mock("@/stores/user", () => ({ useUserStore: () => ({ isLoggedIn: false }) }));
-vi.mock("@/apis/song/netease", () => ({ resolveNeteaseUrl: mocks.netease }));
-vi.mock("@/apis/song/qqmusic", () => ({ resolveQQMusicUrl: mocks.qqmusic }));
-vi.mock("@/apis/song/kugou", () => ({ resolveKugouUrl: mocks.kugou }));
+vi.mock("@/stores/settings", () => ({ useSettingsStore: () => mocks.settings }));
 vi.mock("@/utils/errors", () => ({ handleError: mocks.error }));
 import { resolveTrackSource } from "./audioSource";
-
+const local: Track = {
+  id: "local",
+  source: "local",
+  title: "本地歌曲",
+  artists: [],
+  duration: 1000,
+  path: "/music/local.flac",
+};
+const server: Track = {
+  ...local,
+  id: "server:remote",
+  source: "streaming",
+  serverId: "server",
+  originalId: "remote",
+  serverRevision: 3,
+};
 beforeEach(() => {
-  vi.clearAllMocks();
-  mocks.lookup.mockReset().mockResolvedValue(null);
+  vi.resetAllMocks();
   mocks.settings.system.cache.songCache.enabled = false;
   Object.assign(window, {
     api: {
-      download: { lookup: mocks.lookup },
-      cache: { song: { lookup: mocks.cacheLookup } },
+      cache: { song: { lookup: mocks.lookup, fetch: mocks.fetch } },
+      download: { lookup: mocks.download },
+      apis: { netease: mocks.online },
     },
   });
 });
-
-describe("优先播放下载文件", () => {
-  it("远端流媒体只返回身份占位符，凭据和播放会话由主进程解析", async () => {
-    const result = await resolveTrackSource({
-      id: "server:remote",
-      source: "streaming",
-      serverId: "server",
-      originalId: "remote",
-      title: "歌曲",
-      artists: [],
-      duration: 1000,
-    });
-    expect(result?.source).toBe("streaming://server/remote");
-  });
-  it("命中下载后跳过缓存和在线地址解析", async () => {
-    mocks.settings.system.cache.songCache.enabled = true;
-    mocks.lookup.mockResolvedValueOnce("C:/downloads/song.flac");
-    const track: Track = { id: "1", title: "test", source: "netease", artists: [], duration: 1000 };
-    expect(await resolveTrackSource(track)).toEqual({
-      source: "C:/downloads/song.flac",
+describe("离线与自托管音源", () => {
+  it("本地文件无需任何网络或下载查询", async () => {
+    expect(await resolveTrackSource(local)).toEqual({
+      source: local.path,
+      provider: "local",
       fromCache: false,
-      provider: "download",
     });
-    expect(mocks.lookup).toHaveBeenCalledExactlyOnceWith({ source: "netease", id: "1" });
-    expect(mocks.cacheLookup).not.toHaveBeenCalled();
-    expect(mocks.netease).not.toHaveBeenCalled();
+    expect(mocks.lookup).not.toHaveBeenCalled();
+    expect(mocks.download).not.toHaveBeenCalled();
+    expect(mocks.online).not.toHaveBeenCalled();
   });
-
-  it("流媒体下载按服务器身份查询，并跳过远端地址解析", async () => {
-    mocks.lookup.mockResolvedValueOnce("C:/downloads/stream.flac");
-    await resolveTrackSource({
-      id: "song",
-      source: "streaming",
-      serverId: "server",
-      originalId: "remote",
-      title: "stream",
-      artists: [],
-      duration: 1000,
-    });
-    expect(mocks.lookup).toHaveBeenCalledExactlyOnceWith({
-      source: "streaming",
-      id: "song",
-      serverId: "server",
-      originalId: "remote",
-    });
+  it("CUE 分轨使用实际音频路径", async () => {
+    expect((await resolveTrackSource({ ...local, cueAudioPath: "/music/disc.flac" }))?.source).toBe(
+      "/music/disc.flac",
+    );
   });
-
-  it("下载查询异常时继续在线解析", async () => {
-    mocks.lookup.mockRejectedValueOnce(new Error("database error"));
-    mocks.netease.mockResolvedValueOnce({
-      available: true,
-      url: "https://music/song",
-      isTrial: false,
-    });
-    const result = await resolveTrackSource({
-      id: "1",
-      source: "netease",
-      title: "test",
-      artists: [],
-      duration: 1000,
-    });
-    expect(result?.source).toBe("https://music/song");
-    expect(mocks.netease).toHaveBeenCalledOnce();
-  });
-});
-
-describe("音源解析失败原因", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it("缺失本地路径时返回明确错误", async () => {
+    const error = vi.fn();
+    expect(
+      await resolveTrackSource({ ...local, path: undefined }, { silent: true, onError: error }),
+    ).toBeNull();
+    expect(error).toHaveBeenCalledWith(ErrorCode.FILE_NOT_FOUND);
+    expect(mocks.error).not.toHaveBeenCalled();
   });
   it.each(["netease", "qqmusic", "kugou"] as const)(
-    "%s API 异常不会被无插件覆盖",
+    "拒绝旧队列的 %s 曲目，即使有旧下载或缓存",
     async (source) => {
-      mocks[source].mockRejectedValueOnce(new Error("fetch failed"));
-      const onError = vi.fn();
-      const track: Track = { id: "1", title: "test", source, artists: [], duration: 1000 };
-      expect(await resolveTrackSource(track, { silent: true, onError })).toBeNull();
-      expect(onError).toHaveBeenCalledExactlyOnceWith(ErrorCode.NETWORK_ERROR);
-      expect(mocks.error).not.toHaveBeenCalled();
+      mocks.settings.system.cache.songCache.enabled = true;
+      mocks.download.mockResolvedValue("/downloads/old.flac");
+      mocks.lookup.mockResolvedValue("/cache/old.flac");
+      expect(await resolveTrackSource({ ...local, source }, { silent: true })).toBeNull();
+      expect(mocks.download).not.toHaveBeenCalled();
+      expect(mocks.lookup).not.toHaveBeenCalled();
+      expect(mocks.online).not.toHaveBeenCalled();
     },
   );
-  it("歌曲无版权仍保留单曲错误", async () => {
-    mocks.netease.mockResolvedValueOnce({
-      available: false,
-      errorCode: ErrorCode.NETEASE_UNAVAILABLE,
+  it("自托管曲目仅向主进程传递身份，不泄露凭据", async () => {
+    expect(await resolveTrackSource(server)).toEqual({
+      source: "streaming://server/remote?revision=3",
+      provider: "streaming",
+      fromCache: false,
     });
-    await resolveTrackSource({
-      id: "1",
-      title: "test",
-      source: "netease",
-      artists: [],
-      duration: 1000,
-    });
-    expect(mocks.error).toHaveBeenCalledExactlyOnceWith(ErrorCode.NETEASE_UNAVAILABLE);
+    expect(mocks.download).not.toHaveBeenCalled();
+  });
+  it("服务器缓存按身份版本隔离", async () => {
+    mocks.settings.system.cache.songCache.enabled = true;
+    mocks.lookup.mockResolvedValue("/cache/server.flac");
+    expect((await resolveTrackSource(server))?.provider).toBe("cache");
+    expect(mocks.lookup).toHaveBeenCalledWith("s:server:remote:r3");
+  });
+  it("服务器缓存仍支持预载和取消", async () => {
+    mocks.settings.system.cache.songCache.enabled = true;
+    const result = await resolveTrackSource(server);
+    const abort = new AbortController();
+    abort.abort();
+    expect(await result?.cacheRequest?.("next", abort.signal)).toBeNull();
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    await result?.cacheRequest?.("next");
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      "s:server:remote:r3",
+      "streaming",
+      "streaming://server/remote?revision=3",
+      "next",
+    );
   });
 });

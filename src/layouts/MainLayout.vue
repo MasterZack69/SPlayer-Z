@@ -2,15 +2,13 @@
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
-import { useOrpheusProtocol } from "@/composables/useOrpheusProtocol";
 import { useExternalFileHandler } from "@/composables/useExternalFileHandler";
 
 const route = useRoute();
 const status = useStatusStore();
 const settings = useSettingsStore();
 
-// 接入 orpheus 协议唤起与外部音频文件播放
-useOrpheusProtocol();
+// 接入外部音频文件播放
 useExternalFileHandler();
 
 /** 有歌曲信息时显示播放栏 */
@@ -44,10 +42,6 @@ const cachedViews = [
   "Library",
   "Liked",
   "History",
-  "Download",
-  "Daily",
-  "Favorites",
-  "Cloud",
   "LocalList",
   "Folders",
   "SearchPage",
@@ -183,7 +177,6 @@ const playerBarInnerClass = computed(() => {
   <!-- 更新弹窗 -->
   <UpdateDialog />
   <!-- 评论弹窗 -->
-  <MusicCommentsDialog />
   <!-- 输出信息弹窗 -->
   <AudioInfoDialog />
 </template>

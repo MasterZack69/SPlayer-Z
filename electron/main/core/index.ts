@@ -5,8 +5,6 @@ import {
   restoreLyricWindows,
   getMainWindow,
   focusMainWindow,
-  getDesktopLyricWindow,
-  getDynamicIslandWindow,
   getTaskbarLyricWindow,
 } from "@main/window";
 import { isMac } from "@main/utils/config";
@@ -16,18 +14,9 @@ import { init as initLastfm } from "@main/services/lastfm";
 import { initGlobalHotkey } from "@main/services/globalHotkey";
 import { initDatabase, closeDatabase } from "@main/database";
 import { init as initSongCache } from "@main/services/songCache";
-import { init as initDownload } from "@main/services/downloadManager";
-import { pluginRegistry } from "@main/plugins/registry";
-import {
-  init as initPlaybackBridge,
-  dispose as disposePlaybackBridge,
-} from "@main/plugins/playbackBridge";
 import { registerCacheScheme, handleCacheProtocol } from "@main/utils/protocol";
-import { startServer, stopServer } from "@main/server";
-import { startMcpServer, stopMcpServer } from "@main/services/mcp/http";
 import { initUpdater, disposeUpdater } from "@main/services/updater";
 import { coreLog, initLogger } from "@main/utils/logger";
-import { isAppQuitting } from "@main/utils/lifecycle";
 import {
   initOrpheusRegistration,
   extractOrpheusUrl,
@@ -54,8 +43,6 @@ const logProcessMemory = (): void => {
   const windowPids = new Map<number, string>();
   const namedWindows: Array<[string, Electron.BrowserWindow | null]> = [
     ["main", getMainWindow()],
-    ["desktop-lyric", getDesktopLyricWindow()],
-    ["dynamic-island", getDynamicIslandWindow()],
     ["taskbar-lyric", getTaskbarLyricWindow()],
   ];
   for (const [name, win] of namedWindows) {
@@ -111,17 +98,7 @@ export const initApp = (): void => {
       optimizer.watchWindowShortcuts(window);
     });
     // 注册 IPC
-    let startupComplete = false;
-    registerIpcHandlers(() => {
-      if (startupComplete) return;
-      startupComplete = true;
-      setImmediate(() => {
-        if (isAppQuitting()) return;
-        void startServer();
-        void startMcpServer();
-        void pluginRegistry.checkAllUpdates();
-      });
-    });
+    registerIpcHandlers(() => {});
     // 初始化数据库
     initDatabase();
     // 创建主窗口
@@ -138,14 +115,8 @@ export const initApp = (): void => {
     if (coldAudioFiles.length > 0) captureAudioFiles(coldAudioFiles);
     // 启动歌曲缓存
     void initSongCache();
-    // 启动下载服务
-    void initDownload();
     // 初始化 Last.fm 集成
     initLastfm();
-    // 初始化插件系统
-    pluginRegistry.init();
-    // 初始化播放事件桥（需在 pluginRegistry.init 之后，读 hasEnabledControlPlugin）
-    initPlaybackBridge();
     // 恢复歌词相关窗口
     restoreLyricWindows();
     // 注册全局快捷键
@@ -175,10 +146,6 @@ export const initApp = (): void => {
     coreLog.info("应用即将退出，清理资源");
     shutdownMedia();
     closeDatabase();
-    void stopServer();
-    void stopMcpServer();
-    void pluginRegistry.shutdown();
-    disposePlaybackBridge();
     disposeUpdater();
   });
 };

@@ -1,106 +1,90 @@
-import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Track } from "@shared/types/player";
-import { useSettingsStore } from "@/stores/settings";
-
-const mockRequestPlatformLyric = vi.fn();
-
-vi.mock("./request", () => ({
-  requestPlatformLyric: (...args: unknown[]) => mockRequestPlatformLyric(...args),
-  requestStreamingLyric: vi.fn(),
-  requestTTMLOverlay: vi.fn(),
-}));
-
-const mockWindowApi = {
-  desktopLyric: { onConfigChange: vi.fn(() => () => {}) },
-  taskbarLyric: { onConfigChange: vi.fn(() => () => {}) },
-  dynamicIsland: { onConfigChange: vi.fn(() => () => {}) },
-  window: {
-    onDesktopLyricVisibilityChange: vi.fn(() => () => {}),
-    onDynamicIslandVisibilityChange: vi.fn(() => () => {}),
-    onTaskbarLyricVisibilityChange: vi.fn(() => () => {}),
-    isDesktopLyricOpen: vi.fn().mockResolvedValue(false),
-    isDynamicIslandOpen: vi.fn().mockResolvedValue(false),
-    isTaskbarLyricOpen: vi.fn().mockResolvedValue(false),
+const mocks = vi.hoisted(() => ({
+  server: vi.fn(),
+  online: vi.fn(),
+  repo: vi.fn(),
+  settings: {
+    lyric: { lyricFormatOrder: ["ttml", "lrc"] },
+    system: { localLyric: { enableLocalTTMLOverride: false, repoDir: "/lyrics" } },
   },
+}));
+vi.mock("@/stores/settings", () => ({ useSettingsStore: () => mocks.settings }));
+vi.mock("./request", () => ({ requestStreamingLyric: mocks.server }));
+import {
+  resolveOnlineByPreference,
+  resolveTTMLOverlay,
+  resolvePluginLyric,
+  resolveStreamingByPreference,
+  resolveLyricForPreload,
+  resolveLocalRepoLyric,
+} from "./resolve";
+const track: Track = {
+  id: "server:1",
+  source: "streaming",
+  serverId: "server",
+  originalId: "1",
+  title: "歌曲",
+  artists: [],
+  duration: 1000,
 };
-
-// @ts-expect-error test mock
-window.api = mockWindowApi;
-
-import { resolveOnlineByPreference } from "./resolve";
-
-const createTrack = (id: string): Track => ({
-  id,
-  source: "netease",
-  title: `Song ${id}`,
-  artists: [{ id: "a1", name: "Artist" }],
-  duration: 180_000,
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.settings.system.localLyric.enableLocalTTMLOverride = false;
+  Object.assign(window, {
+    api: {
+      lyrics: {
+        matchById: mocks.online,
+        matchByQuery: mocks.online,
+        fetchTTMLOverlay: mocks.online,
+        matchLocalTTML: mocks.repo,
+      },
+      plugins: { matchLyric: mocks.online },
+    },
+  });
 });
-
-describe("resolveOnlineByPreference 平台优先与智能回退", () => {
-  beforeEach(() => {
-    setActivePinia(createPinia());
-    vi.clearAllMocks();
+describe("不再获取在线歌词", () => {
+  it.each(["netease", "qqmusic", "kugou", "local", "streaming"] as const)(
+    "旧 %s 来源偏好不能发起网络匹配",
+    async (source) => {
+      expect(
+        await resolveOnlineByPreference(
+          { ...track, source },
+          { hasLocal: false, localFormat: null },
+        ),
+      ).toBeNull();
+      expect(await resolvePluginLyric(track)).toBeNull();
+      expect(
+        await resolveTTMLOverlay(track, {
+          source: { source: "online", format: "lrc", platform: "netease" },
+          input: { content: "旧歌词" },
+        }),
+      ).toBeNull();
+      expect(mocks.online).not.toHaveBeenCalled();
+    },
+  );
+  it("只读取当前媒体服务器的歌词", async () => {
+    mocks.server.mockResolvedValue("[00:01.00]服务器歌词");
+    expect((await resolveStreamingByPreference(track))?.input.content).toContain("服务器歌词");
+    expect(mocks.server).toHaveBeenCalledWith(track);
+    expect(mocks.online).not.toHaveBeenCalled();
   });
-
-  it("偏好平台命中时：优先返回该偏好平台歌词且不查询其他平台", async () => {
-    const settings = useSettingsStore();
-    settings.lyric.lyricSourcePreference = "kugou";
-
-    mockRequestPlatformLyric.mockImplementation(async (platform: string) => {
-      if (platform === "kugou") {
-        return {
-          platform: "kugou",
-          format: "krc",
-          content: "[00:01.000]<0,1000>酷狗KRC",
-        };
-      }
-      return null;
-    });
-
-    const result = await resolveOnlineByPreference(createTrack("song_hit"), {
-      hasLocal: false,
-      localFormat: null,
-    });
-
-    expect(result).not.toBeNull();
-    expect(result?.source.platform).toBe("kugou");
-    expect(result?.source.format).toBe("krc");
-    expect(mockRequestPlatformLyric).toHaveBeenCalledTimes(1);
-    expect(mockRequestPlatformLyric).toHaveBeenCalledWith("kugou", expect.anything());
+  it("切歌后丢弃旧服务器响应", async () => {
+    mocks.server.mockResolvedValue("[00:01.00]旧歌词");
+    expect(await resolveStreamingByPreference(track, () => false)).toBeNull();
   });
-
-  it("偏好平台查无此歌时：自动智能回退至其余音源平台成功获取歌词", async () => {
-    const settings = useSettingsStore();
-    settings.lyric.lyricSourcePreference = "kugou";
-    settings.lyric.lyricSourceOrder = ["netease", "qqmusic", "kugou"];
-
-    // 酷狗完全查无此歌，QQ音乐有
-    mockRequestPlatformLyric.mockImplementation(async (platform: string) => {
-      if (platform === "kugou") return null;
-      if (platform === "netease") return null;
-      if (platform === "qqmusic") {
-        return {
-          platform: "qqmusic",
-          format: "qrc",
-          content: "[1000,1000]QQ音乐QRC(1000,1000)",
-        };
-      }
-      return null;
+  it("本地歌词库无需在线服务", async () => {
+    mocks.settings.system.localLyric.enableLocalTTMLOverride = true;
+    mocks.repo.mockResolvedValue({ ok: true, data: "<tt>本地歌词</tt>" });
+    expect((await resolveLocalRepoLyric(track))?.source).toEqual({
+      source: "external",
+      format: "ttml",
     });
-
-    const result = await resolveOnlineByPreference(createTrack("song_fallback"), {
-      hasLocal: false,
-      localFormat: null,
-    });
-
-    expect(result).not.toBeNull();
-    expect(result?.source.platform).toBe("qqmusic");
-    expect(result?.source.format).toBe("qrc");
-    // 验证确实先查了酷狗，酷狗没有才查了 netease 和 qqmusic
-    expect(mockRequestPlatformLyric).toHaveBeenCalledWith("kugou", expect.anything());
-    expect(mockRequestPlatformLyric).toHaveBeenCalledWith("netease", expect.anything());
-    expect(mockRequestPlatformLyric).toHaveBeenCalledWith("qqmusic", expect.anything());
+    expect(mocks.online).not.toHaveBeenCalled();
+  });
+  it("不预载本地或已移除平台的歌词", async () => {
+    expect(await resolveLyricForPreload({ ...track, source: "local" }, () => true)).toBeNull();
+    expect(await resolveLyricForPreload({ ...track, source: "kugou" }, () => true)).toBeNull();
+    expect(mocks.server).not.toHaveBeenCalled();
   });
 });

@@ -8,10 +8,6 @@ import IconLucideFolder from "~icons/lucide/folder";
 import IconLucideChartPie from "~icons/lucide/chart-pie";
 import IconLucideLibrary from "~icons/lucide/library";
 import IconMaterialSymbolsFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
-import IconLucideStar from "~icons/lucide/star";
-import IconLucideHistory from "~icons/lucide/history";
-import IconLucideDownload from "~icons/lucide/download";
-import IconLucideCloud from "~icons/lucide/cloud";
 
 /** 侧边栏固定导航项元数据 */
 export interface SidebarNavEntry {
@@ -38,11 +34,7 @@ const SIDEBAR_NAV_ENTRIES: SidebarNavEntry[] = [
     icon: IconMaterialSymbolsFavoriteOutline,
     hideable: true,
   },
-  { key: "/favorites", labelKey: "nav.favorites", icon: IconLucideStar, hideable: true },
-  { key: "/cloud", labelKey: "nav.cloud", icon: IconLucideCloud, hideable: true },
-  { key: "/download", labelKey: "nav.download", icon: IconLucideDownload, hideable: true },
   { key: "/streaming", labelKey: "nav.streaming", icon: IconLucideLibrary, hideable: true },
-  { key: "/history", labelKey: "nav.history", icon: IconLucideHistory, hideable: true },
 ];
 
 /** key → 导航项元数据 */

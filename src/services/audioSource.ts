@@ -1,22 +1,9 @@
-import type { Track, TrackSource } from "@shared/types/player";
-import type { Platform } from "@shared/types/platform";
+import type { Track } from "@shared/types/player";
 import type { QualityLevel } from "@/utils/quality";
 import { streamingSourceForTrack } from "@shared/utils/streamingSource";
 import { useSettingsStore } from "@/stores/settings";
-import { usePluginsStore } from "@/stores/plugins";
-import { useUserStore } from "@/stores/user";
-import { resolveNeteaseUrl } from "@/apis/song/netease";
-import { resolveQQMusicUrl } from "@/apis/song/qqmusic";
-import { resolveKugouUrl } from "@/apis/song/kugou";
 import { ErrorCode } from "@shared/types/errors";
 import { handleError } from "@/utils/errors";
-
-/** 在线平台 source → 插件 source key */
-const PLATFORM_TO_PLUGIN_SOURCE: Record<Platform, string> = {
-  netease: "wy",
-  qqmusic: "tx",
-  kugou: "kg",
-};
 
 /** 解析选项 */
 export interface ResolveTrackSourceOptions {
@@ -33,31 +20,14 @@ export interface ResolveTrackSourceOptions {
 }
 
 /**
- * 检查给定 source 是否为在线平台
- * @param source - 要检查的 source
+ * 为自托管曲目生成隔离的缓存键
+ * @param track - 歌曲身份及服务器版本
+ * @returns 缓存键或 null
  */
-const isOnlinePlatform = (source: TrackSource): source is Platform =>
-  source === "netease" || source === "qqmusic" || source === "kugou";
-
-/**
- * 派生缓存键
- * netease / qqmusic 把音质档位并入键，使不同音质的同一首歌互不覆盖
- * @param track - 要解析的 track
- * @param songLevel - 在线歌曲音质档位
- * @returns 派生缓存键，如果该 track 不参与歌曲缓存则返回 null
- */
-const cacheKeyForTrack = (track: Track, songLevel: QualityLevel): string | null => {
-  if (track.source === "streaming" && track.serverId && track.originalId) {
-    return `s:${track.serverId}:${track.originalId}:${track.serverRevision ? `r${track.serverRevision}` : ""}`;
-  }
-  if (track.source === "kugou" && track.id) {
-    return `o:kugou:${track.id}:${track.extId ?? ""}:${songLevel}`;
-  }
-  if (isOnlinePlatform(track.source) && track.id) {
-    return `o:${track.source}:${track.id}:${songLevel}`;
-  }
-  return null;
-};
+const cacheKeyForTrack = (track: Track): string | null =>
+  track.source === "streaming" && track.serverId && track.originalId
+    ? `s:${track.serverId}:${track.originalId}:${track.serverRevision ? `r${track.serverRevision}` : ""}`
+    : null;
 
 /** 在线 URL 解析结果 */
 export type OnlineResolveResult =
@@ -71,152 +41,17 @@ export type OnlineResolveResult =
   | { ok: false; errorCode: ErrorCode };
 
 /**
- * 经插件解析在线音频源 URL
- * @param track - 要解析的 track
- * @param quality - 音质档位（由调用方传入，默认 hq）
- * @returns 解析结果，失败时带原因码
+ * 拒绝旧队列中的插件音源重试
+ * @param _track - 旧队列歌曲
+ * @param _quality - 旧音质参数
+ * @param _skipPluginIds - 旧插件跳过列表
+ * @returns 不支持的音源结果
  */
 export const resolveByPlugin = async (
-  track: Track,
-  quality: QualityLevel = "hq",
-  skipPluginIds: readonly string[] = [],
-): Promise<OnlineResolveResult> => {
-  const fail = (errorCode: ErrorCode): OnlineResolveResult => ({ ok: false, errorCode });
-  if (!isOnlinePlatform(track.source)) return fail(ErrorCode.URL_RESOLVE_FAILED);
-  const pluginSource = PLATFORM_TO_PLUGIN_SOURCE[track.source];
-  if (!pluginSource) return fail(ErrorCode.URL_RESOLVE_FAILED);
-  const skip = new Set(skipPluginIds);
-  const plugins = usePluginsStore();
-  const candidates = plugins.list.filter(
-    (info) =>
-      !skip.has(info.manifest.id) &&
-      info.enabled &&
-      info.status.state === "ready" &&
-      info.status.sources[pluginSource]?.actions.includes("musicUrl"),
-  );
-  if (candidates.length === 0) return fail(ErrorCode.NO_PLUGIN_AVAILABLE);
-  // 补齐 id / songmid / songId / hash / albumId 等字段
-  const totalSec = track.duration > 0 ? Math.round(track.duration / 1000) : 0;
-  const interval =
-    totalSec > 0
-      ? `${Math.floor(totalSec / 60)
-          .toString()
-          .padStart(2, "0")}:${(totalSec % 60).toString().padStart(2, "0")}`
-      : null;
-  const singer = track.artists.map((artist) => artist.name).join("/");
-  const songId = track.id;
-  const isHash =
-    typeof songId === "string" && songId.length === 32 && /^[0-9a-fA-F]{32}$/.test(songId);
-  const hash = isHash || track.source === "kugou" ? songId : undefined;
-  const musicInfo = {
-    id: songId,
-    songmid: songId,
-    songId,
-    name: track.title,
-    singer,
-    source: pluginSource,
-    interval,
-    img: track.cover ?? null,
-    ...(hash ? { hash } : {}),
-    albumId: track.album?.id ?? "",
-    albumName: track.album?.name ?? "",
-    meta: {
-      songId,
-      albumName: track.album?.name ?? "",
-      albumId: track.album?.id ?? "",
-      picUrl: track.cover ?? null,
-      ...(hash ? { hash } : {}),
-    },
-  };
-  for (const plugin of candidates) {
-    try {
-      const res = await window.api.plugins.resolveUrl({
-        pluginId: plugin.manifest.id,
-        source: pluginSource,
-        quality,
-        musicInfo,
-      });
-      if (res?.url) {
-        return {
-          ok: true,
-          url: res.url,
-          isTrial: false,
-          provider: "plugin",
-          pluginId: plugin.manifest.id,
-        };
-      }
-    } catch (err) {
-      console.warn("[plugin] resolveUrl failed", plugin.manifest.id, err);
-    }
-  }
-  return fail(ErrorCode.URL_RESOLVE_FAILED);
-};
-
-/**
- * 解析在线音频源 URL
- * @param track - 要解析的 track
- * @param songLevel - 在线歌曲音质档位（仅内置官方接口生效）
- */
-const resolveOnlineUrl = async (
-  track: Track,
-  songLevel: QualityLevel,
-  options: ResolveTrackSourceOptions = {},
-): Promise<OnlineResolveResult> => {
-  const settings = useSettingsStore();
-  let trialUrl: string | null = null;
-  let officialErrorCode: ErrorCode | null = null;
-  if (track.source === "netease" && !options.skipOfficialOnline) {
-    const user = useUserStore();
-    try {
-      const resolved = await resolveNeteaseUrl(track, songLevel, {
-        authenticated: user.isLoggedIn,
-        validate: () => user.fetchStatus(),
-      });
-      if (!resolved.available) {
-        officialErrorCode = resolved.errorCode;
-      } else if (!resolved.isTrial) {
-        return { ok: true, url: resolved.url, isTrial: false, provider: "official" };
-      } else {
-        trialUrl = resolved.url;
-      }
-    } catch (err) {
-      console.warn("[audio-source] official URL resolve failed:", err);
-      officialErrorCode = ErrorCode.NETWORK_ERROR;
-    }
-  }
-  if (track.source === "qqmusic" && !options.skipOfficialOnline) {
-    try {
-      const resolved = await resolveQQMusicUrl(track, songLevel);
-      if (resolved.available) {
-        return { ok: true, url: resolved.url, isTrial: false, provider: "official" };
-      }
-      officialErrorCode = resolved.errorCode;
-    } catch (err) {
-      console.warn("[audio-source] official QQMusic URL resolve failed:", err);
-      officialErrorCode = ErrorCode.NETWORK_ERROR;
-    }
-  }
-  if (track.source === "kugou" && !options.skipOfficialOnline) {
-    try {
-      const resolved = await resolveKugouUrl(track, songLevel);
-      if (resolved.available) {
-        return { ok: true, url: resolved.url, isTrial: false, provider: "official" };
-      }
-      officialErrorCode = resolved.errorCode;
-    } catch (err) {
-      console.warn("[audio-source] official Kugou URL resolve failed:", err);
-      officialErrorCode = ErrorCode.NETWORK_ERROR;
-    }
-  }
-  const pluginResolved = await resolveByPlugin(track, songLevel, options.skipPluginIds ?? []);
-  if (pluginResolved.ok) return pluginResolved;
-  if (trialUrl && settings.player.allowTrialPlay) {
-    return { ok: true, url: trialUrl, isTrial: true, provider: "trial" };
-  }
-  if (trialUrl) return { ok: false, errorCode: ErrorCode.NETEASE_TRIAL_DISABLED };
-  if (officialErrorCode) return { ok: false, errorCode: officialErrorCode };
-  return pluginResolved;
-};
+  _track: Track,
+  _quality: QualityLevel = "hq",
+  _skipPluginIds: readonly string[] = [],
+): Promise<OnlineResolveResult> => ({ ok: false, errorCode: ErrorCode.URL_RESOLVE_FAILED });
 
 /**
  * 解析结果
@@ -264,26 +99,11 @@ export const resolveTrackSource = async (
     return localPath ? { source: localPath, fromCache: false, provider: "local" } : null;
   }
   const settings = useSettingsStore();
-  const songLevel = settings.player.songLevel;
-  if (!options.skipDownloaded) {
-    try {
-      const downloaded = await window.api.download.lookup({
-        source: track.source,
-        id: track.id,
-        ...(track.source === "streaming"
-          ? {
-              serverId: track.serverId,
-              originalId: track.originalId,
-              serverRevision: track.serverRevision,
-            }
-          : {}),
-      });
-      if (downloaded) return { source: downloaded, fromCache: false, provider: "download" };
-    } catch (err) {
-      console.warn("[audio-source] download lookup failed:", err);
-    }
+  if (track.source !== "streaming") {
+    reportLoadError(ErrorCode.URL_RESOLVE_FAILED, options);
+    return null;
   }
-  const cacheKey = cacheKeyForTrack(track, songLevel);
+  const cacheKey = cacheKeyForTrack(track);
   const cacheEnabled = settings.system.cache?.songCache?.enabled === true && cacheKey !== null;
   if (cacheEnabled) {
     const cached = await window.api.cache.song.lookup(cacheKey!);
@@ -308,33 +128,6 @@ export const resolveTrackSource = async (
             console.warn("[cache] 流媒体缓存失败", err);
             return null;
           }
-        };
-      }
-      return result;
-    } catch (err) {
-      reportLoadError(err instanceof Error ? err.message : String(err), options);
-      return null;
-    }
-  }
-  // 在线源（netease / qqmusic / kugou）
-  if (isOnlinePlatform(track.source)) {
-    try {
-      const resolved = await resolveOnlineUrl(track, songLevel, options);
-      if (!resolved.ok) {
-        reportLoadError(resolved.errorCode, options);
-        return null;
-      }
-      const url = resolved.url;
-      const result: ResolvedTrackSource = {
-        source: url,
-        fromCache: false,
-        provider: resolved.provider,
-        pluginId: resolved.pluginId,
-      };
-      if (cacheEnabled && !resolved.isTrial) {
-        result.cacheRequest = async (preloadId, signal) => {
-          if (signal?.aborted) return null;
-          return window.api.cache.song.fetch(cacheKey, track.source, url, preloadId);
         };
       }
       return result;

@@ -9,13 +9,11 @@ import { extname } from "node:path";
 import { app, ipcMain, powerMonitor } from "electron";
 import { sendToMain } from "@main/utils/broadcast";
 import { readFileAutoEncoding } from "@main/utils/encoding";
-import { wsBroadcast } from "@main/server/broadcast";
 import { toCacheUrl } from "@main/utils/protocol";
 import { toMs } from "@main/utils/time";
 import * as mediaService from "@main/services/media";
 import * as nowPlaying from "@main/services/nowPlaying";
 import * as lastfm from "@main/services/lastfm";
-import * as neteaseScrobble from "@main/services/neteaseScrobble";
 import * as streamingPlayback from "@main/services/streaming/playback";
 import { invalidateStreamingSession } from "@main/services/streaming/adapters/resolve";
 import { fetchBytes } from "@main/utils/fetchBytes";
@@ -157,7 +155,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         }
         nowPlaying.onPlayStateChange(state);
         lastfm.onState(state === "playing");
-        neteaseScrobble.onState(state === "playing");
         streamingPlayback.onStreamingState(state);
         const statusEvent = {
           type: "status",
@@ -171,15 +168,12 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           },
         };
         sendToMain("player:event", statusEvent);
-        wsBroadcast(statusEvent);
         break;
       }
       case "ended": {
         sendToMain("player:event", { type: "ended" });
-        wsBroadcast({ type: "ended" });
         mediaService.setPlayState({ status: "Paused" });
         lastfm.onEnded();
-        neteaseScrobble.onEnded();
         void streamingPlayback.stopStreamingPlayback();
         setTaskbarProgress(-1);
         break;
@@ -188,7 +182,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         // 音源失效（网络中断 / URL 过期）
         sendToMain("player:event", { type: "sourceError" });
         mediaService.setPlayState({ status: "Paused" });
-        neteaseScrobble.onState(false);
         void streamingPlayback.stopStreamingPlayback();
         setTaskbarProgress(-1);
         break;
@@ -216,11 +209,9 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         };
         // 主窗口隐藏时跳过高频推送
         if (getMainWindow()?.isVisible()) sendToMain("player:event", positionEvent);
-        wsBroadcast(positionEvent);
         mediaService.setTimeline({ currentMs: posMs, totalMs: durMs });
         nowPlaying.onPosition(posMs, true);
         lastfm.onPosition();
-        neteaseScrobble.onPosition(posMs);
         streamingPlayback.onStreamingPosition(posMs);
         if (store.get("system.taskbarProgress") && durMs > 0) setTaskbarProgress(posMs / durMs);
         break;
@@ -237,13 +228,11 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           data: { active: event.transitionActive ?? false, mode: "crossfade" },
         } as const;
         sendToMain("player:event", transitionEvent);
-        wsBroadcast(transitionEvent);
         break;
       }
       case "fftData": {
         const fftEvent = { type: "fftData", data: event.fftData ?? { ldata: [], rdata: [] } };
         if (getMainWindow()?.isVisible()) sendToMain("player:event", fftEvent);
-        wsBroadcast(fftEvent);
         break;
       }
       case "outputFailed": {
@@ -345,7 +334,6 @@ const completeTrackLoad = (
     durationMs,
     autoPlay,
   });
-  neteaseScrobble.onTrackLoaded(authoritative, options.context, durationMs, autoPlay);
   if (coverFetchUrl) {
     void fetchBytes(coverFetchUrl).then((buf) => {
       if (!buf || seq !== loadSeq) return;
@@ -532,7 +520,6 @@ export const registerPlayerIpc = (): void => {
         },
       };
       sendToMain("player:event", loadingEvent);
-      wsBroadcast(loadingEvent);
       // 在线封面原图 URL
       const remoteCover =
         authoritative && authoritative.source !== "local"
@@ -659,7 +646,6 @@ export const registerPlayerIpc = (): void => {
     loadSeq++;
     void streamingPlayback.stopStreamingPlayback();
     try {
-      neteaseScrobble.onStopped();
       lastfm.onStopped();
       cancelPreparedTrack();
       cancelPendingReinit();
@@ -678,7 +664,6 @@ export const registerPlayerIpc = (): void => {
     try {
       /** 重播时先装配轮次，原生 seek 的播放事件才能启动新的计时 */
       if (restartRound) {
-        neteaseScrobble.onRepeatOneRestart();
         lastfm.onRepeatOneRestart();
       }
       const enginePositionMs = toEnginePositionMs(positionMs);
@@ -694,7 +679,6 @@ export const registerPlayerIpc = (): void => {
       return { success: true };
     } catch (error) {
       if (restartRound && seq === loadSeq) {
-        neteaseScrobble.onStopped();
         lastfm.onStopped();
       }
       return fail(ErrorCode.UNKNOWN, error);
@@ -1084,7 +1068,6 @@ export const registerPlayerIpc = (): void => {
       data: { state: "stopped", position: 0, duration: 0, volume: 1, speed: 1, isFinished: false },
     };
     sendToMain("player:event", stoppedEvent);
-    wsBroadcast(stoppedEvent);
   };
   powerMonitor.on("resume", resumeHandler);
   // 退出前停止设备监听并释放休眠抑制

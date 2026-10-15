@@ -2,7 +2,6 @@
 import type { Track } from "@shared/types/player";
 import type { ContentScope } from "@/types/collection";
 import { usePlaylistStore } from "@/stores/playlist";
-import { useUserStore } from "@/stores/user";
 import { toast } from "@/composables/useToast";
 import PlaylistCreateDialog from "./PlaylistCreateDialog.vue";
 import IconLucidePlus from "~icons/lucide/plus";
@@ -18,7 +17,6 @@ const emit = defineEmits<{ "update:open": [value: boolean] }>();
 
 const { t } = useI18n();
 const playlistStore = usePlaylistStore();
-const userStore = useUserStore();
 
 /** 列表项的统一形状 */
 interface PickerEntry {
@@ -30,25 +28,12 @@ interface PickerEntry {
 
 /** 当前 mode 下的歌单 */
 const entries = computed<PickerEntry[]>(() => {
-  if (props.mode === "local") {
-    return playlistStore.localPlaylists.map((pl) => ({
-      id: pl.id,
-      name: pl.title,
-      cover: pl.cover,
-      trackCount: pl.trackCount ?? 0,
-    }));
-  }
-  // 跳过"我喜欢"，红心按钮负责那条路径
-  return userStore.createdPlaylists
-    .filter(
-      (pl): pl is typeof pl & { id: string } => !!pl.id && pl.id !== userStore.likedPlaylistId,
-    )
-    .map((pl) => ({
-      id: pl.id,
-      name: pl.name,
-      cover: pl.cover,
-      trackCount: pl.trackCount ?? 0,
-    }));
+  return playlistStore.localPlaylists.map((pl) => ({
+    id: pl.id,
+    name: pl.title,
+    cover: pl.cover,
+    trackCount: pl.trackCount ?? 0,
+  }));
 });
 
 const createDialogOpen = ref(false);
@@ -62,13 +47,7 @@ const handlePick = async (playlistId: string): Promise<void> => {
   if (submitting.value) return;
   submitting.value = true;
   try {
-    let count = 0;
-    if (props.mode === "local") {
-      count = await playlistStore.addTracks(playlistId, props.tracks);
-    } else {
-      const ids = props.tracks.map((track) => track.id);
-      count = await userStore.addTracksToPlaylist(playlistId, ids);
-    }
+    const count = await playlistStore.addTracks(playlistId, props.tracks);
     if (count > 0) {
       toast.success(t("collection.tracksAdded", { count }));
     } else {

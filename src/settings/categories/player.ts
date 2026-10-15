@@ -67,25 +67,6 @@ const playerCategory: SettingCategory = {
       id: "audioSource",
       items: [
         {
-          key: "songLevel",
-          type: "select",
-          binding: { store: "settings", path: "player.songLevel" },
-          options: [
-            { value: "lq", labelKey: "settings.songLevel.lq" },
-            { value: "sq", labelKey: "settings.songLevel.sq" },
-            { value: "hq", labelKey: "settings.songLevel.hq" },
-            { value: "lossless", labelKey: "settings.songLevel.lossless" },
-            { value: "hi-res", labelKey: "settings.songLevel.hi-res" },
-          ],
-          defaultValue: "hq",
-        },
-        {
-          key: "allowTrialPlay",
-          type: "switch",
-          binding: { store: "settings", path: "player.allowTrialPlay" },
-          defaultValue: false,
-        },
-        {
           key: "preloadNextTrack",
           type: "switch",
           binding: { store: "settings", path: "player.preloadNextTrack" },
