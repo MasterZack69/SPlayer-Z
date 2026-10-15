@@ -138,7 +138,7 @@ const handlePlay = async (item: CoverItem): Promise<void> => {
       originType: mode,
       originName: item.title,
     };
-    await player.playFrom(tracks, 0, context);
+     await player.playFrom(tracks, { startIndex: 0, context });
   } finally {
     playingItem.value = "";
   }
