@@ -12,7 +12,6 @@ import { useImmersiveMode } from "@/composables/useImmersiveMode";
 import { useTimeFormat } from "@/composables/useTimeFormat";
 import { useProgressLyric } from "@/composables/useProgressLyric";
 import Lyrics from "@/components/player/Lyrics/index.vue";
-import PlaylistPickerDialog from "@/components/modals/PlaylistPickerDialog.vue";
 import { useWindowControls } from "@/composables/useWindowControls";
 import * as player from "@/core/player";
 import IconFavorite from "~icons/material-symbols/favorite-rounded";
@@ -44,9 +43,12 @@ const { snapToNearestLyric } = useProgressLyric();
 
 const lyricRef = ref<InstanceType<typeof Lyrics>>();
 const lyricMounted = ref(false);
+const playerVisible = ref(false);
+const visualizerMounted = ref(false);
 const initialLyricTimeMs = ref(0);
+let visualizerMountFrame = 0;
 
-/** 加载中的歌曲使用队列当前项兜底，避免全屏播放器出现空白。 */
+/** 加载中的歌曲使用队列当前项兜底，避免全屏播放器出现空白 */
 const displayTrack = computed(() => media.track ?? status.currentTrack);
 const hasLyric = computed(() => media.parsedLyric.length > 0 || media.lyricLoading);
 const hasTrack = computed(() => !!displayTrack.value);
@@ -60,28 +62,39 @@ const { start: startTick, stop: stopTick } = usePlaybackTime((currentMs) => {
 
 /** 展开后 */
 const onAfterEnter = () => {
-  nextTick(() => {
-    lyricRef.value?.resume();
-    startTick();
-  });
-};
-
-/** 展开动画开始时就挂载歌词，给引擎预留初始化时间 */
-const onBeforeEnter = () => {
   initialLyricTimeMs.value = getCurrentTime() + status.lyricOffsetMs;
   lyricMounted.value = true;
+  nextTick(() => {
+    if (!isPlayerExpanded.value) return;
+    lyricRef.value?.setCurrentTime(getCurrentTime() + status.lyricOffsetMs);
+    lyricRef.value?.resume();
+    startTick();
+    // 将 WebGL 和频谱创建与歌词 DOM 测量错开
+    visualizerMountFrame = requestAnimationFrame(() => {
+      visualizerMountFrame = requestAnimationFrame(() => {
+        visualizerMountFrame = 0;
+        if (isPlayerExpanded.value) visualizerMounted.value = true;
+      });
+    });
+  });
 };
 
 /** 收起前 */
 const onBeforeLeave = () => {
+  cancelAnimationFrame(visualizerMountFrame);
+  visualizerMountFrame = 0;
   lyricRef.value?.freeze();
   stopTick();
 };
 
 /** 收起后 */
 const onAfterLeave = () => {
+  playerVisible.value = false;
   lyricMounted.value = false;
+  visualizerMounted.value = false;
 };
+
+onBeforeUnmount(() => cancelAnimationFrame(visualizerMountFrame));
 
 // 重新挂载时，刷新初始时间
 watch(hasLyric, (value) => {
@@ -125,6 +138,12 @@ const lyricFontSize = computed(() =>
   settings.lyric.adaptiveFontSize
     ? `calc(${settings.lyric.fontSize} / 1080 * 100vh)`
     : `${settings.lyric.fontSize}px`,
+);
+
+const lyricSubFontSize = computed(() =>
+  settings.lyric.adaptiveFontSize
+    ? `calc(${settings.lyric.translationFontSize} / 1080 * 100vh)`
+    : `${settings.lyric.translationFontSize}px`,
 );
 
 const { immersive, onPlayerMouseEnter, onPlayerMouseLeave, onMainMove, onBarEnter, onBarLeave } =
@@ -185,12 +204,13 @@ const showComments = (): void => {
 <template>
   <Teleport to="body">
     <Transition
+      appear
       enter-active-class="transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.3,1)]"
       leave-active-class="transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.3,1)]"
       enter-from-class="translate-y-full"
       leave-to-class="translate-y-full"
       @after-enter="onAfterEnter"
-      @before-enter="onBeforeEnter"
+      @before-enter="playerVisible = true"
       @before-leave="onBeforeLeave"
       @after-leave="onAfterLeave"
     >
@@ -203,14 +223,14 @@ const showComments = (): void => {
         @mouseleave="onPlayerMouseLeave"
       >
         <!-- 背景 -->
-        <PlayerBackground />
+        <PlayerBackground :visible="playerVisible" :active="visualizerMounted" />
         <!-- 全屏封面 -->
         <div v-if="fullscreenCover" class="absolute inset-y-0 left-0 w-[60%]">
           <PlayerCover fullscreen />
         </div>
         <!-- 底部频谱 -->
         <BottomSpectrum
-          v-if="isPlayerExpanded && settings.player.enableSpectrum"
+          v-if="isPlayerExpanded && visualizerMounted && settings.player.enableSpectrum"
           :show="isPlaying && immersive"
         />
         <!-- 顶/底栏渐变遮罩（全屏封面模式） -->
@@ -300,6 +320,10 @@ const showComments = (): void => {
               :style="{
                 '--lp-credit-opacity': '1',
                 fontSize: lyricFontSize,
+                '--lp-sub-font-size': lyricSubFontSize,
+                // 副行透明度恒定，激活/非激活的明暗由行级透明度负责（与旧版 SPlayer 一致）
+                '--lp-sub-active-opacity': '0.6',
+                '--lp-sub-inactive-opacity': '0.6',
                 fontWeight: String(settings.lyric.fontWeight),
                 fontFamily: settings.lyric.fontFamily || undefined,
                 '--lyric-font-zh': settings.lyric.fontFamilyChinese || undefined,
@@ -361,7 +385,7 @@ const showComments = (): void => {
               variant="ghost"
               size="large"
               circle
-              :disabled="!hasTrack"
+              :disabled="!hasTrack || !fav.isSupported(displayTrack)"
               @click="fav.toggle(displayTrack)"
             >
               <template #icon>

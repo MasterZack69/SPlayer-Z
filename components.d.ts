@@ -17,6 +17,7 @@ declare module 'vue' {
     AmllDbServerConfig: typeof import('./src/components/settings/custom/AmllDbServerConfig.vue')['default']
     AMLLLyrics: typeof import('./src/components/player/Lyrics/AMLLLyrics.vue')['default']
     AppBackground: typeof import('./src/components/AppBackground.vue')['default']
+    AudioInfoDialog: typeof import('./src/components/modals/AudioInfoDialog.vue')['default']
     AutoCloseDialog: typeof import('./src/components/modals/AutoCloseDialog.vue')['default']
     BackgroundImagePicker: typeof import('./src/components/settings/custom/BackgroundImagePicker.vue')['default']
     BackgroundRender: typeof import('./src/components/player/FullPlayer/BackgroundRender.vue')['default']
@@ -108,6 +109,7 @@ declare module 'vue' {
     IconLucideGripVertical: typeof import('~icons/lucide/grip-vertical')['default']
     IconLucideHardDrive: typeof import('~icons/lucide/hard-drive')['default']
     IconLucideHeadphones: typeof import('~icons/lucide/headphones')['default']
+    IconLucideHeart: typeof import('~icons/lucide/heart')['default']
     IconLucideHeartOff: typeof import('~icons/lucide/heart-off')['default']
     IconLucideHistory: typeof import('~icons/lucide/history')['default']
     IconLucideInfinity: typeof import('~icons/lucide/infinity')['default']
@@ -306,7 +308,6 @@ declare module 'vue' {
     TooltipTrigger: typeof import('reka-ui')['TooltipTrigger']
     TrackInfo: typeof import('./src/components/player/TrackInfo.vue')['default']
     UiZoomDialog: typeof import('./src/components/modals/UiZoomDialog.vue')['default']
-    UncensorProfanityConfig: typeof import('./src/components/settings/custom/UncensorProfanityConfig.vue')['default']
     UpdateDialog: typeof import('./src/components/modals/UpdateDialog.vue')['default']
     WindowControls: typeof import('./src/components/layout/WindowControls.vue')['default']
   }
