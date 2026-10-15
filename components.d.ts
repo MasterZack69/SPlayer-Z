@@ -107,6 +107,7 @@ declare module 'vue' {
     IconLucideGithub: typeof import('~icons/lucide/github')['default']
     IconLucideGlobe2: typeof import('~icons/lucide/globe2')['default']
     IconLucideGripVertical: typeof import('~icons/lucide/grip-vertical')['default']
+    IconLucideGuitar: typeof import('~icons/lucide/guitar')['default']
     IconLucideHardDrive: typeof import('~icons/lucide/hard-drive')['default']
     IconLucideHeadphones: typeof import('~icons/lucide/headphones')['default']
     IconLucideHeart: typeof import('~icons/lucide/heart')['default']
