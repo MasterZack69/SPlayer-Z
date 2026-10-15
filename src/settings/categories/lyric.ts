@@ -171,11 +171,21 @@ const lyricCategory: SettingCategory = {
           key: "fontSize",
           type: "slider",
           binding: { store: "settings", path: "lyric.fontSize" },
-          min: 30,
+          min: 12,
           max: 64,
           step: 1,
           defaultValue: 48,
-          marks: { 30: "30", 48: "48", 64: "64" },
+          marks: { 12: "12", 24: "24", 36: "36", 48: "48", 64: "64" },
+        },
+        {
+          key: "translationFontSize",
+          type: "slider",
+          binding: { store: "settings", path: "lyric.translationFontSize" },
+          min: 12,
+          max: 64,
+          step: 1,
+          defaultValue: 22,
+          marks: { 12: "12", 24: "24", 36: "36", 48: "48", 64: "64" },
         },
         {
           key: "fontWeight",
@@ -227,6 +237,19 @@ const lyricCategory: SettingCategory = {
     {
       id: "lyricDisplay",
       items: [
+        {
+          key: "lyricAlignment",
+          type: "select",
+          binding: { store: "settings", path: "lyric.alignment" },
+          options: [
+            { value: "auto", labelKey: "settings.lyricAlignment.auto" },
+            { value: "left", labelKey: "settings.lyricAlignment.left" },
+            { value: "center", labelKey: "settings.lyricAlignment.center" },
+            { value: "right", labelKey: "settings.lyricAlignment.right" },
+          ],
+          defaultValue: "auto",
+          visible: () => lyricEngine() === "physics",
+        },
         {
           key: "enableScale",
           type: "switch",

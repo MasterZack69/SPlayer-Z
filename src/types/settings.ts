@@ -5,6 +5,7 @@ import type { TransitionPreference } from "@shared/types/player";
 import { ALL_PLATFORMS } from "@shared/types/platform";
 import type { CjkTransformMode } from "@shared/types/opencc";
 import type { QualityLevel } from "@/utils/quality";
+import type { LyricAlignment } from "lyric-dom";
 
 /** 播放器背景类型 */
 export type PlayerBgType = "blur" | "solid" | "animation";
@@ -157,6 +158,8 @@ export interface LyricSettings {
   adaptiveFontSize: boolean;
   /** 歌词字号（px，自适应关闭时生效） */
   fontSize: number;
+  /** 歌词翻译/音译副行字号（px，自适应关闭时生效） */
+  translationFontSize: number;
   /** 歌词字重（100~900） */
   fontWeight: number;
   /** 歌词混合模式 */
@@ -203,6 +206,8 @@ export interface LyricSettings {
   springStiffness: number;
   /** 激活行对齐位置（0~1） */
   alignPosition: number;
+  /** 歌词水平对齐方式 */
+  alignment: LyricAlignment;
   /** 逐字掩码渐变宽度 */
   wordFadeWidth: number;
   /** 非激活行透明度 */

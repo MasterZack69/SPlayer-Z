@@ -10,7 +10,7 @@ import type {
   PluginMatchCoverArgs,
 } from "@shared/types/plugin";
 import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
-import type { LoadOptions, TrackSource, TransitionPreference } from "@shared/types/player";
+import type { LoadOptions, Track, TrackSource, TransitionPreference } from "@shared/types/player";
 import type { StreamingServerInput } from "@shared/types/streaming";
 import type { RecognitionConfig, RecognitionEvent } from "@shared/types/recognition";
 import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
@@ -26,6 +26,7 @@ import type {
   PlaylistUpdateInput,
 } from "@shared/types/playlist";
 import type { CjkTransformMode } from "@shared/types/opencc";
+import type { DownloadTrackIdentity } from "@shared/types/download";
 
 /** 订阅主进程推送的事件 */
 const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void) => {
@@ -109,8 +110,14 @@ const api = {
     pause: () => ipcRenderer.invoke("player:pause"),
     // 停止播放
     stop: () => ipcRenderer.invoke("player:stop"),
-    // 跳转到指定位置（毫秒）
-    seek: (position: number) => ipcRenderer.invoke("player:seek", position),
+    /**
+     * 单曲重播需要在原生播放事件前开启新的统计轮次
+     * @param position - 目标位置，单位为毫秒
+     * @param restartRound - 是否开启新的播放统计轮次
+     * @returns 主进程跳转结果
+     */
+    seek: (position: number, restartRound?: boolean) =>
+      ipcRenderer.invoke("player:seek", position, restartRound),
     // 设置音量（0.0 ~ 1.0）
     setVolume: (volume: number) => ipcRenderer.invoke("player:setVolume", volume),
     // 设置输出设备切换时暂停播放
@@ -184,6 +191,9 @@ const api = {
     toggleDevTools: () => ipcRenderer.invoke("system:toggleDevTools"),
     // 在文件管理器中显示文件
     showInExplorer: (filePath: string) => ipcRenderer.invoke("system:showInExplorer", filePath),
+    // 将本地或已下载歌曲复制到系统文件剪贴板
+    copyTrackFile: (track: Track): Promise<boolean> =>
+      ipcRenderer.invoke("system:copyTrackFile", track),
     // 打开日志目录
     openLogsDir: () => ipcRenderer.invoke("system:openLogsDir"),
     // 同步语言到主进程
@@ -294,6 +304,9 @@ const api = {
     clear: () => ipcRenderer.invoke("playlist:clear"),
   },
   window: {
+    ready: (): Promise<void> => ipcRenderer.invoke("window:ready"),
+    startupComplete: (): Promise<void> => ipcRenderer.invoke("window:startupComplete"),
+    startupFailed: (error: string): void => ipcRenderer.send("window:startupFailed", error),
     // 切换桌面歌词窗口
     toggleDesktopLyric: () => ipcRenderer.invoke("window:toggleDesktopLyric"),
     // 关闭桌面歌词窗口
@@ -500,6 +513,8 @@ const api = {
     clearFinished: () => ipcRenderer.invoke("download:clearFinished"),
     // 拉取全部任务
     list: () => ipcRenderer.invoke("download:list"),
+    lookup: (track: DownloadTrackIdentity): Promise<string | null> =>
+      ipcRenderer.invoke("download:lookup", track),
     // 选择下载目录
     pickDir: () => ipcRenderer.invoke("download:pickDir"),
     // 当前下载目录

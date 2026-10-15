@@ -54,6 +54,8 @@ interface LoadRuntimeOptions {
 
 /** 单次音源兜底过程的重试状态 */
 interface SourceRetryState {
+  /** 已下载文件加载失败后不再重复命中 */
+  skipDownloaded: boolean;
   /** 是否已放弃官方在线接口，后续仅尝试插件 */
   skipOfficialOnline: boolean;
   /** 已尝试且需跳过的插件 ID */
@@ -75,6 +77,8 @@ type LoadSourceResult =
 let loadToken = 0;
 /** loadTrack 竞态 token */
 let trackToken = 0;
+/** 暂停操作代次，防止热重载覆盖期间的手动暂停 */
+let pauseToken = 0;
 let transitionInFlight = false;
 let lastLoggedTransitionId: string | null = null;
 /** 连续加载失败计数，成功时重置 */
@@ -99,7 +103,7 @@ const skipOnFailure = async (
   consecutiveFailures++;
   if (
     consecutiveFailures >= MAX_CONSECUTIVE_FAILURES ||
-    consecutiveFailures >= queue.queueLength.value
+    (!useStatusStore().fmMode && consecutiveFailures >= queue.queueLength.value)
   ) {
     const reachedMax = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
     consecutiveFailures = 0;
@@ -221,6 +225,7 @@ export const load = async (
 
 /** 创建音源重试状态 */
 const createSourceRetryState = (): SourceRetryState => ({
+  skipDownloaded: false,
   skipOfficialOnline: false,
   skippedPluginIds: new Set<string>(),
 });
@@ -238,6 +243,7 @@ const resolveTrackSourceWithRetry = (
   resolveTrackSource(track, {
     silent: true,
     onError,
+    skipDownloaded: retry.skipDownloaded,
     skipOfficialOnline: retry.skipOfficialOnline,
     skipPluginIds: [...retry.skippedPluginIds],
   });
@@ -252,6 +258,10 @@ const markRetryableSourceFailure = (
   resolved: ResolvedTrackSource,
   retry: SourceRetryState,
 ): boolean => {
+  if (resolved.provider === "download" && !retry.skipDownloaded) {
+    retry.skipDownloaded = true;
+    return true;
+  }
   if (resolved.provider === "official" && !retry.skipOfficialOnline) {
     retry.skipOfficialOnline = true;
     return true;
@@ -310,15 +320,17 @@ const loadTrackSourceWithFallback = async (
       usingInitial &&
       !result.ok &&
       resolved.provider !== "local" &&
+      resolved.provider !== "download" &&
       (resolved.provider !== "cache" || Boolean(result.error && isSkippableError(result.error)))
     ) {
       continue;
     }
     const canRetry =
       !result.ok &&
-      result.error !== ErrorCode.NETWORK_ERROR &&
-      result.error !== ErrorCode.NETWORK_TIMEOUT &&
-      (retryOnAnyFailure || Boolean(result.error && isSkippableError(result.error))) &&
+      (resolved.provider === "download" ||
+        (result.error !== ErrorCode.NETWORK_ERROR &&
+          result.error !== ErrorCode.NETWORK_TIMEOUT &&
+          (retryOnAnyFailure || Boolean(result.error && isSkippableError(result.error))))) &&
       markRetryableSourceFailure(resolved, retry);
     if (canRetry) continue;
     return { status: "loaded", result, resolved };
@@ -430,6 +442,7 @@ export const reloadCurrentTrack = async (forcePlay?: boolean): Promise<boolean> 
   if (!track || track.source === "local") return false;
   const status = useStatusStore();
   const shouldPlay = forcePlay ?? status.isPlaying;
+  const myPauseToken = pauseToken;
   const resumePosition = Math.round(playback.getCurrentTime());
   // 抢占加载令牌，与 loadTrack 互相取消
   const myToken = ++trackToken;
@@ -454,8 +467,16 @@ export const reloadCurrentTrack = async (forcePlay?: boolean): Promise<boolean> 
     if (loaded.result.error) handleError(loaded.result.error);
     return false;
   }
-  if (resumePosition > 0) await seek(resumePosition);
-  if (shouldPlay) await play();
+  let resumeToken = myToken;
+  if (resumePosition > 0) {
+    const seeking = seek(resumePosition);
+    /** seek 会推进加载代次，后续只接受这次进度恢复的结果 */
+    resumeToken = trackToken;
+    await seeking;
+    if (resumeToken !== trackToken) return true;
+  }
+  if (shouldPlay && myPauseToken === pauseToken) await play();
+  if (resumeToken !== trackToken) return true;
   if (loaded.resolved.cacheRequest) {
     cacheScheduler.schedule(track.id, loaded.resolved.cacheRequest);
   }
@@ -476,6 +497,7 @@ export const recoverFromSourceFailure = async (): Promise<void> => {
   const track = useMediaStore().track;
   if (!track) return;
   const wasPlaying = useStatusStore().isPlaying;
+  const myPauseToken = pauseToken;
   // 本地文件源失效（文件被删/磁盘错误）没有重载意义，直接跳曲
   if (track.source === "local") {
     await nextTrack(wasPlaying);
@@ -497,7 +519,7 @@ export const recoverFromSourceFailure = async (): Promise<void> => {
   const ok = await reloadCurrentTrack();
   if (!ok) {
     sourceRecoveryCount = 0;
-    await nextTrack(wasPlaying);
+    await nextTrack(wasPlaying && myPauseToken === pauseToken);
   }
 };
 
@@ -548,6 +570,7 @@ export const togglePlay = (): void => {
 
 /** 暂停播放 */
 export const pause = async (): Promise<void> => {
+  pauseToken++;
   const status = useStatusStore();
   const prev = status.state;
   status.state = "paused";
@@ -609,8 +632,9 @@ export const isSeeking = (): boolean => seekTarget !== null;
 /**
  * 跳转到指定播放位置
  * @param posMs - 目标位置（毫秒）
+ * @param restartRound - 是否为单曲循环开启新的统计轮次
  */
-export const seek = async (posMs: number): Promise<void> => {
+export const seek = async (posMs: number, restartRound = false): Promise<void> => {
   const status = useStatusStore();
   // 歌曲加载中 seek 无意义：引擎此刻没有可 seek 的解码线程，
   // 且 seekTarget 残留会让加载完成后的 position 推送被持续丢弃
@@ -624,7 +648,9 @@ export const seek = async (posMs: number): Promise<void> => {
   // 设置 seek 目标，屏蔽旧 position 推送
   seekTarget = posMs;
 
-  const result = await window.api.player.seek(posMs);
+  const result = await (restartRound
+    ? window.api.player.seek(posMs, true)
+    : window.api.player.seek(posMs));
   if (token !== trackToken) return;
   if (result.success) {
     status.position = posMs;
@@ -751,16 +777,22 @@ export const switchDevice = async (deviceId: string | null): Promise<void> => {
   }
 };
 
+/** 列表播放选项 */
+export interface PlayFromOptions {
+  /** 省略时顺序模式从首曲开始、随机模式随机选曲 */
+  startIndex?: number;
+  /** 队列中曲目共用的播放来源上下文 */
+  context?: PlaybackContext;
+}
+
 /**
- * 设置队列并从指定位置开始播放
+ * 设置队列并开始播放，未指定起点时遵循随机模式
  * @param items - 歌曲列表
- * @param startIndex - 起始播放位置，默认 0
- * @param context - 队列中曲目共用的播放来源上下文
+ * @param options - 起始位置和播放来源选项
  */
 export const playFrom = async (
   items: readonly Track[],
-  startIndex = 0,
-  context?: PlaybackContext,
+  { startIndex, context }: PlayFromOptions = {},
 ): Promise<void> => {
   if (items.length === 0) return;
   const status = useStatusStore();
@@ -768,7 +800,9 @@ export const playFrom = async (
   // 退出特殊模式
   status.heartMode = false;
   status.fmMode = false;
-  const idx = Math.max(0, Math.min(startIndex, items.length - 1));
+  const start =
+    startIndex ?? (status.shuffleMode === "on" ? Math.floor(Math.random() * items.length) : 0);
+  const idx = Math.max(0, Math.min(start, items.length - 1));
   const isSameTrack = media.track?.id === items[idx]?.id;
   queue.setQueue(items, context);
   status.playIndex = idx;
@@ -1284,10 +1318,12 @@ export const playFile = async (filePath: string): Promise<void> => {
 export const playFiles = async (filePaths: string[]): Promise<void> => {
   if (filePaths.length === 0) return;
   const tracks = filePaths.map(createLocalTrack);
-  await playFrom(tracks, 0, {
-    originId: "local-files",
-    originType: "track",
-    originName: "本地文件",
+  await playFrom(tracks, {
+    context: {
+      originId: "local-files",
+      originType: "track",
+      originName: "本地文件",
+    },
   });
 };
 
