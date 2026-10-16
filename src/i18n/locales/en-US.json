@@ -750,8 +750,6 @@
       "about": "About"
     },
     "section": {
-      "platformLogin": "Platform Login",
-      "platformConfig": "Platform Config",
       "network": "Network & Proxy",
       "aboutApp": "About",
       "specialThanks": "Special Thanks",
@@ -764,7 +762,6 @@
       "audioSource": "Audio Source",
       "scrobble": "Scrobble",
       "lyricContent": "Lyric Content",
-      "lyricTTML": "TTML Lyrics",
       "lyricExclude": "Metadata Stripping",
       "lyricGeneral": "Content & Style",
       "lyricDisplay": "Display Effects",
@@ -1122,8 +1119,6 @@
       "restartRequiredContent": "This setting requires an app restart. Save and relaunch now?",
       "testChannelTitle": "Switch to a Test Channel",
       "testChannelContent": "Beta and Alpha channels receive test releases early. Alpha releases may be highly unstable. Switch anyway?",
-      "kugouLoginVersionTitle": "Switch KG Login Version",
-      "kugouLoginVersionContent": "After switching, the current credentials will not match the new version. You must log out and scan the QR code again, or VIP privileges and high-quality playback will stop working. Switch anyway?",
       "exclusiveModeTitle": "Switch to Exclusive Mode",
       "exclusiveModeContent": "Exclusive mode bypasses the system mixer and prefers the source sample rate and bit depth, making it suitable for external DACs / Hi-Fi gear. Player volume, EQ and other processing still apply, so bit-perfect output is not guaranteed. Other apps may be unable to play audio while exclusive. If exclusive mode is unavailable, shared mode will be attempted; it may also fail if another app holds the device exclusively. Switch anyway?",
       "preloadCacheTitle": "Enable the caches required for preloading?",
@@ -1735,28 +1730,6 @@
         "disconnected": "Disconnected from Last.fm"
       }
     },
-    "platformLogin": {
-      "title": "Log in to {name} Account",
-      "desc": "Log in to retrieve playback streams directly from the platform",
-      "loginWeb": "Web Login",
-      "loginQr": "QR Login",
-      "loginQrQQ": "QQ QR Login",
-      "loginQrWX": "WeChat QR Login",
-      "qrTitle": "Scan to Log In",
-      "manualCookie": "Cookie Login",
-      "logout": "Log Out",
-      "logoutTitle": "Log Out from {name}",
-      "logoutConfirm": "Are you sure you want to log out of current {name} account ({user})?",
-      "cookieTitle": "Set {name} Cookie",
-      "cookiePlaceholder": "Please enter Cookie",
-      "toast": {
-        "loginSuccess": "{name} login successful: {user}",
-        "loginFailed": "{name} login failed, please try again",
-        "logoutDone": "Logged out from {name}",
-        "cookieSuccess": "{name} Cookie set successfully",
-        "cookieInvalid": "Invalid Cookie, please check and retry"
-      }
-    },
     "rememberWindowState": {
       "label": "Remember Window State",
       "description": "Restore window size, position and maximized state on next launch"
@@ -1815,12 +1788,6 @@
     "neteaseRealIp": {
       "label": "Use Real IP",
       "description": "May be restricted overseas or in some regions; enable this to try to resolve it"
-    },
-    "kugouLoginVersion": {
-      "label": "KG Login Version",
-      "description": "Re-login is required after switching",
-      "standard": "Standard",
-      "concept": "Concept"
     },
     "neteaseScrobbleEnabled": {
       "label": "Enable scrobble",
@@ -2045,25 +2012,23 @@
         "homepage": "Homepage"
       },
       "grant": {
-        "network": { "label": "Network", "desc": "Can make network requests" },
-        "control": { "label": "Control", "desc": "Can control the player" },
-        "ui": { "label": "Interface", "desc": "Can extend or modify the app interface" }
+        "network": {
+          "label": "Network",
+          "desc": "Can make network requests"
+        },
+        "control": {
+          "label": "Control",
+          "desc": "Can control the player"
+        },
+        "ui": {
+          "label": "Interface",
+          "desc": "Can extend or modify the app interface"
+        }
       }
     },
     "pluginManager": {
       "label": "Plugin Manager",
       "description": "Import, enable, or uninstall extension scripts"
-    },
-    "enableLocalTTMLOverride": {
-      "label": "Enable Local TTML Library",
-      "description": "Match .ttml in a chosen folder by song metadata; takes priority over online lyrics when found"
-    },
-    "localLyricRepoDir": {
-      "label": "Library Folder",
-      "description": "Choose a folder containing TTML lyrics; the app searches it by metadata",
-      "choose": "Choose",
-      "clear": "Clear",
-      "unset": "Not set"
     },
     "fileCacheManager": {
       "label": "Cache Manager",

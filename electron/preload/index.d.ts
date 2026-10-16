@@ -12,7 +12,6 @@ import { LibraryApi } from "@shared/types/library";
 import { NowPlayingApi } from "@shared/types/nowPlaying";
 import { PluginsApi } from "@shared/types/plugin";
 import { ApisApi } from "@shared/types/apis";
-import { LyricsApi } from "@shared/types/lyrics";
 import { DownloadApi } from "@shared/types/download";
 import {
   WindowApi,
@@ -81,7 +80,6 @@ declare global {
       plugins: PluginsApi;
       apis: ApisApi;
       cloud: CloudUploadApi;
-      lyrics: LyricsApi;
       opencc: OpenccApi;
       comments: CommentsApi;
       download: DownloadApi;

@@ -202,8 +202,6 @@ onUnmounted(() => {
         :search-query="searchQuery"
         :playback-context="playbackContext"
         enable-sort
-        show-genre
-        show-size
       />
     </div>
     <!-- 空状态：无目录或无歌曲 -->

@@ -323,8 +323,6 @@ export const installNextTrackPreloadWatchers = (): void => {
       queue.queue.value,
       streaming.activeServerId,
       settings.lyric.lyricFormatOrder.join(","),
-      settings.system.localLyric.enableLocalTTMLOverride,
-      settings.system.localLyric.repoDir,
     ],
     scheduleNextTrackPreload,
     { flush: "post" },

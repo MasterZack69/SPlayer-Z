@@ -1,6 +1,5 @@
 import type { SettingCategory } from "@/types/settings-schema";
 import { useSettingsStore } from "@/stores/settings";
-import LocalLyricRepoConfig from "@/components/settings/custom/LocalLyricRepoConfig.vue";
 import LyricFormatOrderConfig from "@/components/settings/custom/LyricFormatOrderConfig.vue";
 import ExcludeLyricsConfig from "@/components/settings/custom/ExcludeLyricsConfig.vue";
 import IconLucideMic2 from "~icons/lucide/mic-2";
@@ -46,26 +45,6 @@ const lyricCategory: SettingCategory = {
             { value: "t2jp", labelKey: "settings.cjkTransform.t2jp" },
           ],
           defaultValue: "none",
-        },
-      ],
-    },
-    {
-      id: "lyricTTML",
-      items: [
-        {
-          key: "enableLocalTTMLOverride",
-          type: "switch",
-          binding: { store: "settings", path: "system.localLyric.enableLocalTTMLOverride" },
-          defaultValue: false,
-          tag: { text: "Beta" },
-          children: [
-            {
-              key: "localLyricRepoDir",
-              type: "custom",
-              component: LocalLyricRepoConfig,
-              binding: { store: "settings", path: "system.localLyric.repoDir" },
-            },
-          ],
         },
       ],
     },

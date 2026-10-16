@@ -45,7 +45,6 @@ const cachedViews = [
   "LocalList",
   "Folders",
   "SearchPage",
-  "Stats",
   "StreamingIndex",
 ];
 

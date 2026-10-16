@@ -4,7 +4,6 @@ import { registerConfigIpc } from "./config";
 import { registerLibraryIpc } from "./library";
 import { registerNowPlayingIpc } from "./nowPlaying";
 import { registerWindowIpc } from "./window";
-import { registerLyricsIpc } from "./lyrics";
 import { registerHotkeyIpc } from "./hotkey";
 import { registerThemeIpc } from "./theme";
 import { registerStreamingIpc } from "./streaming";
@@ -26,7 +25,6 @@ export const registerIpcHandlers = (onStartupComplete: () => void): void => {
   registerLibraryIpc();
   registerNowPlayingIpc();
   registerWindowIpc(onStartupComplete);
-  registerLyricsIpc();
   registerOpenccIpc();
   registerHotkeyIpc();
   registerThemeIpc();

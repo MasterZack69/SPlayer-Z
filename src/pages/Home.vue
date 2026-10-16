@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: "Home" });
 import type { Track } from "@shared/types/player";
+import HomeStats from "@/components/stats/HomeStats.vue";
 
 import { useHomeHeader } from "@/composables/home/useHomeHeader";
 import { useDailyRecommend } from "@/composables/home/useDailyRecommend";
@@ -55,7 +56,7 @@ const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
         </div>
       </header>
       <!-- Hero -->
-      <SCard v-if="heroLoading || hero" radius="xl" flush class="min-h-40 -mb-3">
+      <SCard v-if="heroLoading || hero" radius="xl" flush class="min-h-40">
         <div class="flex items-stretch gap-4 p-4">
           <!-- 封面 -->
           <div class="size-32 shrink-0 self-center overflow-hidden rounded-lg">
@@ -82,7 +83,7 @@ const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
           <!-- 队列预览 -->
           <ul
             v-if="heroPreview.length > 0"
-            class="w-100 shrink-0 flex-col border-l border-on-surface/8 pl-4 lg:flex"
+            class="hidden w-80 shrink-0 flex-col border-l border-on-surface/8 pl-4 xl:flex"
           >
             <li
               v-for="(track, index) in heroPreview"
@@ -100,6 +101,7 @@ const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
           </ul>
         </div>
       </SCard>
+      <HomeStats />
     </div>
   </div>
 </template>

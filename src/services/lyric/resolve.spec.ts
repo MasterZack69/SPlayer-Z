@@ -17,7 +17,6 @@ import {
   resolvePluginLyric,
   resolveStreamingByPreference,
   resolveLyricForPreload,
-  resolveLocalRepoLyric,
 } from "./resolve";
 const track: Track = {
   id: "server:1",
@@ -73,14 +72,13 @@ describe("不再获取在线歌词", () => {
     mocks.server.mockResolvedValue("[00:01.00]旧歌词");
     expect(await resolveStreamingByPreference(track, () => false)).toBeNull();
   });
-  it("本地歌词库无需在线服务", async () => {
+  it("ignores stale TTML library settings and only uses the media server", async () => {
     mocks.settings.system.localLyric.enableLocalTTMLOverride = true;
-    mocks.repo.mockResolvedValue({ ok: true, data: "<tt>本地歌词</tt>" });
-    expect((await resolveLocalRepoLyric(track))?.source).toEqual({
-      source: "external",
-      format: "ttml",
-    });
-    expect(mocks.online).not.toHaveBeenCalled();
+    mocks.server.mockResolvedValue("[00:01.00]Server lyrics");
+    expect((await resolveLyricForPreload(track, () => true))?.input.content).toContain(
+      "Server lyrics",
+    );
+    expect(mocks.repo).not.toHaveBeenCalled();
   });
   it("不预载本地或已移除平台的歌词", async () => {
     expect(await resolveLyricForPreload({ ...track, source: "local" }, () => true)).toBeNull();

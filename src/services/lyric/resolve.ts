@@ -48,24 +48,6 @@ export const isBetterFormat = (
 };
 
 /**
- * 从本地 TTML 仓库解析歌词
- * @param track - 歌曲信息
- * @returns 本地仓库歌词，不存在则返回 null
- */
-export const resolveLocalRepoLyric = async (track: Track): Promise<ResolvedLyric | null> => {
-  const settings = useSettingsStore();
-  if (
-    !settings.system.localLyric?.enableLocalTTMLOverride ||
-    !settings.system.localLyric?.repoDir
-  ) {
-    return null;
-  }
-  const resp = await window.api.lyrics.matchLocalTTML(track);
-  if (!resp.ok || !resp.data) return null;
-  return { source: { source: "external", format: "ttml" }, input: { content: resp.data } };
-};
-
-/**
  * 仅从曲目所属的自托管服务器读取歌词
  * @param track - 服务器曲目
  * @returns 服务器歌词或 null
@@ -95,16 +77,14 @@ export const resolveStreamingByPreference = async (
  * 为自托管曲目预载歌词，本地曲目在音频加载后读取标签
  * @param track - 下一首歌曲
  * @param shouldContinue - 响应是否仍然有效
- * @returns 本地库或服务器歌词
+ * @returns Lyrics from the configured media server, or null
  */
 export const resolveLyricForPreload = async (
   track: Track,
   shouldContinue: () => boolean,
 ): Promise<ResolvedLyric | null> => {
   if (track.source !== "streaming") return null;
-  const local = await resolveLocalRepoLyric(track);
-  if (!shouldContinue()) return null;
-  return local ?? resolveStreamingByPreference(track, shouldContinue);
+  return resolveStreamingByPreference(track, shouldContinue);
 };
 
 /**

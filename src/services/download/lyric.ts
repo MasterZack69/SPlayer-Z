@@ -11,7 +11,6 @@ import { buildDownloadLyric } from "@/utils/lyric/serialize";
 import {
   isBetterFormat,
   isPluginLyricPreferred,
-  resolveLocalRepoLyric,
   resolveOnlineByPreference,
   resolvePluginLyric,
   resolveStreamingByPreference,
@@ -60,9 +59,6 @@ const resolveOnlineDownloadLyric = async (
  * @returns 歌词文本与格式；无歌词返回 null
  */
 export const resolveDownloadLyric = async (track: Track): Promise<DownloadLyric | null> => {
-  const local = toUsableDownloadLyric(await resolveLocalRepoLyric(track));
-  if (local) return local;
-
   // 流媒体
   if (track.source === "streaming") {
     // 插件优选：请求先行发出，与正常来源并发

@@ -470,21 +470,6 @@ const api = {
     onUploadProgress: (callback: (progress: CloudUploadProgress) => void) =>
       subscribe<CloudUploadProgress>("cloud:upload-progress", callback),
   },
-  lyrics: {
-    // 按 id 直取某平台歌词
-    matchById: (platform: string, id: string) =>
-      ipcRenderer.invoke("lyrics:matchById", platform, id),
-    // 按 Track 元数据在某平台模糊搜索歌词
-    matchByQuery: (platform: string, track: unknown) =>
-      ipcRenderer.invoke("lyrics:matchByQuery", platform, track),
-    // 获取 AMLL TTML DB 的 TTML
-    fetchTTMLOverlay: (track: unknown, platform: string) =>
-      ipcRenderer.invoke("lyrics:fetchTTMLOverlay", track, platform),
-    // 在本地 TTML 歌词库目录中按元信息匹配
-    matchLocalTTML: (track: unknown) => ipcRenderer.invoke("lyrics:matchLocalTTML", track),
-    // 选择本地 TTML 歌词库目录
-    pickLyricRepoDir: () => ipcRenderer.invoke("lyrics:pickLyricRepoDir"),
-  },
   opencc: {
     // 转换单个文本
     convert: (text: string, config: CjkTransformMode): Promise<string> =>

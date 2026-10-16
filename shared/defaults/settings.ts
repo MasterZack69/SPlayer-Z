@@ -99,10 +99,6 @@ export const defaultSystemConfig: SystemConfig = {
     enableOnlineTTMLLyric: false,
     amllDbServer: "https://amlldb.bikonoo.com/%p/%s.ttml",
   },
-  localLyric: {
-    enableLocalTTMLOverride: false,
-    repoDir: "",
-  },
   cache: {
     dir: null,
     songCache: {

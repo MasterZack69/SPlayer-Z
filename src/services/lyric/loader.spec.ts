@@ -94,15 +94,30 @@ describe("本地及自托管歌词加载", () => {
     );
     expect(mocks.online).not.toHaveBeenCalled();
   });
-  it("本地 TTML 仓库命中后不请求服务器", async () => {
+  it("loads TTML sidecar files without consulting a library", async () => {
     mocks.settings.system.localLyric.enableLocalTTMLOverride = true;
-    mocks.repo.mockResolvedValue({ ok: true, data: "<tt>本地</tt>" });
-    await loadForTrack(detail);
+    const ttml =
+      '<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1s" end="2s">Local lyrics</p></div></body></tt>';
+    mocks.read.mockResolvedValue({ success: true, data: ttml });
+    await loadForTrack({
+      ...detail,
+      externalLyrics: [{ path: "/music/song.ttml", format: "ttml" }],
+    });
     expect(mocks.media.setLyric).toHaveBeenLastCalledWith(
       { source: "external", format: "ttml" },
-      { content: "<tt>本地</tt>" },
+      { content: ttml },
     );
+    expect(mocks.repo).not.toHaveBeenCalled();
     expect(mocks.server).not.toHaveBeenCalled();
+  });
+  it("preserves embedded TTML support", async () => {
+    const ttml =
+      '<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1s" end="2s">Embedded</p></div></body></tt>';
+    await loadForTrack({ ...detail, embeddedLyric: ttml });
+    expect(mocks.media.setLyric).toHaveBeenLastCalledWith(
+      { source: "embedded", format: "ttml" },
+      { content: ttml },
+    );
   });
   it("快速切歌后迟到的歌词不能污染新曲", async () => {
     let finish!: (result: unknown) => void;

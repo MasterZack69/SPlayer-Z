@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SIDEBAR_NAV_META } from "./sidebarNav";
 import { DEFAULT_SIDEBAR_NAV_GROUPS } from "@/types/settings";
@@ -10,7 +10,7 @@ import { DEFAULT_SIDEBAR_NAV_GROUPS } from "@/types/settings";
  */
 const source = (path: string): string => readFileSync(path, "utf8");
 describe("离线应用功能边界", () => {
-  it.each(["/history", "/favorites", "/cloud", "/download"])(
+  it.each(["/history", "/favorites", "/cloud", "/download", "/stats"])(
     "侧边栏及新用户默认配置不包含 %s",
     (path) => {
       expect(SIDEBAR_NAV_META[path]).toBeUndefined();
@@ -42,12 +42,27 @@ describe("离线应用功能边界", () => {
     expect(core).toContain("initSongCache");
     expect(ipc).toContain("registerStreamingIpc");
   });
-  it("歌词 IPC 仅保留本地歌词库入口", () => {
-    const ipc = source("electron/main/ipc/lyrics.ts");
-    for (const channel of ["lyrics:matchById", "lyrics:matchByQuery", "lyrics:fetchTTMLOverlay"])
-      expect(ipc).not.toContain(channel);
-    expect(ipc).toContain("lyrics:matchLocalTTML");
+  it("removes local TTML library IPC and settings but preserves TTML files", () => {
+    expect(existsSync("electron/main/ipc/lyrics.ts")).toBe(false);
+    expect(existsSync("electron/main/services/localLyricRepo.ts")).toBe(false);
+    expect(source("src/settings/categories/lyric.ts")).not.toContain("enableLocalTTMLOverride");
+    expect(source("electron/preload/index.ts")).not.toContain("lyrics:matchLocalTTML");
+    expect(source("native/audio-engine/src/metadata/lyrics.rs")).toContain('"ttml"');
     expect(source("src/components/modals/TagEditorDialog.vue")).not.toContain("matchById");
+  });
+  it("does not mount public platform logins or account settings", () => {
+    const settings = source("src/settings/categories/other.ts");
+    for (const key of ["PlatformAccount", "platformLogin", "platformConfig", "kugouLoginVersion"])
+      expect(settings).not.toContain(key);
+    expect(existsSync("src/components/settings/custom/PlatformAccount.vue")).toBe(false);
+  });
+  it("places all statistics below the Home hero and redirects the old route", () => {
+    const home = source("src/pages/Home.vue");
+    expect(home.indexOf("<HomeStats />")).toBeGreaterThan(home.indexOf("</SCard>"));
+    const stats = source("src/components/stats/HomeStats.vue");
+    for (const section of ["StatsOverview", "StatsHeatmap", "StatsTopList"])
+      expect(stats).toContain(`<${section}`);
+    expect(source("src/router/index.ts")).not.toContain("@/pages/Stats.vue");
   });
   it("首页和顶栏不再挂载在线发现、账户及识曲", () => {
     const home = source("src/pages/Home.vue");

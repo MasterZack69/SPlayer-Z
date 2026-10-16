@@ -364,7 +364,6 @@ const albumItems = computed<CoverItem[]>(() => {
               :search-query="searchQuery"
               :source="source"
               :playback-context="playbackContext"
-              :show-size="source === 'local'"
               :has-more="hasMoreSongs"
               :loading-more="loadingMore"
               enable-sort

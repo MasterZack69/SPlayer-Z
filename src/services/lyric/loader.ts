@@ -3,7 +3,7 @@ import type { LyricData, LyricFormat, LyricInput } from "@shared/types/lyrics";
 import { useMediaStore } from "@/stores/media";
 import { useSettingsStore } from "@/stores/settings";
 import { DEFAULT_LYRIC_FORMAT_ORDER } from "@/types/settings";
-import { embeddedLyricFromDetail, resolveLocalRepoLyric, resolveStreamingLyric } from "./resolve";
+import { embeddedLyricFromDetail, resolveStreamingLyric } from "./resolve";
 import { consumePreloadedLyric } from "./preload";
 
 let currentToken = 0;
@@ -73,7 +73,7 @@ export const beginLoad = (): number => {
 };
 
 /**
- * 读取本地歌词库、旁挂文件、内嵌标签或自托管服务器歌词
+ * Load sidecar files, embedded lyrics, or lyrics from the configured media server
  * @param detail - 当前歌曲详情
  */
 export const loadForTrack = async (detail: TrackDetail | null): Promise<void> => {
@@ -85,12 +85,6 @@ export const loadForTrack = async (detail: TrackDetail | null): Promise<void> =>
     return;
   }
   try {
-    const repo = await resolveLocalRepoLyric(track);
-    if (token !== currentToken) return;
-    if (repo) {
-      commit(token, repo.source, repo.input);
-      return;
-    }
     if (track.source === "streaming") {
       const preloaded = await consumePreloadedLyric(track);
       if (token !== currentToken) return;
@@ -115,12 +109,7 @@ export const loadForTrack = async (detail: TrackDetail | null): Promise<void> =>
 export const watchLyricPreference = (): void => {
   const settings = useSettingsStore();
   watch(
-    () => [
-      settings.lyric.lyricFormatOrder.join(","),
-      settings.lyric.detectBackgroundLyrics,
-      settings.system.localLyric.enableLocalTTMLOverride,
-      settings.system.localLyric.repoDir,
-    ],
+    () => [settings.lyric.lyricFormatOrder.join(","), settings.lyric.detectBackgroundLyrics],
     () => {
       void loadForTrack(useMediaStore().detail);
     },

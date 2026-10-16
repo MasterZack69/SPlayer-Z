@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import { configureLinuxGraphics } from "@main/utils/chromium";
 import { electronApp, optimizer } from "@electron-toolkit/utils";
 import {
   createMainWindow,
@@ -25,11 +26,14 @@ import {
 import { extractAudioFiles, captureAudioFiles } from "@main/services/externalFile";
 
 /**
- * 配置 Chromium 启动参数以优化内存占用
+ * Configure Chromium memory limits without discarding user-supplied feature switches
  */
 const configureMemoryOptimizations = (): void => {
-  // 禁止预热备用渲染进程
-  app.commandLine.appendSwitch("disable-features", "SpareRendererForSitePerProcess");
+  const disabled = new Set(
+    app.commandLine.getSwitchValue("disable-features").split(",").filter(Boolean),
+  );
+  disabled.add("SpareRendererForSitePerProcess");
+  app.commandLine.appendSwitch("disable-features", [...disabled].join(","));
 };
 
 /** 内存指标采样间隔 */
@@ -62,6 +66,7 @@ const logProcessMemory = (): void => {
  */
 export const initApp = (): void => {
   configureMemoryOptimizations();
+  configureLinuxGraphics(app.commandLine, process.platform, process.env);
   // 初始化日志
   initLogger();
   // 单例锁

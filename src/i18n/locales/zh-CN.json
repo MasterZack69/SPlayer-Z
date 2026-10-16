@@ -22,10 +22,22 @@
       "subtitle": "一个现代化的桌面音乐播放器，完成几步设置即可开始享用",
       "start": "开始设置",
       "features": {
-        "local": { "title": "本地音乐库", "desc": "扫描本地目录，自动整理音乐库" },
-        "quality": { "title": "无损音质", "desc": "原生音频引擎，支持多种无损格式" },
-        "streaming": { "title": "流媒体服务器", "desc": "Subsonic / Jellyfin / Emby 等" },
-        "lyrics": { "title": "丰富歌词体验", "desc": "AMLL 逐字歌词，桌面歌词、灵动岛、任务栏歌词" }
+        "local": {
+          "title": "本地音乐库",
+          "desc": "扫描本地目录，自动整理音乐库"
+        },
+        "quality": {
+          "title": "无损音质",
+          "desc": "原生音频引擎，支持多种无损格式"
+        },
+        "streaming": {
+          "title": "流媒体服务器",
+          "desc": "Subsonic / Jellyfin / Emby 等"
+        },
+        "lyrics": {
+          "title": "丰富歌词体验",
+          "desc": "AMLL 逐字歌词，桌面歌词、灵动岛、任务栏歌词"
+        }
       }
     },
     "agreement": {
@@ -738,8 +750,6 @@
       "about": "关于软件"
     },
     "section": {
-      "platformLogin": "平台登录",
-      "platformConfig": "平台配置",
       "network": "网络代理",
       "aboutApp": "关于软件",
       "specialThanks": "特别致谢",
@@ -752,7 +762,6 @@
       "audioSource": "播放音源",
       "scrobble": "听歌打卡",
       "lyricContent": "歌词内容",
-      "lyricTTML": "TTML 歌词",
       "lyricExclude": "歌词排除",
       "lyricGeneral": "内容样式",
       "lyricDisplay": "显示效果",
@@ -1110,8 +1119,6 @@
       "restartRequiredContent": "此设置需要重启应用后生效。确定保存并立即重启吗？",
       "testChannelTitle": "切换到测试通道",
       "testChannelContent": "Beta 与 Alpha 通道会提前收到测试版本，其中 Alpha 版本可能非常不稳定。确定切换吗？",
-      "kugouLoginVersionTitle": "切换 KG 登录版本",
-      "kugouLoginVersionContent": "切换后当前登录凭据与新版本不匹配，需退出登录并重新扫码，否则会员权益与高音质解析会失效。确定切换吗？",
       "exclusiveModeTitle": "切换到独占模式",
       "exclusiveModeContent": "独占模式绕过系统混音器，优先使用音源采样率与位深，适合外接 DAC / Hi-Fi 设备。播放器的音量、均衡器等处理仍然生效，不保证逐位无损输出。独占期间其他应用可能无法播放声音；独占不可用时会尝试共享模式，若设备被其他应用独占，共享模式也可能无法播放。确定切换吗？",
       "preloadCacheTitle": "开启预载所需的缓存？",
@@ -1723,28 +1730,6 @@
         "disconnected": "已断开 Last.fm 连接"
       }
     },
-    "platformLogin": {
-      "title": "登录 {name} 账号",
-      "desc": "登录后可获取对应平台播放地址",
-      "loginWeb": "网页登录",
-      "loginQr": "扫码登录",
-      "loginQrQQ": "QQ 扫码登录",
-      "loginQrWX": "微信扫码登录",
-      "qrTitle": "扫码登录",
-      "manualCookie": "Cookie 登录",
-      "logout": "退出登录",
-      "logoutTitle": "退出 {name} 登录",
-      "logoutConfirm": "确定要退出当前 {name} 账号（{user}）吗？",
-      "cookieTitle": "设置 {name} Cookie",
-      "cookiePlaceholder": "请输入 Cookie",
-      "toast": {
-        "loginSuccess": "{name} 登录成功：{user}",
-        "loginFailed": "{name} 登录失败，请重试",
-        "logoutDone": "已退出 {name} 登录",
-        "cookieSuccess": "{name} Cookie 设置成功",
-        "cookieInvalid": "Cookie 无效，请检查后重试"
-      }
-    },
     "rememberWindowState": {
       "label": "记忆窗口状态",
       "description": "下次启动时恢复窗口的大小、位置和最大化状态"
@@ -1803,12 +1788,6 @@
     "neteaseRealIp": {
       "label": "使用真实IP地址",
       "description": "在海外或部分地区可能会受到限制，可开启此处尝试解决"
-    },
-    "kugouLoginVersion": {
-      "label": "KG 登录版本",
-      "description": "切换后需重新扫码登录",
-      "standard": "标准版",
-      "concept": "概念版"
     },
     "neteaseScrobbleEnabled": {
       "label": "启用听歌打卡",
@@ -2033,25 +2012,23 @@
         "homepage": "主页"
       },
       "grant": {
-        "network": { "label": "联网", "desc": "插件可发起网络请求" },
-        "control": { "label": "控制", "desc": "插件可控制播放器" },
-        "ui": { "label": "界面", "desc": "插件可扩展或修改应用界面" }
+        "network": {
+          "label": "联网",
+          "desc": "插件可发起网络请求"
+        },
+        "control": {
+          "label": "控制",
+          "desc": "插件可控制播放器"
+        },
+        "ui": {
+          "label": "界面",
+          "desc": "插件可扩展或修改应用界面"
+        }
       }
     },
     "pluginManager": {
       "label": "插件管理",
       "description": "导入、启用或卸载扩展脚本"
-    },
-    "enableLocalTTMLOverride": {
-      "label": "启用本地 TTML 歌词库",
-      "description": "从指定目录按歌曲元信息匹配 .ttml，命中后优先于在线歌词"
-    },
-    "localLyricRepoDir": {
-      "label": "歌词库目录",
-      "description": "选择一个存放 TTML 歌词的目录，软件会按元信息在其中查找",
-      "choose": "选择目录",
-      "clear": "清除",
-      "unset": "未设置目录"
     },
     "fileCacheManager": {
       "label": "缓存管理",

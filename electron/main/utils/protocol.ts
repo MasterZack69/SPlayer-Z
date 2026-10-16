@@ -1,4 +1,7 @@
 import path from "node:path";
+import { stat } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
+import { coreLog } from "./logger";
 import { net, protocol, session } from "electron";
 import { getAppCacheDir } from "./config";
 
@@ -38,11 +41,20 @@ export const registerCacheScheme = (): void => {
   ]);
 };
 
-/** cache:// 协议的处理函数 */
-const cacheHandler = (request: Request): Response | Promise<Response> => {
+/**
+ * Serve cached images and return HTTP errors for stale or invalid cache entries.
+ * @param request - Cache protocol request
+ * @returns Cached file response, or an appropriate HTTP error
+ */
+const cacheHandler = async (request: Request): Promise<Response> => {
   // 剥离查询串：?v=xxx 仅用于封面替换后的缓存失效，不参与路径解析
   const withoutQuery = request.url.split("?")[0];
-  const relativePath = decodeURIComponent(withoutQuery.slice(`${SCHEME}://`.length));
+  let relativePath: string;
+  try {
+    relativePath = decodeURIComponent(withoutQuery.slice(`${SCHEME}://`.length));
+  } catch {
+    return new Response(null, { status: 400 });
+  }
   const root = getAppCacheDir();
   const resolved = path.resolve(root, relativePath);
   // 防 cache://../ 逃逸：解析后的绝对路径必须仍在缓存根目录内
@@ -50,7 +62,23 @@ const cacheHandler = (request: Request): Response | Promise<Response> => {
   if (resolved !== root && !resolved.startsWith(rootWithSep)) {
     return new Response(null, { status: 403 });
   }
-  return net.fetch(`file://${resolved.replace(/\\/g, "/")}`);
+  try {
+    const entry = await stat(resolved);
+    if (!entry.isFile()) return new Response(null, { status: 404 });
+    return await net.fetch(pathToFileURL(resolved).href);
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (
+      code === "ENOENT" ||
+      code === "ENOTDIR" ||
+      code === "ERR_FILE_NOT_FOUND" ||
+      (err instanceof Error && err.message === "net::ERR_FILE_NOT_FOUND")
+    ) {
+      return new Response(null, { status: 404 });
+    }
+    coreLog.warn(`[cache] Failed to serve ${relativePath}`, err);
+    return new Response(null, { status: 500 });
+  }
 };
 
 /**

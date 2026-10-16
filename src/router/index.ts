@@ -70,7 +70,7 @@ const router = createRouter({
         {
           path: "stats",
           name: "stats",
-          component: () => import("@/pages/Stats.vue"),
+          redirect: "/",
         },
         {
           path: "search",

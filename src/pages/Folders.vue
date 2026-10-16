@@ -167,8 +167,6 @@ onMounted(async () => {
           v-if="selectedFolder && selectedTracks.length > 0"
           ref="songListRef"
           :items="selectedTracks"
-          show-album
-          show-duration
           enable-sort
         >
           <template #topInfo>

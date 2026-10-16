@@ -30,12 +30,7 @@ const buildTrackKey = (track: Track): string =>
 const buildContextKey = (): string => {
   const settings = useSettingsStore();
   const streaming = useStreamingStore();
-  return JSON.stringify([
-    settings.lyric.lyricFormatOrder,
-    settings.system.localLyric.enableLocalTTMLOverride,
-    settings.system.localLyric.repoDir,
-    streaming.activeServerId ?? "",
-  ]);
+  return JSON.stringify([settings.lyric.lyricFormatOrder, streaming.activeServerId ?? ""]);
 };
 
 /** 清空下一首歌词预载结果 */

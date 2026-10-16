@@ -418,8 +418,6 @@ onBeforeUnmount(() => {
           ref="songListRef"
           :items="collection.tracks"
           :search-query="searchQuery"
-          :show-album="type !== 'album'"
-          :show-size="source === 'local'"
           :source="source"
           :collection-type="type"
           :collection-id="id"

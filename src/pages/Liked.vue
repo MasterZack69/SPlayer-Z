@@ -127,7 +127,6 @@ const handleMoreMenu = (key: string): void => {
           ref="songListRef"
           :items="localTracks"
           :search-query="searchQuery"
-          :show-size="false"
           source="local"
           enable-sort
         />
