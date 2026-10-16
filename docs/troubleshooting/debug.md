@@ -1,64 +1,27 @@
-# 调试模式与错误排查
+# Debugging and logs
 
-本文介绍如何定位 SPlayer-Next 运行中遇到的问题。
+## Collect useful evidence
 
-## 开发者工具
+Include the SPlayer-Z commit or version, OS and architecture, installation format, reproduction steps, expected behavior, and complete relevant error output. For server issues, add the server type/version and whether synchronization completed. Redact credentials, tokens, personal paths, and private server addresses as needed.
 
-在右上角的齿轮图标中打开 **开发者工具**。
+Use the app's **Open log directory** control in Settings → About rather than guessing a path. Application logs live under `{userData}/app-data/logs/`; native logs are under its `native/` subdirectory. Current builds can retain the upstream `SPlayer-Next` data-directory name.
 
-> [!TIP]
->
-> 开发环境中也可以按 `Ctrl + Shift + I`（Windows / Linux）或 `Cmd + Option + I`（macOS）
+Typical user-data roots are `%APPDATA%/SPlayer-Next` on Windows, `~/Library/Application Support/SPlayer-Next` on macOS, and `${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Next` on Linux. Portable Windows builds use `UserData` beside the executable. Check the actual build and path before moving files.
 
-| 面板            | 用途                   |
-| --------------- | ---------------------- |
-| **Console**     | 查看日志输出、错误信息 |
-| **Network**     | 监控网络请求           |
-| **Application** | 查看本地存储、缓存数据 |
+## Developer tools
 
-## 日志文件
+Use the Developer Tools command when available. In development, the common shortcuts are Ctrl+Shift+I on Windows/Linux and Cmd+Option+I on macOS. Console shows renderer errors; Network helps diagnose failed media-server requests. Main-process and Rust errors may only appear in application logs or the terminal.
 
-最简单的方式：在 **设置 → 关于** 中点击 **打开日志目录**。
+## Common checks
 
-日志位于用户数据目录下的 `app-data/logs/`：
+- **Silence or wrong speed:** Check the selected output device, audio backend, negotiated rate, and [PipeWire diagnostics](/troubleshooting/nix).
+- **Missing cover:** Check embedded artwork or server access; a placeholder is not proof of a network error.
+- **Missing lyrics:** Check sidecar filenames, embedded text, and server-provided lyrics. There is no public lyric-fetch fallback.
+- **Missing search item:** Finish scanning/synchronization and verify the active server and page scope.
+- **Stale IPC errors:** Rebuild main and renderer together; a new renderer paired with old main output can request a handler that is not registered. Do not re-enable removed API services to hide the error.
 
-| 系统    | 路径                                                        |
-| ------- | ----------------------------------------------------------- |
-| Windows | `%APPDATA%\SPlayer-Next\app-data\logs\`                     |
-| macOS   | `~/Library/Application Support/SPlayer-Next/app-data/logs/` |
-| Linux   | `~/.config/SPlayer-Next/app-data/logs/`                     |
+## Reset safely
 
-原生模块日志位于 `app-data/logs/native/`。
+Back up the entire user-data directory before resetting. Close the app, rename that directory, and start again to create a fresh profile. This can remove settings, credentials, playlists, queue state, library indexes, and statistics from the active profile. Uninstalling the executable may leave user data behind.
 
-## 常见问题
-
-- **歌曲无法播放 / 卡顿 / 无声**：检查 Console 是否有错误、音频源是否有效、系统输出设备是否正常。
-- **封面 / 歌词加载失败**：在 Network 面板查看失败请求与状态码，确认网络与音源可达。
-- **界面异常 / 白屏**：查看 Console 错误堆栈，尝试清缓存后重启（设置 → 缓存，或删除 `app-data/cache/`）。
-
-## 提交 Issue
-
-请附上：操作系统与版本、SPlayer-Next 版本（开发版附 Commit ID）、Console 完整错误日志、可复现的操作步骤。
-
-> [!IMPORTANT]
->
-> 如果是 Linux，请先查看 [Linux Wayland 兼容性](./wayland)。报告故障时附带桌面环境、发行版、所使用的安装包格式（官方包）或构建脚本（第三方包）
-
-## 重置应用
-
-::: warning 注意
-重置会清除全部用户数据（登录状态、播放列表、设置、本地库等）。
-:::
-
-删除用户数据目录即可重置：
-
-```bash
-# Windows
-rd /s /q "%APPDATA%\SPlayer-Next"
-
-# macOS
-rm -rf ~/Library/Application\ Support/SPlayer-Next
-
-# Linux
-rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Next"
-```
+Do not delete your music folders as a troubleshooting step. Prefer targeted cache controls in **Settings → Local & Cache** when the problem is limited to cached data.

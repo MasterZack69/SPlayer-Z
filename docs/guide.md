@@ -1,65 +1,45 @@
-# 使用指南
+# User guide
 
-本页介绍 SPlayer-Next 的基本使用。安装包请见 [下载](/download)。
+SPlayer-Z is an offline-first fork of SPlayer-Next. Play files on your device, or connect a media server you own or are authorized to use. Local playback does not require a public music-service account.
 
-## 播放音乐
+## First launch
 
-- **搜索播放**：在顶部搜索框输入歌曲 / 歌手 / 专辑，点击即可播放或加入播放列表。
-- **播放队列**：支持顺序、随机、单曲循环等播放模式，可在队列中拖拽排序。
-- **音质与音效**：在设置中可选择音质档位，并开启渐入渐出、音量均衡、均衡器、变速变调等音效。
+Setup starts with **Choose your language**, with English selected by default. The selected language applies to the remaining setup and the app. Existing installations keep their saved language preference; change it in **Settings → General**.
 
-## 本地音乐
+Continue through the agreement and remaining setup pages, choose your music folders, and let the library scan finish. Settings skipped during setup can be changed later.
 
-1. 打开 **设置 → 本地音乐**（或音乐库页面），添加要扫描的本地文件夹；
-2. 等待扫描完成后，即可在「音乐库」中按歌曲、专辑、歌手浏览；
-3. 支持编辑本地曲目的**标签与封面**（元信息编辑）。
+## Home
 
-## 流媒体
+The greeting is followed by a random selection from your library, up to 50 tracks. Use **Play now** or **Add to queue**. The layout adapts to the available width.
 
-接入 Subsonic / Navidrome / Jellyfin / Emby 等自建服务器，详见 [流媒体服务](/streaming)。
+The **Stats** section below the selection contains:
 
-## 歌词
+- Song, album, artist, and genre counts, total duration, and library size.
+- Listening activity and listening hours.
+- Audio-format distribution.
+- Most-played songs, albums, and artists.
 
-SPlayer-Next 支持 LRC / QRC / YRC / TTML 多种歌词格式，提供逐字高亮、翻译与音译。在线歌词会按 **设置 → 歌词** 中的「歌词来源偏好」「音源排序」「格式偏好」依次匹配。
+These are local library and playback statistics, not online recommendations. Empty charts can mean that no qualifying listening events have been recorded yet. There is no separate Stats destination; older `/stats` links open Home.
 
-在此之外，还提供两种高质量 TTML 歌词来源。
+## Organize and find music
 
-### 在线 TTML 歌词（AMLL TTML DB）
+- **Library** shows indexed local songs.
+- **Artists**, **Albums**, **Genres**, and **Folders** offer different views of that library.
+- **Liked Songs** holds locally liked tracks; personal playlists remain available.
+- **Media Sources** manages your own servers.
 
-[AMLL TTML DB](https://github.com/amll-dev/amll-ttml-db) 是一个社区维护的 TTML 歌词数据库，提供制作精良的**逐字歌词**，并带**翻译**与**音译**，观感接近 Apple Music。
+Song tables share the same layout, including Genre where applicable. See [Library and metadata](/library), [Search](/search), and [Media servers](/streaming).
 
-- 在 **设置 → 歌词 → 启用在线 TTML 歌词**（Beta）开启；
-- 开启后可配置 **AMLL TTML DB 地址**。地址是一个模板，需包含两个占位符：`%p`（平台）与 `%s`（歌曲 ID），应用据此拼接请求；地址错误会导致获取失败；
-- 播放时会尝试从该数据库匹配 TTML，命中则使用其逐字 / 翻译 / 音译内容。
+## Playback and lyrics
 
-### 本地 TTML 歌词库
+Open **Now Playing** for the full player. Lyrics use AMLL; there is no engine selector. Local sidecar files, embedded lyrics, and lyrics supplied by your configured server are supported. See [Lyrics](/lyrics).
 
-如果你自己收藏或校对了 TTML 歌词文件，可以指定一个本地目录作为歌词库：
+The **Fluid** background starts initializing during player entry rather than first showing a blurred-cover background. Initial rendering still depends on cover decoding and GPU availability.
 
-- 在 **设置 → 歌词 → 启用本地 TTML 歌词库**（Beta）开启；
-- 选择一个存放 `.ttml` 文件的目录，应用会按歌曲**元信息**（曲名 / 艺术家等）在其中查找；
-- **命中本地歌词时优先于在线歌词**，方便用你自己的版本覆盖在线结果。
+Open **Queue** from the player controls to inspect or rearrange upcoming tracks. The compact popover and full Now Playing queue share the same order. See [Queue](/queue).
 
-### 歌词窗口
+## Settings
 
-除主播放页外，歌词还可在多种独立窗口中展示：
+Use Settings for appearance, playback, lyrics, shortcuts, services, media sources, local caches, and application information. Optional Last.fm and Discord integration remain under **Services**. Media-server credentials are separate from those integrations.
 
-- **桌面歌词**：悬浮于桌面，可调整位置、字号、颜色、对齐、逐字与翻译等，支持锁定与鼠标穿透；
-- **灵动岛**：顶部居中的紧凑歌词条；
-- **任务栏歌词**（Windows）：在任务栏内显示当前歌词。
-
-可在播放页或托盘菜单快速开关这些窗口，并在设置中分别调整它们的样式。
-
-## 系统集成
-
-- **系统媒体控制**：对接 Windows SMTC / Linux MPRIS / macOS Now Playing，可用锁屏、通知栏、键盘媒体键控制播放；
-- **Discord 状态**：可在设置中开启，将当前播放展示到 Discord；
-- **全局快捷键**：在设置中为播放控制绑定全局快捷键。
-
-## 插件
-
-SPlayer-Next 内置插件系统，可通过脚本扩展音源与控制等能力，详见 [插件使用](/plugins-usage) 与 [插件开发](/plugins/)。
-
-## 外部控制
-
-应用提供可选的外部 API（HTTP + WebSocket）以及独立的本机 MCP 服务，可供其他程序或 AI 查询状态与控制播放，详见 [外部 API](/api)、[WebSocket API](/socket) 与 [MCP 接口](/mcp)。
+For installation and build problems, start with [Downloads and installation](/download) or [Debugging](/troubleshooting/debug).

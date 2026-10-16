@@ -1,27 +1,27 @@
 # audio-engine
 
-Rust 音频引擎，通过 NAPI-RS 暴露给 Electron 主进程。FFmpeg 解码，CPAL 负责跨平台输出，Windows 独占输出直接使用 WASAPI。
+Rust audio engine exposed to the Electron main process through NAPI-RS. FFmpeg handles decoding, CPAL provides cross-platform output, and Windows exclusive output uses WASAPI directly.
 
-## 目录与职责
+## Source layout
 
-| 目录                         | 职责                                                                      |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `src/bindings/player/`       | JS 类型和接口；按加载、seek、设备、事件、控制拆分，负责异步任务与错误转换 |
-| `src/player/`                | 播放状态、资源所有权、加载代次、后台任务和状态转换                        |
-| `src/decoder/`               | FFmpeg 读取、seek、重采样、解码与 DSP 工作线程、有界缓冲、输出供数        |
-| `src/dsp/`                   | 均衡器、响度归一化、变速变调、限幅、FFT                                   |
-| `src/output/`                | 设备选择、CPAL 输出流、播放句柄、Windows COM 线程与 PipeWire 环境         |
-| `src/output/wasapi/`         | 独占流生命周期、设备格式协商、PCM 转换                                    |
-| `src/output/device_watcher/` | 各平台设备变化监听                                                        |
-| `src/metadata/`              | 标签、封面、歌词读取与写入                                                |
-| `src/tests/`                 | 跨模块解码链路、真实 PipeWire 输出测试及音源 fixture                      |
-| `tests/`                     | Node.js 加载实际 `.node` 插件的接口集成测试                               |
+| Directory                    | Responsibility                                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `src/bindings/player/`       | JavaScript types and bindings split by loading, seeking, devices, events and controls; asynchronous tasks and error conversion |
+| `src/player/`                | Playback state, resource ownership, load generations, background tasks and transitions                                         |
+| `src/decoder/`               | FFmpeg reads, seeking, resampling, decode/DSP workers, bounded buffers and output supply                                       |
+| `src/dsp/`                   | Equalization, loudness normalization, speed/pitch processing, limiting and FFT                                                 |
+| `src/output/`                | Device selection, CPAL streams, playback handles, Windows COM threads and PipeWire environment                                 |
+| `src/output/wasapi/`         | Exclusive-stream lifetime, device-format negotiation and PCM conversion                                                        |
+| `src/output/device_watcher/` | Platform-specific device-change monitoring                                                                                     |
+| `src/metadata/`              | Reading and writing tags, artwork and lyrics                                                                                   |
+| `src/tests/`                 | Cross-module decoding, real PipeWire output tests and source fixtures                                                          |
+| `tests/`                     | Node.js integration tests loading the actual `.node` addon                                                                     |
 
-模块单元测试通过 `#[cfg(test)]` 和 `#[path]` 引入为被测模块的子模块，可访问私有实现。跨模块测试集中在 `src/tests/`；实际加载 `.node` 的 JS 集成测试位于 `tests/`。
+Module unit tests are included as child modules through `#[cfg(test)]` and `#[path]`, allowing access to private implementation details. Cross-module tests live in `src/tests/`; JavaScript binding integration tests live in `tests/`.
 
-## 构建与测试
+## Build and test
 
-在仓库根目录运行：
+Run from the repository root:
 
 ```bash
 pnpm --dir native/audio-engine build:debug
@@ -29,18 +29,20 @@ cargo test -p audio-engine --lib
 cargo fmt -p audio-engine --check
 ```
 
-构建生成 `audio-engine.node` 和 `index.d.ts`。类型声明由 NAPI-RS 生成，不手动维护；主进程通过 `@splayer/audio-engine` 引用。
+The build produces `audio-engine.node` and `index.d.ts`. NAPI-RS generates the declarations; do not maintain them manually. The main process imports types through `@splayer/audio-engine`.
 
-Linux PipeWire 集成测试需要 PipeWire、WirePlumber、D-Bus 和对应开发依赖。脚本创建独立服务和虚拟输出，日志目录在退出时打印：
+Linux PipeWire integration tests require PipeWire, WirePlumber, D-Bus, Cargo, and the corresponding development/runtime dependencies. The script starts isolated services and a virtual output, discovers the PipeWire configuration directory, and prints a persistent log location:
 
 ```bash
 bash scripts/test-pipewire.sh
 ```
 
-JS 集成测试需要已构建的本机插件和可用音频输出设备：
+Use `PIPEWIRE_TEST_CONFIG_SOURCE` to override the configuration directory and `SPLAYER_PIPEWIRE_LOG_DIR` to override the log parent. See `docs/troubleshooting/nix.md` for Nix and real-time scheduling diagnostics.
+
+The JavaScript integration tests need a built native addon and a usable audio output:
 
 ```bash
 pnpm --dir native/audio-engine test:integration
 ```
 
-测试默认加载模块目录下的 `audio-engine.node`，也可通过 `SPLAYER_AUDIO_ENGINE_MODULE` 指定 `.node` 的绝对路径。测试音源由临时 WAV 和本机 HTTP 服务提供，无需连接在线音乐服务。
+Tests load `audio-engine.node` from the module directory by default. Set `SPLAYER_AUDIO_ENGINE_MODULE` to an absolute `.node` path to use another build. Temporary WAV files and a local HTTP server supply test audio; no public music service is required.

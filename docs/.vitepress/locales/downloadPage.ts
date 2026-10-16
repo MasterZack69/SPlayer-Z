@@ -1,36 +1,4 @@
 export const DOWNLOAD_PAGE_COPY = {
-  zh: {
-    loading: "正在获取最新版本…",
-    fetchFailed: "获取版本信息失败",
-    openGitHub: "前往 GitHub 下载",
-    noRelease: "暂无可用版本",
-    channelLabel: "更新通道",
-    mirrorLabel: "下载线路",
-    recommended: "为你的设备推荐",
-    download: "下载",
-    otherVersions: "需要其他版本？",
-    allReleases: "查看全部 Releases",
-    archHint: "Arch Linux / CachyOS 用户请参考",
-    archHintLink: "archlinuxcn 源安装指南",
-    channelEmpty: (name: string) => `当前还没有 ${name}，请切换其他通道或稍后再试。`,
-    channels: {
-      stable: { name: "Stable 正式版", description: "稳定通道，只提供正式发布版本。" },
-      beta: { name: "Beta 预览版", description: "功能基本可用，可能仍有已知问题。" },
-      alpha: { name: "Alpha 内测版", description: "包含最早期功能，仅建议测试使用。" },
-    },
-    formats: {
-      installer: "Windows 安装版",
-      portable: "Windows 便携版",
-      dmg: "macOS 安装包 (.dmg)",
-      zip: "macOS 压缩包 (.zip)",
-      AppImage: "Linux AppImage",
-      deb: "Debian / Ubuntu (.deb)",
-      rpm: "Fedora / RHEL (.rpm)",
-      pacman: "Arch Linux (.pacman)",
-      "tar.gz": "Linux 压缩包 (.tar.gz)",
-    },
-    universal: "通用",
-  },
   en: {
     loading: "Fetching the latest release…",
     fetchFailed: "Failed to fetch release information",
@@ -42,8 +10,8 @@ export const DOWNLOAD_PAGE_COPY = {
     download: "Download",
     otherVersions: "Looking for another version?",
     allReleases: "View all releases",
-    archHint: "On Arch Linux and CachyOS, see the",
-    archHintLink: "archlinuxcn installation guide",
+    archHint: "For Linux installation and Nix builds, see",
+    archHintLink: "installation instructions",
     channelEmpty: (name: string) =>
       `There is no ${name} release yet. Choose another channel or try again later.`,
     channels: {

@@ -1,65 +1,25 @@
-# SPlayer-Z Copilot Instructions
+# SPlayer-Z Copilot instructions
 
-Use **English** for all Copilot conversations, code reviews, suggestions, new or updated code comments, commit messages, PR titles and descriptions, and project documentation. Application localization strings may remain in their target languages. See `docs/contributing.md` and `AGENTS.md` for repository guidance.
+Read `AGENTS.md` before changing the repository. It is the authoritative contributor and agent guide; `docs/architecture.md`, `docs/native.md`, and `docs/contributing.md` explain the current architecture and workflow.
 
-## Project overview
+## Language and scope
 
-SPlayer-Z is a cut-down fork of SPlayer-Next, a desktop music player based on **Electron + Vue 3 + TypeScript**, with **Rust NAPI-RS** native modules for audio decoding, system media integration, and taskbar integration. This fork focuses on local music and user-owned media servers.
+Use **English** for conversations, reviews, suggestions, new or updated code comments, commits, pull requests, documentation, and contributor instructions. Localized application strings remain in their target languages. Use a one-line English Conventional Commit subject without a body unless requested.
 
-### Process architecture
+Target **dev**. Preserve the root **README.md** unless explicitly authorized. Keep changes focused and do not put personal task commentary in public documentation.
 
-- **Main process** `electron/main/`: window management, IPC, and native module coordination
-- **Preload** `electron/preload/`: exposes `window.api` through contextBridge
-- **Renderer** `src/`: Vue 3 SPA; auxiliary window code and shared lyric utilities live under `windows/`. Desktop Lyric and Dynamic Island entrypoints are disabled in this fork.
+## Current product boundaries
 
-### Native modules (`native/`)
+The app is local-first with authorized Subsonic-compatible, Jellyfin, and Emby servers. Use the shared SongList, categorized global/contextual search, Home statistics, AMLL lyrics, and shared draggable queue. Do not reactivate retired platform logins, public catalogs, plugins, external control services, lyric lookup, or auxiliary lyric windows to resolve stale references.
 
-- `audio-engine`: `ffmpeg_audio` decoding (statically built FFmpeg without system FFmpeg dependencies), rodio playback, FFT, and cover extraction. URLs use `ffmpeg_audio::HttpAudioSource` with `HttpCancelHandle` for interruption and seek resets (`reqwest` + `rustls`), providing a Read+Seek stream to `ffmpeg_audio`.
-- `media-ctrl`: cross-platform system media controls (Windows SMTC / Linux MPRIS / macOS MPNowPlaying) and Discord RPC
-- `taskbar-lyric`: Windows-only taskbar window embedding with RegistryWatcher, UiaWatcher, and TrayWatcher monitoring
+The audio engine uses FFmpeg and **CPAL**, not rodio. Nix uses system FFmpeg and explicit audio/D-Bus dependencies. Windows-specific integration still exists and must remain target-gated; Linux changes do not require Windows testing.
 
-Native modules are loaded lazily through `loadNativeModule()` in `electron/main/utils/nativeLoader.ts`.
+## Implementation safeguards
 
-### Path aliases
-
-| Alias                    | Target                 | Usage                                                   |
-| ------------------------ | ---------------------- | ------------------------------------------------------- |
-| `@/*`                    | `src/*`                | Renderer                                                |
-| `@shared/*`              | `shared/*`             | Main process, renderer, and native types                |
-| `@main/*`                | `electron/main/*`      | Main process                                            |
-| `@windows/*`             | `windows/*`            | Auxiliary lyric windows and `windows/shared/` utilities |
-| `@splayer/audio-engine`  | `native/audio-engine`  | Main process; import types from generated `index.d.ts`  |
-| `@splayer/media-ctrl`    | `native/media-ctrl`    | Same as above                                           |
-| `@splayer/taskbar-lyric` | `native/taskbar-lyric` | Same as above                                           |
-
-## Code conventions
-
-- **Language:** English for comments, Git commits, PRs, reviews, and documentation. Use Conventional Commits: `<type>: <English summary>`.
-- **Time units:** renderer time values are in **milliseconds**. The Rust engine uses seconds; conversion happens through `toMs()` in `electron/main/ipc/player.ts`.
-- **Prettier:** double quotes, semicolons, 100-character width, and trailing commas
-- **Auto-imports:** `vue`, `pinia`, `vue-router`, `@vueuse/core`, and `vue-i18n` need no manual imports; UI components are injected from `src/components/`.
-- **Native module types:** never hand-write them; import generated `index.d.ts` types from `@splayer/<module>`.
-- **Two-layer playback state:** `src/stores/status.ts` provides reactive Pinia state (5 Hz); `src/services/playback.ts` holds the non-reactive time source sampled by RAF for 60 fps lyrics and spectrum rendering.
-- **Reactivity:** use `shallowRef` for large collections such as `Track[]`. Persisting reactive proxies to IndexedDB causes `DataCloneError`.
-- **Store persistence:** write only lightweight data to sessionStorage. Never persist `TrackDetail`, which contains large lyric strings.
-- **IPC listeners:** main-process push events use the preload `subscribe` helper (`ipcRenderer.on` plus a returned per-handler `unsubscribe`). Do not add `removeAllListeners` to individual channels. Finite-lifetime consumers must save and call `unsubscribe` in `onBeforeUnmount` / `onScopeDispose`. Application-level singletons registered once, such as Pinia setup stores, intentionally retain their subscriptions for the process lifetime.
-- **Generated files:** do not edit `auto-imports.d.ts`, `components.d.ts`, or `native/*/index.d.ts` manually.
-- **Logging:** use scoped loggers from `@main/utils/logger` (`coreLog`, `playerLog`, `mediaLog`, `trayLog`, `taskbarLog`, `nativeLog`, etc.) in the main process. Do not import `electron-log` directly.
-
-## Auxiliary windows (`windows/`)
-
-Existing lyric window code shares:
-
-- `@windows/shared/composables/useNowPlayingSync` for playback sync, lyric indices, and anchor interpolation
-- `getNowPlayingCurrentMs()` for non-reactive time reads in word-highlighting RAF loops
-- Window-specific lyric selection: `pickPrimaryIndex` accounts for overlap; `pickLatestStartedIndex` switches immediately to the latest started line.
-
-Reuse these shared utilities rather than implementing duplicate synchronization logic. Do not re-enable removed lyric windows as part of unrelated changes.
-
-## Settings schema
-
-- Structure: `src/settings/schema.ts`
-- Types: `src/types/settings-schema.ts`, with `SettingCategory` → `SettingSection` → `SettingItem`
-- `SettingSection.tag` / `SettingItem.tag` support `SettingTag = { text: string; type?: "primary" | "warning" | ... }` for title badges such as Beta or Experimental.
-- i18n keys: `settings.section.{id}`, `settings.{itemKey}.label`, and `settings.{itemKey}.description`
-- UI primitives: `STag`, `SButton`, `SSelect`, `SSlider`, `SSwitch`, `SColor`, `SDialog`, etc., using seven theme tokens: default, primary, cover, info, success, warning, and error.
+- Keep authentication and server playback resolution in the main process; never expose secrets in renderer URLs or logs.
+- Preserve queue-entry identity for duplicate songs, current-track continuity, persistence, and keyboard accessibility.
+- Preserve lyric timing and text offsets; never interpret arbitrary lyric markup as executable HTML.
+- Use generated native types, shared cross-process contracts, lightweight persisted data, and shallow track collections.
+- Event subscriptions return per-handler cleanup functions. Finite-lifetime consumers unsubscribe; do not add bulk `removeAllListeners` calls to shared channels.
+- Bound caches, stop hidden animation work, and follow AGENTS memory-measurement requirements for rendering/caching/IPC changes.
+- Do not edit generated declarations or auto-import files by hand. Format changed files and run relevant checks; report environment limitations honestly.

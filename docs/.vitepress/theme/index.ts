@@ -1,11 +1,16 @@
+import type { Theme } from "vitepress";
 import DefaultTheme from "vitepress/theme";
 import "./custom.css";
 import DownloadPage from "../components/DownloadPage.vue";
 
-export default {
+const theme: Theme = {
   extends: DefaultTheme,
+  /** Register the shared documentation download component.
+   * @param context - VitePress application context.
+   */
   enhanceApp({ app }) {
-    // 注册全局组件
     app.component("DownloadPage", DownloadPage);
   },
 };
+
+export default theme;

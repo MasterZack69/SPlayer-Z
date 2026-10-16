@@ -1,76 +1,60 @@
-# 原生模块
+# Native modules
 
-SPlayer-Next 将性能敏感的能力下沉到 **Rust**，通过 [NAPI-RS](https://napi.rs/) 编译为 Node 原生插件（`.node`），由主进程按需加载。所有原生模块都位于仓库的 `native/` 目录。
+SPlayer-Z uses Rust and NAPI-RS for decoding, output, metadata, and operating-system integration. Native modules are loaded in the Electron main process through `electron/main/utils/nativeLoader.ts`.
 
-## 模块一览
+## Active build targets
 
-| 模块                | 职责                                                                         |
-| ------------------- | ---------------------------------------------------------------------------- |
-| `audio-engine`      | 音频解码（FFmpeg）与播放（rodio）、FFT 频谱、封面提取                        |
-| `media-ctrl`        | 系统媒体控制（Windows SMTC / Linux MPRIS / macOS Now Playing）与 Discord RPC |
-| `taskbar-lyric`     | Windows 任务栏歌词文字渲染                                                   |
-| `taskbar-thumbnail` | Windows 任务栏悬停缩略图 / Peek 预览替换为专辑封面                           |
+`scripts/build-native.ts` builds:
 
-### audio-engine
+| Module              | Responsibility                                                 | Platforms               |
+| ------------------- | -------------------------------------------------------------- | ----------------------- |
+| `audio-engine`      | FFmpeg decoding, CPAL output, DSP, metadata, covers and lyrics | Current desktop targets |
+| `media-ctrl`        | System media controls and Discord integration                  | Current desktop targets |
+| `opencc`            | Text conversion used by lyric settings                         | Current desktop targets |
+| `taskbar-lyric`     | Taskbar lyric integration                                      | Windows only            |
+| `taskbar-thumbnail` | Taskbar thumbnail integration                                  | Windows only            |
 
-核心音频引擎，负责解码与播放：
+An old module directory or declaration is not proof that a feature is still built. In particular, audio capture for recognition is not part of the active native build list. Do not re-enable removed subsystems to satisfy a stale reference.
 
-- 使用 `ffmpeg_audio` crate 进行解码，支持 MP3、FLAC、WAV、AAC、OGG、APE 等格式；
-- 基于 rodio 输出，支持渐入渐出、变速变调、音量均衡与均衡器；
-- 实时 FFT 频谱数据，驱动可视化与歌词律动；
-- 解码时同步提取封面缩略图；
-- 在线音源通过 `ffmpeg_audio::HttpAudioSource`（配合 `HttpCancelHandle` 实现打断与 Seek 状态重置，基于 `reqwest` + `rustls`）以 `Read + Seek` 方式按需拉取，TLS 在 Rust 内处理，跨平台且无系统依赖。
+## Audio architecture
 
-### media-ctrl
+`audio-engine` decodes through `ffmpeg_audio` and outputs through **CPAL**, with Linux PipeWire/PulseAudio support. Windows exclusive output uses WASAPI directly. DSP includes equalization, normalization, speed/pitch processing, limiting, and FFT.
 
-跨平台的系统媒体集成：
+Loading and cancellation use generation ownership so a late decoder result cannot replace a newer track. Streaming HTTP sources and authentication resolution must preserve cancellation and avoid exposing credentials to the renderer.
 
-- Windows SMTC、Linux MPRIS、macOS Now Playing；
-- Discord Rich Presence（播放状态展示）。
+JavaScript-facing times are milliseconds. Rust works in seconds internally; conversion occurs at the main-process boundary.
 
-### taskbar-lyric
+## Build prerequisites
 
-Windows 任务栏歌词渲染，跟随系统主题与任务栏状态自适应。
+Use the Node and pnpm versions required by `package.json`, a Rust toolchain with Cargo, the platform C/C++ toolchain, and Python for native Node dependencies. Linux builds also require development packages for the selected audio backends and system libraries.
 
-### taskbar-thumbnail
-
-Windows 任务栏缩略图自定义（仅 Windows）：
-
-- 借助 DWM 的 iconic representation，把任务栏**悬停缩略图**与 **Peek 全尺寸预览**替换为指定图片（当前专辑封面），而非默认的实时窗口内容；
-- 对主窗口子类化，被动应答 DWM 的位图请求，封面变化时通知 DWM 重新拉取。
-
-## 构建
-
-构建原生模块需要 **Rust 工具链**（通过 [rustup](https://rustup.rs/) 安装）。
-
-`pnpm dev` 与 `pnpm build` 会自动编译原生模块，通常无需手动操作：
+Do not assume there are zero system dependencies. The Nix flake uses `FFMPEG_MODE=system`, with FFmpeg, PipeWire, PulseAudio, ALSA, OpenSSL, D-Bus, and `pkg-config` declared in the derivation. Other FFmpeg build modes depend on `ffmpeg_audio` configuration. See [Nix diagnostics](/troubleshooting/nix).
 
 ```bash
-# 仅构建原生模块（release）
-pnpm build:native
-
-# 构建 debug 版本（更快，便于调试）
 pnpm build:native --dev
+pnpm build:native
+cargo check --all-targets --locked
+cargo test --locked
 ```
 
-NAPI-RS 会自动生成各模块的 `index.d.ts` 类型声明，主进程通过路径别名引用：
+`--all-targets` checks Cargo targets for the current host; it does not require testing Windows from a Linux host. Windows-specific dependencies must remain target-gated.
 
-```
-@splayer/audio-engine      → native/audio-engine
-@splayer/media-ctrl        → native/media-ctrl
-@splayer/taskbar-lyric     → native/taskbar-lyric
-@splayer/taskbar-thumbnail → native/taskbar-thumbnail
-```
+## Generated declarations
 
-::: tip 跳过原生构建
-如果当前只做界面（渲染层）开发、不需要原生能力，可设置环境变量 `SKIP_NATIVE_BUILD=true` 跳过 Rust 编译，加快启动：
+NAPI-RS generates `native/*/index.d.ts`. Import those declarations through the `@splayer/*` aliases; do not hand-write or manually edit them. Rebuild the relevant module when its bindings change.
+
+`SKIP_NATIVE_BUILD=true` skips the native build step, but does not supply a working addon. Use it only when suitable native outputs already exist or for renderer-only work that does not load them.
+
+## Audio-engine tests
+
+From the repository root:
 
 ```bash
-SKIP_NATIVE_BUILD=true pnpm dev
+cargo test -p audio-engine --lib
+cargo fmt -p audio-engine --check
+pnpm --dir native/audio-engine build:debug
+pnpm --dir native/audio-engine test:integration
+bash scripts/test-pipewire.sh
 ```
 
-:::
-
-::: warning 请勿手改类型声明
-`native/*/index.d.ts` 由 NAPI-RS 自动生成，请勿手动编辑——主进程类型应从 `@splayer/*` 导入，而非自行声明。
-:::
+The Node integration suite needs a built `.node` module and a usable audio output. Real PipeWire tests need their own runtime dependencies and are distinct from normal unit tests. The module's `native/audio-engine/README.md` describes its source layout and test fixtures.

@@ -28,9 +28,9 @@ const FORMAT_ORDER = [
 ];
 
 /**
- * 将默认安装方式排在便携版和压缩包之前
- * @param assets - 全部可下载资源
- * @returns 按推荐优先级排序后的新数组
+ * Prefer standard installers over portable packages and archives.
+ * @param assets - Available release assets.
+ * @returns A new array in recommended download order.
  */
 export const sortDownloadAssets = (assets: DownloadAsset[]): DownloadAsset[] => {
   return [...assets].sort((left, right) => {
@@ -41,11 +41,11 @@ export const sortDownloadAssets = (assets: DownloadAsset[]): DownloadAsset[] => 
 };
 
 /**
- * 识别发布资源的平台、架构与安装包格式
- * @param name - 发布资源文件名
- * @param url - 资源下载地址
- * @param size - 资源大小
- * @returns 可下载的安装包信息，非安装包返回 null
+ * Identify the platform, architecture, and package format of an asset.
+ * @param name - Release asset filename.
+ * @param url - Direct asset download URL.
+ * @param size - Asset size in bytes.
+ * @returns Parsed package information, or null for non-package assets.
  */
 export const parseDownloadAsset = (
   name: string,
@@ -81,11 +81,11 @@ export const parseDownloadAsset = (
 };
 
 /**
- * 根据系统和架构选择推荐资源；Linux 无法可靠识别发行版，因此只推荐通用 AppImage
- * @param assets - 全部可下载资源
- * @param platform - 用户操作系统
- * @param arch - 用户架构
- * @returns 最多两个推荐资源
+ * Prefer matching platform and architecture; use AppImage when available on Linux.
+ * @param assets - Available release assets.
+ * @param platform - Detected operating system.
+ * @param arch - Detected CPU architecture.
+ * @returns Up to two recommended assets.
  */
 export const selectRecommendedAssets = (
   assets: DownloadAsset[],

@@ -1,154 +1,99 @@
-# AGENTS.md
+# Agent and contributor instructions
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+## Project and scope
 
-## Project Overview
+SPlayer-Z is an offline-first fork of SPlayer-Next built with Electron, Vue 3, TypeScript, and Rust NAPI-RS modules. Work on **dev** unless explicitly directed otherwise. Preserve the root **README.md** unless the user explicitly authorizes changing it. Do not write chat handoffs or task-specific commentary into public documentation.
 
-SPlayer-Next — desktop music player on **Electron + Vue 3 + TypeScript**, with Rust native modules (NAPI-RS) for audio decoding, system media integration, and Windows taskbar lyric. Successor to SPlayer.
+Use local files and authorized self-hosted media servers as the product boundary. Public KG/QM playback and logins, cloud navigation, recommendation features, plugins, external HTTP/WebSocket/MCP services, AI integration, music recognition, public lyric lookup, and the separate local TTML library are not supported features. TTML file support, local liked songs/playlists, and authorized media-server caching/downloads remain. Legacy files and types are not proof that a removed feature should be enabled.
 
-## Commands
+Windows removal is a future plan, not a completed change. Do not require Windows testing for a Linux-only task. Preserve target gating for Windows dependencies while they remain.
+
+## Commands and environment
+
+Use the Node/pnpm versions in `package.json`. Use bash syntax for portable shell examples; do not assume a Windows Git Bash host or fixed filesystem paths.
 
 ```bash
-pnpm install              # Install deps
-pnpm dev                  # Build native (debug) + start Electron dev
-pnpm build                # Full build (rimraf → native → typecheck → electron-vite)
-pnpm build:{win,mac,linux}# Platform packages
-pnpm typecheck            # tsc + vue-tsc (node + web targets)
-pnpm lint / format        # ESLint / Prettier
-pnpm build:native         # Rust only; add `--dev` for debug
+pnpm install
+pnpm dev                 # Debug native build and Electron development
+pnpm build               # Native build, type checks, Electron bundles
+pnpm build:linux         # Platform package; build:mac/build:win on suitable hosts
+pnpm build:native --dev  # Debug native modules
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm docs:build
+cargo check --all-targets --locked
+cargo test --locked
 ```
 
-`SKIP_NATIVE_BUILD=true` skips Rust during dev.
+Format each changed file with Prettier before committing; do not run a whole-repository formatter that changes unrelated files. `SKIP_NATIVE_BUILD=true` skips compilation but does not create missing native outputs.
 
-`audio-engine` static-links FFmpeg via the `ffmpeg_audio` crate (vendor zip + cc-built at compile time). Zero environment dependency — no `FFMPEG_DIR` / `PKG_CONFIG_PATH`, no system FFmpeg required.
+On Nix, `nix build .` produces `./result/bin/splayer-next`; `nix develop` provides the development toolchain. The flake sets `FFMPEG_MODE=system` and declares FFmpeg, PipeWire, PulseAudio, ALSA, OpenSSL, D-Bus and pkg-config. Host-installed tools do not satisfy sandboxed derivation inputs. Do not claim zero system dependencies or describe the audio engine as rodio-based.
 
-## Shell
+## Architecture and ownership
 
-The development shell is Git Bash on Windows. Write all terminal commands in bash syntax (`&&`, `cd`, etc.) — no PowerShell-only constructs. File paths remain in Windows format (backslashes).
+- Main process: `electron/main/`; native loading, configuration, databases, authenticated server operations and IPC registration.
+- Preload: `electron/preload/`; typed `window.api` bridge and per-handler event subscriptions.
+- Renderer: `src/`; Vue interface, Pinia stores, playback coordination and presentation.
+- Shared contracts: `shared/types/` and `shared/defaults/`.
+- Settings: `src/settings/schema.ts`, category implementations in `src/settings/categories/`, schema types in `src/types/settings-schema.ts`.
+- IPC registration: `electron/main/ipc/index.ts` is authoritative. Do not implement unregistered legacy API calls to silence obsolete callers.
 
-## Architecture
+### Native build
 
-### Process Model
+`scripts/build-native.ts` builds `audio-engine`, `media-ctrl`, and `opencc`; Windows additionally builds `taskbar-lyric` and `taskbar-thumbnail`. Recognition audio capture is not an active build target.
 
-- **Main** (`electron/main/`) — windows, IPC, native modules
-- **Preload** (`electron/preload/`) — `contextBridge` exposing `window.api` (player/config/system/library/streaming/lyrics)
-- **Renderer** (`src/`) — Vue 3 SPA
-- **Lyric windows** (`windows/desktop-lyric`, `dynamic-island`, `taskbar-lyric`) — independent Vue entries sharing `windows/shared/`
+`audio-engine` uses `ffmpeg_audio` for decoding, CPAL for shared output, Linux PipeWire/PulseAudio support, and Windows WASAPI exclusive output. DSP handles equalization, normalization, rate/pitch processing, limiting and FFT. Respect load generations and cancellation when changing decoder ownership. Types are generated by NAPI-RS, never copied by hand.
 
-### Native Modules (Rust + NAPI-RS)
+`media-ctrl` provides system media controls and Discord integration. Existing auxiliary-window utilities live under `windows/shared/`; Desktop Lyric and Dynamic Island entrypoints are disabled. Do not reactivate them as an incidental fix.
 
-Four `.node` modules in `native/`, built via `scripts/build-native.ts`, lazy-loaded by `electron/main/utils/nativeLoader.ts`. NAPI-RS auto-generates `index.d.ts`, imported via path aliases `@splayer/audio-engine`, `@splayer/audio-capture`, `@splayer/media-ctrl`, `@splayer/taskbar-lyric`.
+### Playback and queue
 
-- `audio-engine` — `ffmpeg_audio` decode (static FFmpeg) + rodio playback + FFT + cover extraction. URLs wrapped as `Read + Seek` via `ffmpeg_audio::HttpAudioSource` (using `HttpCancelHandle` for cancellation/reset) — TLS handled in Rust (`reqwest` + `rustls`), cross-platform with no system deps. Pushes events (state/position/ended/outputStalled) via ThreadsafeFunction. Has load_token race protection and an `HttpCancelHandle` handle injected into `HttpAudioSource` for instant stop and reset.
-- `audio-capture` — System sound / microphone capture for song recognition. Windows via WASAPI Loopback; Linux via PulseAudio (`libpulse-binding`, needs `libpulse-dev` at build time — CI `dev.yml`/`release.yml` install it). Collects 8 kHz mono f32 PCM.
-- `media-ctrl` — Cross-platform system media controls (Windows SMTC / Linux MPRIS / macOS MPNowPlaying) + Discord RPC.
-- `taskbar-lyric` — Windows taskbar lyric text rendering with RegistryWatcher / UiaWatcher / TrayWatcher.
+`src/core/player` coordinates renderer playback through IPC and the native engine. `src/stores/status.ts` holds low-frequency reactive state; `src/services/playback.ts` interpolates time without frame-rate Vue mutations. `src/stores/media.ts` holds a lightweight current track and on-demand detail.
 
-### Playback Data Flow
+`useQueuePanel` shares popover and Now Playing queue behavior. `useDragSort` handles mouse/touch ordering, insertion geometry, auto-scroll, cancellation and release-click suppression. Reorder through core player operations, preserve the playing entry and time, persist the order, and key duplicate tracks by queue-entry identity. Keep keyboard arrow reordering and focused-handle restoration working.
 
-```
-User action → status store → IPC (player:load/play/pause/seek)
-  → main process player.ts → audio-engine
-  → Rust events (stateChanged/position/ended/outputStalled)
-  → main broadcasts to renderer + syncs to media-ctrl
-  → status store updates reactive state
-  → playback.ts updates non-reactive time source
-```
+### Library, Home and search
 
-### State Management
+Use the shared `SongList` layout for song tables, including Genre where applicable and matching header/row widths. Do not duplicate page-specific grids. Local metadata artist exceptions live in `electron/main/utils/metadata.ts`; preserve **Royal & the Serpent** as one artist without disabling normal credit splitting.
 
-Two-tier position tracking — high-frequency animation vs. low-frequency UI:
+Home contains the random library selection and Stats below it. `/stats` redirects to Home. Do not restore a separate Stats page or recommendation sections.
 
-- `src/stores/status.ts` — Pinia reactive. `position / duration / state / volume`, pushed ~5Hz from main. Drives progress bar, time display, play button.
-- `src/services/playback.ts` — Non-reactive plain vars. `getCurrentTime()` interpolates between pushes; `usePlaybackTime()` reads in RAF loop for 60fps lyrics/spectrum without Vue reactivity.
-- `src/stores/media.ts` — Pinia + shallowRef. Current `Track` (lightweight) + `TrackDetail` (lyrics, quality). Only `track + activeLyric` persisted to sessionStorage; never persist `TrackDetail` (large lyric strings cause memory issues).
+Home's top search is global and categorized across local indexes and the active server's synchronized library. Other library pages use route-bound contextual filters through `usePageSearch`; do not add a second Library search bar. Clear must clear the query and visible results. Search playback behavior is a separate queueing preference, not search scope.
 
-### Streaming Subsystem
+### Lyrics and player rendering
 
-Server protocol clients live in the main process (`electron/main/services/streaming/`): Subsonic / Jellyfin / Emby adapters, safeStorage-backed config, Jellyfin/Emby session management, SQLite synchronization, and the authenticated cover protocol. Subsonic family (Navidrome / OpenSubsonic / Airsonic / Gonic / LMS) shares one adapter; types differ only as UI labels.
+AMLL is the only Now Playing lyric engine. Source resolution lives under `src/services/lyric/`; parsing and safe inline emphasis live under `src/utils/lyric/`. `external` covers sidecars and configured-server lyric responses, not public lookup.
 
-- `electron/main/services/streaming/config.ts` — encrypted config and secret-free renderer views.
-- `electron/main/services/streaming/connection.ts` — connection tests, connect, and authenticated adapter requests.
-- `electron/main/services/streaming/coverProtocol.ts` — `streaming-cover://` proxy registered for the default and `persist:main` sessions.
-- `electron/main/services/streaming/adapters/` — Server response → unified `Track / Album / Artist / Playlist`. Trusts server's artist field; no client-side splitting.
-- `electron/main/services/streaming/sync.ts` + `snapshot.ts` — cancellable enumeration into temporary SQLite staging, then atomically publish all four indexes; failed or interrupted sync keeps the previous snapshot
-- `electron/main/services/streaming/playback.ts` + `playbackSession.ts` — native event driven playback sessions, unique PlaySessionId per play, Jellyfin/Emby start/progress/stop and Subsonic now-playing/scrobble; download and preload never report playback
-- Favorites — server responses are authoritative; SQLite and renderer consume per-track updates, with sync-time overrides preventing late pages from overwriting user actions
-- `stores/streaming.ts` — Server list, active state, and complete shallowRef arrays; main-process update events trigger SQLite snapshot reloads, with no polling or direct media-server access.
-- Credentials — `electron/main/services/streaming/config.ts` encrypts via Electron `safeStorage` to `{userData}/app-data/config/streaming.json`. `accessToken / userId` remain in the bounded main-process session cache and are re-acquired on connect.
+Normalize compact line-timed LRC without splitting word timestamps into lines. Preserve word timings and text offsets when parsing `**bold**`, `*italic*` and nested emphasis. Bold is uppercase in presentation; italic endings need clearance without changing source text. Never execute arbitrary lyric markup.
 
-Playback resolves remote streaming sources in the main process from `Track.serverId / originalId`; the renderer only passes a `streaming://` identity placeholder or a cached local path. Albums, artists, playlists and navigation retain the originating server ID
+Initialize fluid rendering during player entry; do not wait for the entry transition to complete or first show a blurred-cover preview. Guard asynchronous cover readiness against stale tracks, cancel scheduled frames, and dispose renderers on close.
 
-Server identity changes advance `mediaRevision`, which is copied to `Track.serverRevision` and
-used to isolate playback, song caches, and completed downloads. Renaming a server preserves
-its media identity and active playback. Downloads use the protocol's original-file endpoint,
-with authentication recovery and permission checks performed in the main process
+### Media servers
 
-### Lyric Windows
+`electron/main/services/streaming/` owns Subsonic-compatible, Jellyfin and Emby adapters, encrypted configuration, connection sessions, authenticated cover proxying, atomic SQLite snapshots, favorites and playback reporting. The renderer consumes secret-free views and synchronized indexes, not direct authenticated server requests.
 
-`windows/desktop-lyric`, `dynamic-island`, `taskbar-lyric` are independent Vue entries. Always use shared composables from `@windows/shared/`:
+Trust server artist fields without client-side splitting. Preserve server ID, original media identity, and media revision through navigation, queueing, caches and downloads. Renaming a server must not change media identity. A failed sync keeps the last complete snapshot; favorites must not be overwritten by late pages. Preloading and downloading must not report playback.
 
-- `useNowPlayingSync` — playback sync, lyric index, anchor interpolation
-- `getNowPlayingCurrentMs()` — non-reactive current time for RAF char highlight
-- Line selection: `pickPrimaryIndex` (desktop, considers overlap) vs. `pickLatestStartedIndex` (dynamic island, immediate switch)
+Credentials prefer Electron safeStorage; streaming and Last.fm have a logged Base64 fallback when unavailable. Base64 is not encryption. Never expose passwords or access tokens in renderer-visible URLs or logs. `streaming-cover://` is a main-process authenticated proxy.
 
-Don't reimplement these inside individual windows.
+### Storage and localization
 
-### Type System
+`electron/main/utils/paths.ts` defines `{userData}/app-data/`, containing `config/`, `database/library.db`, `cache/`, and `logs/`. Main configuration uses atomic writes and migrations. Renderer localforage stores include `splayer/library` and `splayer/queue`; local playlists use SQLite, with the old renderer playlist store used only for migration.
 
-- `shared/types/player.ts` — `Track`, `TrackDetail`, `Artist`, `Album`, `AudioQuality`, `PlayerState`, `PlayerStatus`, `PlayerEvent`, `LoadOptions`, `LoadResult`, `IpcResponse`
-- `shared/types/lyrics.ts` — `LyricFormat`, `LyricSource (external | embedded | online)`, `LyricData`, `LyricLine`, `LyricWord`, `LyricSpan`
-- `shared/types/platform.ts` — `Platform (netease | qqmusic | kugou)`
-- `shared/types/streaming.ts` — `StreamingServerType`, `StreamingServerConfig`, `StreamingPingResult`, `StreamingAuthResult`, etc.
+Use 300px cover thumbnails for lists, sampling and blurred backgrounds. Full-resolution artwork belongs only on visibly large covers or exports. Respect custom cache paths and portable user-data paths.
 
-`Track` is for queue storage (no heavy data); `TrackDetail` loads on demand.
+English is the default for renderer, main-process and reset paths; saved preferences take precedence. Setup starts with the language picker. Renderer translations live in `src/i18n/locales/`; main tray translations live in `electron/main/utils/i18n.ts`. Keep localized strings in their intended language.
 
-### Settings Schema
+## Validation and documentation
 
-Declarative — defined in `src/settings/schema.ts`, types in `src/types/settings-schema.ts` (`SettingCategory → SettingSection → SettingItem`). Items bind via `{ store: "settings"|"theme", path: "nested.path" }`; `system.*` paths route through IPC to main config. Tag support on section/item via `SettingTag = { text; type? }` for Beta/experimental badges. i18n keys: `settings.section.{id}` / `settings.{itemKey}.{label,description}`.
+Run relevant tests, type checks, lint and builds. Real audio tests and `.node` integration tests require native outputs and suitable runtime services; `scripts/test-pipewire.sh` preserves logs and discovers Nix configuration paths. Do not weaken assertions or claim a check passed if the environment prevented running it.
 
-### Data Storage
+For UI changes, validate pointer, keyboard, narrow/wide layouts, cancellation, and persistence. Browser previews do not replace real Electron or main-process memory checks. Document actual validation gaps in the handoff, not in README.
 
-```
-{userData}/app-data/        # Unified data directory, separate from Chromium cache data
-├── config/
-│   ├── settings.json       # Main config (electron/main/store/)
-│   ├── streaming.json      # Streaming credentials (safeStorage encrypted)
-│   └── lastfm.json         # Last.fm credentials (safeStorage encrypted)
-├── database/library.db     # Music library (better-sqlite3, WAL)
-├── cache/                  # covers/ (cover:// protocol) + artists/ backgrounds/ songs/
-├── logs/                   # App logs + native/
-└── plugins/                # scripts/ data/ logs/
+Canonical documentation is English under `docs/`; `docs/en/` uses includes to preserve old English URLs; its homepage mirrors root frontmatter. Update canonical pages and navigation, remove obsolete feature instructions, and build the documentation. Keep license notices and attribution. Do not silently change legal liability or jurisdiction provisions during a translation task.
 
-# All paths are defined centrally in electron/main/utils/paths.ts
-```
-
-Renderer IndexedDB (localforage): `splayer/library`, `splayer/queue`. Local playlists are stored in
-SQLite through the main-process playlist service; the old `splayer/playlists` store is migration-only.
-
-### Cover Image
-
-Rust extracts 300x300 JPEG thumbnail to `{userData}/app-data/cache/covers/` during decode; renderer reads via `cover://{filename}` protocol. Original via `getCoverRaw()` for SMTC, never cached. Authenticated streaming covers use the main-process `streaming-cover://` proxy.
-
-### Config Store (Main)
-
-`electron/main/store/` is custom (not electron-store). Reads/writes `{userData}/app-data/config/settings.json` (path via `electron/main/utils/paths.ts`), merges with defaults from `shared/defaults/settings.ts`. Supports dot-path access (`store.get("system.taskbarProgress")`), atomic writes, schema migrations.
-
-### i18n
-
-Renderer uses `vue-i18n` with `src/i18n/locales/{zh-CN,en-US}.json`. Main process has a lightweight translation table (`electron/main/utils/i18n.ts`) for tray/thumbar; locale synced via `system:setLocale` IPC.
-
-### Path Aliases
-
-```
-@/                     → src/                   (renderer, tsconfig.web.json)
-@shared/               → shared/                (both processes)
-@main/                 → electron/main/         (main, tsconfig.node.json)
-@windows/              → windows/               (lyric windows)
-@splayer/audio-engine  → native/audio-engine    (main)
-@splayer/media-ctrl    → native/media-ctrl      (main)
-@splayer/taskbar-lyric → native/taskbar-lyric   (main)
-```
+See `docs/architecture.md`, `docs/native.md`, `docs/types.md`, and `docs/contributing.md` for detailed references.
 
 ## Conventions
 
@@ -214,7 +159,7 @@ Use scoped loggers from `@main/utils/logger` (`coreLog / playerLog / mediaLog / 
 
 ### IPC Listeners
 
-In preload's `onEvent`, always `ipcRenderer.removeAllListeners()` before adding a new listener (HMR accumulates otherwise). Renderer composables call the returned `unsubscribe` in `onBeforeUnmount`.
+The preload `subscribe` helper adds one handler and returns an unsubscribe function that removes only that handler. Never add `removeAllListeners` to individual shared channels. Finite-lifetime consumers must call unsubscribe in `onBeforeUnmount` or `onScopeDispose`; application-level singleton subscriptions intentionally live for the process lifetime.
 
 ### Prettier
 

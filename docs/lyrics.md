@@ -1,0 +1,43 @@
+# Lyrics
+
+## One rendering engine
+
+Now Playing uses **AMLL** for lyric playback. There is no second engine or engine switcher. Line-synchronized lyrics and supported word-timed formats use the same rendering path.
+
+Lyrics come from local sidecar files, embedded audio metadata, or the configured media server. The client does not search public music platforms or an online TTML database for a match. A media server can supply its own lyrics; that is distinct from public lyric lookup.
+
+## Local files and TTML
+
+Keep a sidecar lyric file with its matching audio file, using the same base filename, for example `Song.flac` and `Song.lrc` or `Song.ttml`. The local loader chooses a recognized sidecar according to the lyric-format priority, then falls back to embedded lyrics if necessary.
+
+TTML support remains available. The separate metadata-matched **local TTML library** feature and folder setting have been removed; there is no need to configure a second lyric-library directory.
+
+Supported format identifiers and their default priority are defined in `shared/types/lyrics.ts`: TTML, LYS, QRC, KRC, YRC, LRC, ASS, and SRT. Actual display depends on valid timing and the supplied file contents.
+
+## Compact LRC without physical newlines
+
+A compact line-timed LRC string can contain successive line timestamps without newline characters:
+
+```text
+[00:07.450]First line[00:10.790]Second line[00:14.90]Third line
+```
+
+Each line timestamp starts a displayed lyric line. Fractional timestamps with different precision are accepted. This normalization is not a blanket replacement of every time marker: enhanced LRC word timing and other word-by-word formats must retain their words within the original line.
+
+## Bold and italic
+
+Basic inline emphasis is supported:
+
+```text
+You're *italic*, I'm in **bold**
+```
+
+Italic text is slanted with clearance at the end so the following text does not collide with it. Bold text is displayed in uppercase with heavier styling. Nested emphasis is supported; this is not a full Markdown document renderer and arbitrary HTML is not executed.
+
+Formatting markers do not become sung words or change lyric timing. The renderer preserves text-to-word offsets and applies styles to the relevant spans. Uppercasing is a presentation choice, not a rewrite of the source lyric file.
+
+## Troubleshooting and development
+
+Check the sidecar filename, encoding, format, timestamps, and selected format priority. A track with no sidecar, embedded lyrics, or server lyrics will not gain lyrics through an automatic public lookup.
+
+Parsing and emphasis helpers live under `src/utils/lyric/`; source resolution is under `src/services/lyric/`. Regression coverage must include compact LRC, enhanced word timing, emphasis across word boundaries, spaces after emphasis, translations, and untrusted markup. Pause animation work when the player is hidden.

@@ -1,31 +1,42 @@
-# 流媒体服务
+# Media servers
 
-除本地音乐与在线音源外，SPlayer-Next 还支持接入自建的流媒体服务器，直接访问你私有曲库。
+SPlayer-Z can play your local library without network access and can optionally connect to servers you own or are authorized to access. Configure them in **Settings → Media Sources**.
 
-## 支持的服务
+## Supported server families
 
-| 类型            | 说明                                                                 |
-| --------------- | -------------------------------------------------------------------- |
-| **Subsonic 系** | Navidrome、OpenSubsonic、Airsonic、Gonic、LMS 等兼容 Subsonic 的服务 |
-| **Jellyfin**    | 开源媒体服务器                                                       |
-| **Emby**        | 媒体服务器                                                           |
+| Server                                                  | Adapter             |
+| ------------------------------------------------------- | ------------------- |
+| Subsonic, Navidrome, OpenSubsonic, Airsonic, Gonic, LMS | Subsonic-compatible |
+| Jellyfin                                                | Jellyfin            |
+| Emby                                                    | Emby                |
 
-> Subsonic 系服务共享同一套协议，差异仅体现在界面标签上。
+Compatibility depends on the server version, enabled APIs, and account permissions. These are personal media-server connections, not public KG/QM music-platform logins.
 
-## 添加服务器
+## Connect and synchronize
 
-1. 打开 **设置 → 流媒体**，开启流媒体总开关；
-2. 新增一个服务器，选择类型（Subsonic / Jellyfin / Emby）；
-3. 填写服务器地址、用户名与密码；
-4. 保存后会自动尝试连接，连接成功即可在侧边栏浏览该服务器的歌曲、专辑、歌手与歌单。
+1. Enable media sources if disabled.
+2. Add the server type, address, and account credentials.
+3. Test the connection, then connect and choose the active server.
+4. Let synchronization finish before expecting the full library in browse pages and global search.
 
-支持配置**多个服务器**并在它们之间切换；浏览数据会本地缓存，二次进入更快。
+Songs, albums, artists, and playlists are synchronized into a local SQLite snapshot. A failed or interrupted synchronization preserves the previous completed snapshot instead of publishing a partial library. The renderer reads that snapshot rather than making direct authenticated server requests.
 
-::: tip 凭据安全
-服务器凭据优先由主进程使用系统的 `safeStorage` 加密后保存在本地，`accessToken` / `userId` 不落盘，会在每次连接时重新获取。若当前系统环境无法使用安全存储，应用会记录警告并退化为 Base64 编码保存；Base64 不等同于加密，此时应确保设备与本地用户目录可信。
-:::
+## Playback and identity
 
-## 常见问题
+The main process resolves authenticated playback and cover requests. Server-backed tracks retain their originating server ID; identical track IDs from different servers are not interchangeable. Credentials and session tokens must not be embedded in renderer-visible cover URLs.
 
-- **连接失败**：检查服务器地址是否包含正确的协议（`http://` / `https://`）与端口，以及账号密码是否正确。
-- **歌曲无法播放**：确认服务器本身可正常转码 / 直链，并检查网络是否可达。
+Changing a server's media identity invalidates the corresponding media revision used by playback, caches, and completed downloads. Renaming a server does not change that identity or interrupt playback.
+
+Server favorites use the server's returned state. Listening reports are driven by actual playback: Jellyfin/Emby sessions and Subsonic now-playing/scrobble reports are not generated merely by preloading or downloading a file.
+
+## Caching and downloads
+
+Song caching is controlled under **Settings → Local & Cache**. Server-backed caching and authorized original-file downloads remain available where supported by the server and account. The removed public-catalog Downloads page is not required for these operations.
+
+Cached metadata is not cached audio. A synchronized song still needs the server unless its audio is available locally. Server permissions, original-file endpoints, and authentication can affect downloads independently of playback.
+
+## Security and diagnostics
+
+Prefer HTTPS, particularly outside a trusted local network. Passwords are stored using Electron `safeStorage` when available. If it is unavailable, streaming credentials fall back to Base64 and a local warning is logged. Base64 is not encryption; protect and back up the application data accordingly.
+
+For failures, check the URL, certificate, credentials, server permissions, synchronization state, and active server. Share redacted logs and server versions, never passwords or access tokens.

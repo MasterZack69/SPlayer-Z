@@ -103,7 +103,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { useData } from "vitepress";
 import { DOWNLOAD_PAGE_COPY } from "../locales/downloadPage";
 import {
   parseDownloadAsset,
@@ -112,7 +111,7 @@ import {
   type DownloadAsset,
 } from "../utils/downloadAssets";
 
-const GITHUB_REPO = "SPlayer-Dev/SPlayer-Next";
+const GITHUB_REPO = "MasterZack69/SPlayer-Z";
 const releasesUrl = `https://github.com/${GITHUB_REPO}/releases`;
 
 interface Release {
@@ -124,8 +123,7 @@ interface Release {
 
 type ReleaseChannel = "stable" | "beta" | "alpha";
 
-const { lang } = useData();
-const copy = computed(() => DOWNLOAD_PAGE_COPY[lang.value.startsWith("en") ? "en" : "zh"]);
+const copy = computed(() => DOWNLOAD_PAGE_COPY.en);
 const channels = computed(() =>
   (["stable", "beta", "alpha"] as const).map((id) => ({
     id,
@@ -149,29 +147,38 @@ const mirror = ref("");
 const userPlatform = ref("");
 const userArch = ref("");
 
+/** Apply the selected mirror to a release URL.
+ * @param url - Direct GitHub asset URL.
+ */
 const mirrored = (url: string): string => (mirror.value ? mirror.value + url : url);
 
+/** Format an asset size for display.
+ * @param bytes - Release asset size in bytes.
+ */
 const formatSize = (bytes: number): string =>
   bytes ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : "";
 
 const PLATFORM_ORDER = ["Windows", "macOS", "Linux"];
 
-/** Arch Linux 小节在中英文页面中的锚点相同 */
-const archGuideUrl = computed(() =>
-  lang.value.startsWith("en") ? "/en/download.html#arch-linux" : "/download.html#arch-linux",
-);
+const archGuideUrl = "/download#nixos-and-nix";
 
 const currentChannel = computed(
   () => channels.value.find((entry) => entry.id === channel.value) ?? channels.value[0],
 );
 
+/** Return the English package-format label.
+ * @param asset - Parsed release package.
+ */
 const assetLabel = (asset: DownloadAsset): string => {
   return copy.value.formats[asset.format as keyof typeof copy.value.formats] ?? asset.format;
 };
 
+/** Return the display name for an asset architecture.
+ * @param arch - Detected asset architecture.
+ */
 const archLabel = (arch: string): string => (arch === "universal" ? copy.value.universal : arch);
 
-/** 当前通道最新版本 */
+/** Latest release in the selected channel. */
 const release = computed(() => {
   return (
     releases.value.find((entry) => {
@@ -190,7 +197,7 @@ const assets = computed<DownloadAsset[]>(() =>
   ),
 );
 
-/** 按固定平台顺序分组 */
+/** Group packages in a stable platform order. */
 const grouped = computed(() =>
   PLATFORM_ORDER.map((platform) => ({
     platform,
@@ -198,11 +205,12 @@ const grouped = computed(() =>
   })).filter((group) => group.assets.length > 0),
 );
 
-/** 当前系统的推荐下载：匹配平台，并尽量匹配架构 */
+/** Recommend downloads matching the current platform and architecture. */
 const recommended = computed(() => {
   return selectRecommendedAssets(assets.value, userPlatform.value, userArch.value);
 });
 
+/** Detect the browser platform for download recommendations. */
 const detectEnvironment = (): void => {
   if (typeof navigator === "undefined") return;
   const ua = navigator.userAgent.toLowerCase();
@@ -212,6 +220,7 @@ const detectEnvironment = (): void => {
   userArch.value = ua.includes("arm64") || ua.includes("aarch64") ? "ARM64" : "x64";
 };
 
+/** Fetch release metadata from this fork and expose request failures. */
 const fetchRelease = async (): Promise<void> => {
   try {
     const response = await fetch(
