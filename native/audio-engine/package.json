@@ -5,11 +5,21 @@
   "types": "index.d.ts",
   "napi": {
     "binaryName": "audio-engine",
-    "triples": {}
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ]
   },
   "scripts": {
     "build": "napi build --release --no-const-enum",
     "build:debug": "napi build --no-const-enum",
     "test:integration": "node --test --test-concurrency=1 tests/*.cjs"
-  }
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
 }

@@ -1,11 +1,11 @@
 import { app, Menu, MenuItemConstructorOptions, nativeTheme, Tray } from "electron";
 import type { RepeatMode, ShuffleMode } from "@shared/types/player";
 import { sendToMain } from "@main/utils/broadcast";
-import { appName, isWin } from "@main/utils/config";
+import { appName } from "@main/utils/config";
 import { loadIcon, loadThemedIcon } from "@main/utils/icon";
 import { t } from "@main/utils/i18n";
 import { trayLog } from "@main/utils/logger";
-import { toggleTaskbarLyricWindow, focusMainWindow } from "@main/window";
+import { focusMainWindow } from "@main/window";
 
 type PlayState = "playing" | "paused";
 
@@ -15,9 +15,6 @@ let songName = "";
 let liked = false;
 let repeatMode: RepeatMode = "list";
 let shuffleMode: ShuffleMode = "off";
-let desktopLyricOpen = false;
-let dynamicIslandOpen = false;
-let taskbarLyricOpen = false;
 
 const repeatLabel = (mode: RepeatMode): string =>
   ({ list: t("repeatList"), one: t("repeatOne") })[mode];
@@ -105,15 +102,7 @@ const buildMenu = (): Menu => {
     },
     { type: "separator" },
     // 任务栏歌词
-    ...(isWin
-      ? [
-          {
-            label: taskbarLyricOpen ? t("closeTaskbarLyric") : t("openTaskbarLyric"),
-            icon: menuIcon("lyric"),
-            click: () => toggleTaskbarLyricWindow(),
-          },
-        ]
-      : []),
+    ...[],
     { type: "separator" },
     {
       label: t("quit"),
@@ -133,16 +122,7 @@ export const refreshTray = (): void => {
 
 /** 初始化系统托盘 */
 export const initTray = (): void => {
-  const isMac = process.platform === "darwin";
-  let icon: string | Electron.NativeImage;
-  if (isWin) {
-    icon = loadIcon("tray/tray.ico");
-  } else if (isMac) {
-    icon = loadIcon("tray/tray-light.png", { width: 19, height: 19 });
-    icon.setTemplateImage(true);
-  } else {
-    icon = loadIcon("tray/tray@32.png", { width: 20, height: 20 });
-  }
+  const icon = loadIcon("tray/tray@32.png", { width: 20, height: 20 });
   tray = new Tray(icon);
   tray.setToolTip(appName);
   tray.setContextMenu(buildMenu());
@@ -196,28 +176,6 @@ export const getTrayPlayMode = (): { repeat: RepeatMode; shuffle: ShuffleMode } 
 export const setTrayLikeState = (value: boolean): void => {
   if (liked === value) return;
   liked = value;
-  refreshTray();
-};
-
-/** 同步桌面歌词窗口开关状态到托盘 */
-export const setTrayDesktopLyric = (open: boolean): void => {
-  if (desktopLyricOpen === open) return;
-  desktopLyricOpen = open;
-  refreshTray();
-};
-
-/** 同步灵动岛窗口开关状态到托盘 */
-export const setTrayDynamicIsland = (open: boolean): void => {
-  if (dynamicIslandOpen === open) return;
-  dynamicIslandOpen = open;
-  refreshTray();
-};
-
-/** 同步任务栏歌词窗口开关状态到托盘 */
-export const setTrayTaskbarLyric = (open: boolean): void => {
-  if (!isWin) return;
-  if (taskbarLyricOpen === open) return;
-  taskbarLyricOpen = open;
   refreshTray();
 };
 

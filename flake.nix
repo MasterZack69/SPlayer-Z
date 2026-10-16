@@ -5,9 +5,9 @@
   };
 
   outputs =
-    { nixpkgs, systems, ... }:
+    { nixpkgs, ... }:
     let
-      eachSystem = nixpkgs.lib.genAttrs (import systems);
+      eachSystem = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
     in
     {
       packages = eachSystem (
@@ -70,9 +70,6 @@
             postPatch = ''
               # Workaround for https://github.com/electron/electron/issues/31121
               substituteInPlace electron/main/utils/nativeLoader.ts \
-                --replace-fail 'process.resourcesPath' "'$out/share/splayer-next/resources'"
-
-              substituteInPlace electron/main/services/recognition/fingerprint.ts \
                 --replace-fail 'process.resourcesPath' "'$out/share/splayer-next/resources'"
 
               sed -i '/^[[:space:]]*\.atleast_version/d' \
@@ -138,7 +135,7 @@
                 type = "Application";
                 icon = "splayer-next";
                 startupWMClass = "top.imsyy.splayer_next";
-                comment = "Cross-platform desktop music player with rich lyric support and wide audio format compatibility";
+                comment = "Linux desktop music player with rich lyric support and wide audio format compatibility";
                 categories = [
                   "AudioVideo"
                   "Audio"
@@ -150,11 +147,11 @@
             ];
 
             meta = {
-              description = "Cross-platform desktop music player with rich lyric support";
+              description = "Linux desktop music player with rich lyric support";
               homepage = "https://splayer-next.imsyy.top";
               license = lib.licenses.agpl3Only;
               mainProgram = "splayer-next";
-              platforms = lib.platforms.linux;
+              platforms = [ "x86_64-linux" "aarch64-linux" ];
             };
           });
         in

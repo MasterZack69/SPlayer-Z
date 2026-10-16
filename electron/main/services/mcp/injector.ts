@@ -1,10 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { app } from "electron";
 import type { McpAgentApp, McpClientConfigParams } from "@shared/types/settings";
 import { nativeLog } from "@main/utils/logger";
-import { isLinux, isMac, isWin } from "@main/utils/config";
 
 interface AgentDefinition {
   id: string;
@@ -15,17 +13,12 @@ interface AgentDefinition {
   injectable?: boolean;
 }
 
-const getAppDataPath = () => app.getPath("appData");
-
 const SUPPORTED_AGENTS: AgentDefinition[] = [
   {
     id: "codex",
     name: "Codex",
     getConfigPath: () => path.join(os.homedir(), ".codex", "config.toml"),
-    getInstallPaths: () => [
-      path.join(os.homedir(), ".codex"),
-      ...(isWin ? [path.join(getAppDataPath(), "..", "Local", "OpenAI", "Codex")] : []),
-    ],
+    getInstallPaths: () => [path.join(os.homedir(), ".codex")],
     format: "toml",
   },
   {
@@ -38,32 +31,7 @@ const SUPPORTED_AGENTS: AgentDefinition[] = [
     id: "cursor",
     name: "Cursor",
     getConfigPath: () => path.join(os.homedir(), ".cursor", "mcp.json"),
-    getInstallPaths: () => [
-      path.join(os.homedir(), ".cursor"),
-      ...(isWin ? [path.join(getAppDataPath(), "..", "Local", "Programs", "cursor")] : []),
-    ],
-  },
-  {
-    id: "claudedesktop",
-    name: "Claude Desktop",
-    getConfigPath: () => {
-      if (isWin) {
-        return path.join(getAppDataPath(), "Claude", "claude_desktop_config.json");
-      }
-      return path.join(
-        os.homedir(),
-        "Library",
-        "Application Support",
-        "Claude",
-        "claude_desktop_config.json",
-      );
-    },
-    getInstallPaths: () => [
-      isWin
-        ? path.join(getAppDataPath(), "Claude")
-        : path.join(os.homedir(), "Library", "Application Support", "Claude"),
-    ],
-    injectable: false,
+    getInstallPaths: () => [path.join(os.homedir(), ".cursor")],
   },
   {
     id: "codebuddy",
@@ -81,29 +49,12 @@ const SUPPORTED_AGENTS: AgentDefinition[] = [
         path.join(os.homedir(), ".gemini", "antigravity-ide"),
         path.join(os.homedir(), ".gemini", "antigravity-cli"),
       ];
-      if (isWin) {
-        return [
-          ...userInstallPaths,
-          path.join(getAppDataPath(), "Antigravity"),
-          path.join(getAppDataPath(), "..", "Local", "Programs", "Antigravity"),
-          path.join(getAppDataPath(), "..", "Local", "Antigravity"),
-        ];
-      }
-      if (isMac) {
-        return [
-          ...userInstallPaths,
-          "/Applications/Antigravity.app",
-          path.join(os.homedir(), "Applications", "Antigravity.app"),
-        ];
-      }
-      if (isLinux) {
-        return [
-          ...userInstallPaths,
-          path.join(os.homedir(), ".config", "Antigravity"),
-          "/opt/Antigravity",
-        ];
-      }
-      return userInstallPaths;
+
+      return [
+        ...userInstallPaths,
+        path.join(os.homedir(), ".config", "Antigravity"),
+        "/opt/Antigravity",
+      ];
     },
     format: "antigravity",
   },

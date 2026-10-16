@@ -64,7 +64,7 @@ const encryptPassword = (password: string): string => {
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error("系统安全存储不可用，无法保存流媒体密码");
   }
-  if (process.platform === "linux" && safeStorage.getSelectedStorageBackend() === "basic_text") {
+  if (safeStorage.getSelectedStorageBackend() === "basic_text") {
     throw new Error("请启用系统密钥环后保存流媒体密码");
   }
   return `safe:v1:${safeStorage.encryptString(password).toString("base64")}`;

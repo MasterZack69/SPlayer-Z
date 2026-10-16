@@ -6,19 +6,17 @@ SPlayer-Z uses Rust and NAPI-RS for decoding, output, metadata, and operating-sy
 
 `scripts/build-native.ts` builds:
 
-| Module              | Responsibility                                                 | Platforms               |
-| ------------------- | -------------------------------------------------------------- | ----------------------- |
-| `audio-engine`      | FFmpeg decoding, CPAL output, DSP, metadata, covers and lyrics | Current desktop targets |
-| `media-ctrl`        | System media controls and Discord integration                  | Current desktop targets |
-| `opencc`            | Text conversion used by lyric settings                         | Current desktop targets |
-| `taskbar-lyric`     | Taskbar lyric integration                                      | Windows only            |
-| `taskbar-thumbnail` | Taskbar thumbnail integration                                  | Windows only            |
+| Module         | Responsibility                                                 | Platforms              |
+| -------------- | -------------------------------------------------------------- | ---------------------- |
+| `audio-engine` | FFmpeg decoding, CPAL output, DSP, metadata, covers and lyrics | x86_64 / aarch64 Linux |
+| `media-ctrl`   | System media controls and Discord integration                  | x86_64 / aarch64 Linux |
+| `opencc`       | Text conversion used by lyric settings                         | x86_64 / aarch64 Linux |
 
-An old module directory or declaration is not proof that a feature is still built. In particular, audio capture for recognition is not part of the active native build list. Do not re-enable removed subsystems to satisfy a stale reference.
+Recognition capture and Windows taskbar modules have been deleted. Do not re-enable removed subsystems to satisfy a stale reference.
 
 ## Audio architecture
 
-`audio-engine` decodes through `ffmpeg_audio` and outputs through **CPAL**, with Linux PipeWire/PulseAudio support. Windows exclusive output uses WASAPI directly. DSP includes equalization, normalization, speed/pitch processing, limiting, and FFT.
+`audio-engine` decodes through `ffmpeg_audio` and outputs through **CPAL**, with Linux PipeWire/PulseAudio support. Only x86_64 and aarch64 Linux are supported; the obsolete WASAPI, CoreAudio, Windows taskbar, and recognition capture modules have been removed. DSP includes equalization, normalization, speed/pitch processing, limiting, and FFT.
 
 Loading and cancellation use generation ownership so a late decoder result cannot replace a newer track. Streaming HTTP sources and authentication resolution must preserve cancellation and avoid exposing credentials to the renderer.
 
@@ -37,7 +35,7 @@ cargo check --all-targets --locked
 cargo test --locked
 ```
 
-`--all-targets` checks Cargo targets for the current host; it does not require testing Windows from a Linux host. Windows-specific dependencies must remain target-gated.
+`--all-targets` checks the current Linux host. CI runs native tests and packaging on separate x64 and ARM64 Linux runners. No cross-platform compatibility backend is maintained.
 
 ## Generated declarations
 

@@ -1,7 +1,7 @@
 //! 本地文件标签读写（lofty）
 //!
 //! 写入安全策略：复制原文件到同目录临时文件 → 修改临时文件 → 原子 rename 覆盖原文件。
-//! Windows 下 std::fs::rename 使用 MOVEFILE_REPLACE_EXISTING，可覆盖已存在目标。
+//! Linux rename atomically replaces an existing target.
 //!
 //! 字段语义：
 //! - `None` = 不修改该字段
@@ -242,7 +242,7 @@ pub fn write_tags(request: &TagWriteRequest) -> Result<()> {
     fs::copy(original, &temp).context("创建临时副本失败")?;
 
     let applied = apply_to_file(&temp, request)
-        // Windows 下 rename 可原子覆盖已存在目标（MOVEFILE_REPLACE_EXISTING）
+        // Linux rename atomically replaces the existing file.
         .and_then(|()| fs::rename(&temp, original).context("覆盖原文件失败"));
     if applied.is_err() {
         let _ = fs::remove_file(&temp);

@@ -12,7 +12,7 @@ const commandLine = (values: Record<string, string> = {}) => ({
 describe("native Wayland graphics", () => {
   it("disables Vulkan and preserves other disabled features", () => {
     const cli = commandLine({ "disable-features": "SpareRendererForSitePerProcess,Example" });
-    configureLinuxGraphics(cli, "linux", { WAYLAND_DISPLAY: "wayland-1" });
+    configureLinuxGraphics(cli, { WAYLAND_DISPLAY: "wayland-1" });
     expect(cli.getSwitchValue("disable-features")).toBe(
       "SpareRendererForSitePerProcess,Example,Vulkan",
     );
@@ -21,27 +21,22 @@ describe("native Wayland graphics", () => {
   });
   it("honors an explicit X11 override in a Wayland session", () => {
     const cli = commandLine({ "ozone-platform": "x11" });
-    configureLinuxGraphics(cli, "linux", { WAYLAND_DISPLAY: "wayland-1" });
+    configureLinuxGraphics(cli, { WAYLAND_DISPLAY: "wayland-1" });
     expect(cli.appendSwitch).not.toHaveBeenCalled();
   });
   it("handles automatic Ozone selection in a Wayland session", () => {
     const cli = commandLine({ "ozone-platform": "auto" });
-    configureLinuxGraphics(cli, "linux", { WAYLAND_DISPLAY: "wayland-1" });
+    configureLinuxGraphics(cli, { WAYLAND_DISPLAY: "wayland-1" });
     expect(cli.appendSwitch).toHaveBeenCalledWith("disable-vulkan");
   });
   it("handles explicit Wayland without environment detection", () => {
     const cli = commandLine({ "ozone-platform": "wayland" });
-    configureLinuxGraphics(cli, "linux", {});
+    configureLinuxGraphics(cli, {});
     expect(cli.appendSwitch).toHaveBeenCalledWith("disable-vulkan");
-  });
-  it.each(["darwin", "win32"])("leaves %s graphics unchanged", (platform) => {
-    const cli = commandLine();
-    configureLinuxGraphics(cli, platform, { WAYLAND_DISPLAY: "wayland-1" });
-    expect(cli.appendSwitch).not.toHaveBeenCalled();
   });
   it("leaves ordinary X11 sessions unchanged", () => {
     const cli = commandLine();
-    configureLinuxGraphics(cli, "linux", { DISPLAY: ":0" });
+    configureLinuxGraphics(cli, { DISPLAY: ":0" });
     expect(cli.appendSwitch).not.toHaveBeenCalled();
   });
 });

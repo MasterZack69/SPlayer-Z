@@ -1,8 +1,14 @@
 //! OpenCC 中文简繁转换原生模块（基于 ferrous-opencc）
 //! 通过 NAPI-RS 暴露给 Node.js，作为 Electron 主进程的原生模块。
 
-use ferrous_opencc::config::BuiltinConfig;
+#[cfg(not(all(
+    target_os = "linux",
+    any(target_arch = "x86_64", target_arch = "aarch64")
+)))]
+compile_error!("SPlayer supports only x86_64 and aarch64 Linux");
+
 use ferrous_opencc::OpenCC;
+use ferrous_opencc::config::BuiltinConfig;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::collections::HashMap;
@@ -79,9 +85,7 @@ pub fn convert(text: String, config: String) -> Result<String> {
         )
     })?;
 
-    with_opencc(&normalized_config, builtin, |opencc| {
-        opencc.convert(&text)
-    })
+    with_opencc(&normalized_config, builtin, |opencc| opencc.convert(&text))
 }
 
 /// 批量转换文本列表

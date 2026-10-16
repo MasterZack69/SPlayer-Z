@@ -10,7 +10,6 @@ import {
   REPO_NAME,
   HOMEPAGE_URL,
   COPYRIGHT_HOLDER,
-  IS_APPX,
   COMMIT_HASH,
   COMMIT_DATE,
 } from "@/utils/config";
@@ -144,9 +143,6 @@ onMounted(async () => {
         <div class="flex items-center gap-2 mr-auto">
           <span class="text-lg font-logo text-on-surface">{{ REPO_NAME }}</span>
           <STag type="primary" size="small" round>v{{ APP_VERSION }}</STag>
-          <STag v-if="IS_APPX" type="primary" size="small" round>
-            {{ t("settings.storeVersion") }}
-          </STag>
         </div>
         <div class="flex items-center gap-2">
           <SButton
@@ -157,13 +153,11 @@ onMounted(async () => {
           >
             <template #icon><IconLucideRefreshCw /></template>
             {{
-              IS_APPX
-                ? t("update.goStore")
-                : update.hasUpdate
-                  ? t("settings.about.newVersion")
-                  : checking
-                    ? t("settings.about.checking")
-                    : t("settings.about.checkUpdate")
+              update.hasUpdate
+                ? t("settings.about.newVersion")
+                : checking
+                  ? t("settings.about.checking")
+                  : t("settings.about.checkUpdate")
             }}
           </SButton>
           <SButton variant="secondary" @click="handleOpenLogs">

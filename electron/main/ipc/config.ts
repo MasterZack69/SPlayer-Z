@@ -14,13 +14,10 @@ import {
   setEqualizerEnabled,
   setEqualizerBands,
   setPreampGain,
-  setExclusiveMode,
 } from "@main/services/engine";
-import { setTaskbarProgress, applyMainWindowZoom, applyTaskbarLyricLayout } from "@main/window";
-import { broadcast } from "@main/utils/broadcast";
-import { isWin } from "@main/utils/config";
+import { setTaskbarProgress, applyMainWindowZoom } from "@main/window";
+
 import { setOrpheusProtocolRegistered } from "@main/services/orpheus";
-import { setTaskbarThumbnailEnabled } from "@main/services/thumbnail";
 import { getUpdateState, syncUpdateChannel } from "@main/services/updater";
 import { UPDATE_CHANNELS } from "@shared/types/settings";
 
@@ -60,17 +57,8 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
     case "player.equalizer.preamp":
       setPreampGain(value as number);
       break;
-    case "player.audioOutputMode":
-      // 独占模式仅 Windows 引擎支持；切模式后重建输出立即生效
-      if (isWin) {
-        setExclusiveMode(value === "exclusive");
-      }
-      break;
     case "system.taskbarProgress":
       if (!value) setTaskbarProgress(-1);
-      break;
-    case "system.taskbarThumbnailCover":
-      setTaskbarThumbnailEnabled(value as boolean);
       break;
     case "system.registerOrpheusProtocol":
       setOrpheusProtocolRegistered(value as boolean);
@@ -78,18 +66,6 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
     case "system.uiZoom":
       applyMainWindowZoom();
       break;
-    case "taskbarLyric.position":
-    case "taskbarLyric.autoMaxWidth":
-    case "taskbarLyric.autoAdjustOccupiedSpace":
-    case "taskbarLyric.maxWidth":
-    case "taskbarLyric.leftMargin":
-    case "taskbarLyric.rightMargin":
-      if (isWin) applyTaskbarLyricLayout();
-      break;
-  }
-  // 任务栏歌词配置变更广播到所有窗口（仅 Windows）
-  if (isWin && keyPath.startsWith("taskbarLyric.")) {
-    broadcast("taskbarLyric:configChange", store.get("taskbarLyric"));
   }
 };
 

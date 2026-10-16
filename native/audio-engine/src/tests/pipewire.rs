@@ -27,12 +27,10 @@ fn pipewire_real_output_rate_matrix() {
         let output = AudioOutput::new(
             None,
             Some(rate),
-            Some(16),
             1,
             Arc::new(move || {
                 errors.fetch_add(1, Ordering::Relaxed);
             }),
-            None,
         )
         .unwrap();
         let (output, shared, playback) =

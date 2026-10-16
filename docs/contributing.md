@@ -42,7 +42,7 @@ pnpm test
 pnpm build
 ```
 
-For native changes, rebuild the module and run the appropriate Cargo and integration tests. Linux audio changes should include [PipeWire diagnostics](/troubleshooting/nix). No Windows testing is required for a Linux-only change, but keep platform boundaries correct.
+For native changes, rebuild the module and run the appropriate Cargo and integration tests. Linux audio changes should include [PipeWire diagnostics](/troubleshooting/nix). Only x86_64 and ARM64 Linux are supported. Run host-native checks and preserve both Linux CI targets; do not add Windows or macOS fallback code.
 
 For UI work, test narrow and wide windows, keyboard and pointer interaction, and state persistence. For rendering, caching, or IPC changes, compare real main-process memory samples from `app.getAppMetrics()` before and after; browser-only previews do not replace Electron memory measurements. If a check cannot run, say why rather than claiming it passed.
 

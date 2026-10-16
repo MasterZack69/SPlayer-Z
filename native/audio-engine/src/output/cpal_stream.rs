@@ -45,7 +45,6 @@ where
 {
     let mut xruns = 0_u64;
     let stream = {
-        #[cfg(target_os = "linux")]
         let _props_guard =
             super::pipewire::pipewire_props::Guard::set_stream_props(config.sample_rate);
 
@@ -76,11 +75,8 @@ where
                     return;
                 }
                 let err_msg = error.to_string();
-                // 设备失效的两种上报文本：默认设备监听的 "no longer valid"，以及绑定端点被拔出时
-                // GetCurrentPadding 返回 0x88890004 (AUDCLNT_E_DEVICE_INVALIDATED) 的十进制 OS Error。
-                // 均属预期失效，重建即可
-                let invalidated =
-                    err_msg.contains("no longer valid") || err_msg.contains("-2004287484");
+                // An invalidated Linux endpoint needs a fresh output stream.
+                let invalidated = err_msg.contains("no longer valid");
                 if invalidated {
                     info!("音频输出流因设备切换失效，准备重建");
                 } else {

@@ -86,12 +86,6 @@ export declare class AudioPlayer {
    * 旧配置存的是显示名，此处原样返回，由 `open_device` 回退解析
    */
   getSelectedDeviceName(): string | null
-  /**
-   * 设置音频输出模式为 WASAPI 独占（仅 Windows 生效，立即重建设备）
-   *
-   * 设备被占用或格式不支持时自动回退共享模式，并通过 outputFallback 事件通知
-   */
-  setExclusiveMode(enabled: boolean): Promise<void>
   /** 注册事件回调，Rust 侧会在状态变化、位置更新、播放结束时主动调用 */
   onEvent(callback: (event: JsPlayerEvent) => void): void
   /** 当前平台是否支持原生音频设备监听 */
@@ -183,9 +177,7 @@ export interface JsAudioDevice {
 export interface JsAudioStreamInfo {
   /** 当前生效的音频输出设备名称 */
   deviceName: string
-  /** 是否为独占模式输出 */
-  isExclusive: boolean
-  /** 实际输出流采样率（Hz） */
+  /** Negotiated output sample rate in Hz. */
   outputSampleRate: number
   /** 实际输出流声道数 */
   outputChannels: number
@@ -230,10 +222,10 @@ export interface JsMusicMetadata {
   title?: string
   artist?: string
   album?: string
-  /** 注释/副标题 */
-  comment?: string
   /** 流派原始标签文本（可能包含多个流派，由 JS 侧解析拆分） */
   genre?: string
+  /** 注释/副标题 */
+  comment?: string
   /** 时长（秒） */
   duration: number
   /** 播放采样率（重采样后） */

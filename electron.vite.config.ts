@@ -44,10 +44,7 @@ export default defineConfig({
         "@main": resolve(__dirname, "electron/main"),
         "@shared": resolve(__dirname, "shared"),
         "@splayer/audio-engine": resolve(__dirname, "native/audio-engine"),
-        "@splayer/audio-capture": resolve(__dirname, "native/audio-capture"),
         "@splayer/media-ctrl": resolve(__dirname, "native/media-ctrl"),
-        "@splayer/taskbar-lyric": resolve(__dirname, "native/taskbar-lyric"),
-        "@splayer/taskbar-thumbnail": resolve(__dirname, "native/taskbar-thumbnail"),
         "@splayer/opencc": resolve(__dirname, "native/opencc"),
       },
     },
@@ -84,7 +81,6 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "index.html"),
-          "taskbar-lyric": resolve(__dirname, "windows/taskbar-lyric/index.html"),
         },
       },
     },
@@ -92,7 +88,6 @@ export default defineConfig({
       alias: {
         "@": resolve("src"),
         "@shared": resolve(__dirname, "shared"),
-        "@windows": resolve(__dirname, "windows"),
         "@root": resolve(__dirname),
       },
     },

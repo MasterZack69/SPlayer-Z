@@ -20,26 +20,12 @@ time = { workspace = true }
 discord-rich-presence = "1.0"
 url = "2.5"
 
-[build-dependencies]
-napi-build = { workspace = true }
-
-# Windows
-[target.'cfg(target_os = "windows")'.dependencies.windows]
-workspace = true
-features = ["Media_Playback", "Storage_Streams", "Win32_System_Com"]
-
-# Linux
-[target.'cfg(target_os = "linux")'.dependencies]
 mpris-server = "0.9"
 tempfile = "3.24"
 
-# macOS
-[target.'cfg(target_os = "macos")'.dependencies]
-block2 = "0.6"
-objc2 = "0.6"
-objc2-app-kit = "0.3"
-objc2-foundation = "0.3"
-objc2-media-player = "0.3"
+
+[build-dependencies]
+napi-build = { workspace = true }
 
 [lints]
 workspace = true

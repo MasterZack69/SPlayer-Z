@@ -37,7 +37,6 @@ impl AudioPlayer {
             current_source,
             was_playing,
             original_sample_rate: _,
-            original_bits: _,
             output,
             fft,
             token,

@@ -10,11 +10,11 @@ Write all review comments, suggestions, and summaries in **English**. Commit mes
 
 **Real problems first; style preferences last.** Prioritize:
 
-- Runtime bugs, races, and memory/resource leaks: IPC listeners not cleaned up by finite-lifetime consumers, RAF loops, ResizeObserver instances, and Windows event hooks
+- Runtime bugs, races, and memory/resource leaks: IPC listeners not cleaned up by finite-lifetime consumers, RAF loops, ResizeObserver instances, and Linux device monitors
 - Mismatches between types and implementations, such as preload API declarations that differ from resolved values
 - Main-process resource lifetimes: duplicate cleanup outside a window's `closed` event can cause double `stop()` calls or broadcasts
 - Hard-coded values that override user settings: verify configuration reaches the underlying module
-- Native COM lifetimes: check the return value of `CoInitializeEx`; call `CoUninitialize` only when initialization succeeded. See the `should_uninitialize` pattern in `native/taskbar-lyric/src/uia.rs`.
+- Linux-only boundaries: reject unsupported platforms/architectures before builds and preserve native x86_64 and ARM64 CI coverage.
 - Lock duration: clone an `Arc` and release the `Mutex` before invoking callbacks to avoid blocking other access or causing reentrant deadlocks
 - Renderer persistence: do not put `TrackDetail` or large lyric strings in sessionStorage
 - Consistent use of `@shared/*` types across processes

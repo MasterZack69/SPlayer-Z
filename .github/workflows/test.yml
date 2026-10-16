@@ -41,37 +41,17 @@ jobs:
       - name: Test
         run: pnpm test
 
-  native-windows:
-    name: Native modules on Windows
-    runs-on: windows-latest
-    timeout-minutes: 40
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22.19.0
-          cache: pnpm
-
-      - name: Cache Rust build
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: native-windows
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Test Rust workspace
-        run: pnpm test:native
-
   native-linux:
-    name: Native modules on Linux
-    runs-on: ubuntu-latest
+    name: Native modules on Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     timeout-minutes: 40
     steps:
       - name: Checkout
@@ -83,7 +63,7 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: native-linux
+          shared-key: native-linux-${{ matrix.arch }}
 
       - name: Install native dependencies
         run: |
@@ -92,8 +72,8 @@ jobs:
             libasound2-dev libdbus-1-dev libpipewire-0.3-dev libpulse-dev pkg-config clang \
             pipewire pipewire-bin wireplumber dbus-daemon
 
-      - name: Check audio engine
-        run: cargo test -p audio-engine
+      - name: Test Linux native workspace
+        run: cargo test --workspace
 
       - name: Test PipeWire output
         run: bash scripts/test-pipewire.sh

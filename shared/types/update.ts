@@ -22,7 +22,7 @@ export interface UpdateMeta {
 }
 
 /** 当前安装形式支持的更新方式 */
-export type UpdateMode = "inApp" | "external" | "store";
+export type UpdateMode = "inApp" | "external";
 export type UpdateErrorSource = "check" | "download" | "install";
 
 /** 可恢复的完整更新快照，不包含安装包或下载器对象 */

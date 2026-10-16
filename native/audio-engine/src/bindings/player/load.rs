@@ -29,8 +29,6 @@ impl AudioPlayer {
             device_id,
             output_generation,
             failure_callback,
-            fallback_callback,
-            exclusive_mode,
             fft,
             equalizer,
             tempo,
@@ -40,8 +38,6 @@ impl AudioPlayer {
             let (old_threads, token) = player.take_for_async_load(handle.clone());
             let output_generation = player.reserve_output_generation();
             let failure_callback = player.make_failure_callback(output_generation);
-            let fallback_callback = player.make_fallback_callback(output_generation);
-            let exclusive_mode = player.is_exclusive_mode();
             (
                 prepared_playback,
                 old_threads,
@@ -52,8 +48,6 @@ impl AudioPlayer {
                 player.selected_device().map(String::from),
                 output_generation,
                 failure_callback,
-                fallback_callback,
-                exclusive_mode,
                 player.fft_handle(),
                 player.equalizer_handle(),
                 player.tempo_handle(),
@@ -82,22 +76,16 @@ impl AudioPlayer {
                 if load_token.load(std::sync::atomic::Ordering::Acquire) != token {
                     anyhow::bail!(LOAD_SUPERSEDED_REASON);
                 }
-                let (rate, bits) = if let Some(ready) = &prepared_playback {
-                    (
-                        ready.metadata.original_sample_rate,
-                        ready.metadata.bits_per_sample,
-                    )
+                let rate = if let Some(ready) = &prepared_playback {
+                    ready.metadata.original_sample_rate
                 } else {
-                    let prepared = prepared.as_ref().unwrap();
-                    (prepared.original_sample_rate(), prepared.bits_per_sample())
+                    prepared.as_ref().unwrap().original_sample_rate()
                 };
                 let output = output::AudioOutput::new(
                     device_id.as_deref(),
                     Some(rate),
-                    Some(bits),
                     output_generation,
                     failure_callback,
-                    exclusive_mode.then_some(&fallback_callback),
                 )?;
                 let buffer = prepared_playback
                     .as_ref()
@@ -121,7 +109,7 @@ impl AudioPlayer {
                             Some(ready.start_position),
                         ));
                     }
-                    // 独占回退或采样率改变后必须按最终设备格式重新解码
+                    // Re-decode using the final negotiated device sample rate.
                     drop(ready);
                     prepared = Some(decoder::prepare_decode(
                         &source_for_decoder,

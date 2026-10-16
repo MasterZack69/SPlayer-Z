@@ -106,9 +106,7 @@ pub struct JsPlayerStatus {
 pub struct JsAudioStreamInfo {
     /// 当前生效的音频输出设备名称
     pub device_name: String,
-    /// 是否为独占模式输出
-    pub is_exclusive: bool,
-    /// 实际输出流采样率（Hz）
+    /// Negotiated output sample rate in Hz.
     pub output_sample_rate: u32,
     /// 实际输出流声道数
     pub output_channels: u32,

@@ -31,8 +31,6 @@ impl AudioPlayer {
             output_generation,
             on_failure,
             device_id,
-            exclusive_mode,
-            on_fallback,
         ) = {
             let mut player = self.inner.lock();
             let position = player.position();
@@ -40,8 +38,6 @@ impl AudioPlayer {
             let device_id = player.selected_device().map(String::from);
             let output_generation = player.reserve_output_generation();
             let on_failure = player.make_failure_callback(output_generation);
-            let on_fallback = player.make_fallback_callback(output_generation);
-            let exclusive_mode = player.is_exclusive_mode();
             let seek_take = player.take_for_async_seek();
             let fallback_source = player.current_source().map(String::from);
             (
@@ -52,8 +48,6 @@ impl AudioPlayer {
                 output_generation,
                 on_failure,
                 device_id,
-                exclusive_mode,
-                on_fallback,
             )
         };
 
@@ -65,7 +59,6 @@ impl AudioPlayer {
                 current_source,
                 was_playing,
                 original_sample_rate,
-                original_bits,
                 output: old_output,
                 fft,
                 token,
@@ -82,10 +75,8 @@ impl AudioPlayer {
                 let output = match output::AudioOutput::new(
                     device_id.as_deref(),
                     Some(original_sample_rate),
-                    Some(original_bits),
                     output_generation,
                     on_failure,
-                    exclusive_mode.then_some(&on_fallback),
                 ) {
                     Ok(output) => output,
                     Err(error) => return ReinitOutcome::OutputFailed { error },
@@ -259,14 +250,5 @@ impl AudioPlayer {
     #[napi]
     pub fn get_selected_device_name(&self) -> Option<String> {
         self.inner.lock().selected_device().map(String::from)
-    }
-
-    /// 设置音频输出模式为 WASAPI 独占（仅 Windows 生效，立即重建设备）
-    ///
-    /// 设备被占用或格式不支持时自动回退共享模式，并通过 outputFallback 事件通知
-    #[napi]
-    pub async fn set_exclusive_mode(&self, enabled: bool) -> Result<()> {
-        self.inner.lock().set_exclusive_mode(enabled);
-        self.reinit_output().await
     }
 }

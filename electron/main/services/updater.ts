@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { sendToMain } from "@main/utils/broadcast";
 import { store } from "@main/store";
-import { isDev, isMac, isPortable, isAppX } from "@main/utils/config";
+import { isDev } from "@main/utils/config";
 import { updaterLog } from "@main/utils/logger";
 import type { UpdateEvent, UpdateMeta, UpdateMode, UpdateState } from "@shared/types/update";
 import { UPDATE_CHANNELS, type UpdateChannel } from "@shared/types/settings";
@@ -13,21 +13,19 @@ const { autoUpdater } = electronUpdater;
 const RELEASES_URL = "https://github.com/SPlayer-Dev/SPlayer-Next/releases";
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-/** 根据实际安装形式决定能力，解压版和开发环境只允许检查 */
+/** AppImage and package-manager builds may update in-app; development and unpacked builds open releases externally. */
 const getMode = (): UpdateMode => {
-  if (isAppX) return "store";
-  if (!app.isPackaged || isDev || isMac || isPortable) return "external";
-  if (process.platform === "win32") return "inApp";
-  if (process.platform === "linux") {
-    if (process.env.APPIMAGE) return "inApp";
-    const identity = join(process.resourcesPath, "package-type");
-    if (
-      existsSync(identity) &&
-      ["deb", "rpm", "pacman"].includes(readFileSync(identity, "utf8").trim())
-    ) {
-      return "inApp";
-    }
+  if (!app.isPackaged || isDev) return "external";
+
+  if (process.env.APPIMAGE) return "inApp";
+  const identity = join(process.resourcesPath, "package-type");
+  if (
+    existsSync(identity) &&
+    ["deb", "rpm", "pacman"].includes(readFileSync(identity, "utf8").trim())
+  ) {
+    return "inApp";
   }
+
   return "external";
 };
 
@@ -114,7 +112,7 @@ const toMeta = (info: UpdateInfo): UpdateMeta => {
  * @param manual - 手动检查允许重新获取下载失败的目标，避免 Nightly 覆盖后反复使用旧链接
  */
 const runCheck = (manual: boolean): void => {
-  if (disposed || state.mode === "store") return;
+  if (disposed) return;
   if (task) {
     if (task.generation !== generation)
       pendingCheck = { manual: manual || pendingCheck?.manual === true };
@@ -265,13 +263,11 @@ export const quitAndInstall = (): UpdateState => {
   return getUpdateState();
 };
 
-/** 下载链接来自已验证的检查结果，商店版交给商店管理。 */
+/** Open the verified release page or the selected Linux release channel. */
 export const openDownloadPage = (): void => {
   void shell.openExternal(
-    state.mode === "store"
-      ? "ms-windows-store://updates"
-      : (state.meta?.releaseUrl ??
-          (state.channel === "nightly" ? `${RELEASES_URL}/tag/nightly` : RELEASES_URL)),
+    state.meta?.releaseUrl ??
+      (state.channel === "nightly" ? `${RELEASES_URL}/tag/nightly` : RELEASES_URL),
   );
 };
 
@@ -311,8 +307,7 @@ export const initUpdater = (): void => {
   removeListeners();
   autoUpdater.on("download-progress", onProgress);
   autoUpdater.on("error", onError);
-  if (!isDev && state.mode !== "store")
-    intervalTimer = setInterval(() => checkForUpdates(false), CHECK_INTERVAL_MS);
+  if (!isDev) intervalTimer = setInterval(() => checkForUpdates(false), CHECK_INTERVAL_MS);
 };
 
 /** 退出时取消任务并解绑监听，不让迟到结果重新启动检查。 */

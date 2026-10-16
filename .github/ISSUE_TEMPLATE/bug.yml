@@ -40,7 +40,7 @@ body:
         提交: e2f0ce22
         构建时间: 2026-09-14 21:12:19
         Electron: 35.0.0
-        OS: Windows_NT x64 10.0.26100
+        OS: Linux x86_64 6.12
         ...
 
   - type: textarea

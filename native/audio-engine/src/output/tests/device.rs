@@ -2,14 +2,8 @@ use super::*;
 
 #[test]
 fn hides_synthetic_default_devices_from_the_selectable_list() {
-    assert_eq!(
-        is_synthetic_default_device("default_output"),
-        cfg!(target_os = "linux")
-    );
-    assert_eq!(
-        is_synthetic_default_device("default_sink"),
-        cfg!(target_os = "linux")
-    );
+    assert_eq!(is_synthetic_default_device("default_output"), true);
+    assert_eq!(is_synthetic_default_device("default_sink"), true);
 }
 
 #[test]

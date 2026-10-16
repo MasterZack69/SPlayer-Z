@@ -16,7 +16,7 @@ vi.mock("electron", () => ({
   ipcMain: { handle: mocks.handle, on: mocks.on },
 }));
 vi.mock("@main/store", () => ({ store: { get: vi.fn() } }));
-vi.mock("@main/utils/config", () => ({ isWin: false }));
+vi.mock("@main/utils/config", () => ({}));
 vi.mock("@main/utils/logger", () => ({ coreLog: { error: mocks.logError } }));
 vi.mock("@main/window", () => ({
   getMainWindow: () => ({ webContents: mocks.sender }),

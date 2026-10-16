@@ -6,7 +6,7 @@ fn persisted_device_name(device: &cpal::Device) -> Option<String> {
     device.description().ok().map(|desc| desc.name().to_owned())
 }
 
-/// 设备稳定 ID：WASAPI 端点 ID / CoreAudio UID / PipeWire node.name，跨重启和改名都稳定
+/// Stable Linux endpoint ID, independent of its display name.
 pub(super) fn device_id_string(device: &cpal::Device) -> Option<String> {
     device.id().ok().map(|id| id.to_string())
 }
@@ -14,7 +14,7 @@ pub(super) fn device_id_string(device: &cpal::Device) -> Option<String> {
 /// cpal 的 PipeWire 后端会合成「跟随系统默认」的哨兵设备，它们不对应真实节点，
 /// 选择系统默认时由 `open_device(None)` 取用，不应混进给用户挑选的设备列表
 fn is_synthetic_default_device(name: &str) -> bool {
-    cfg!(target_os = "linux") && matches!(name, "default_output" | "default_sink")
+    matches!(name, "default_output" | "default_sink")
 }
 
 /// 按选择器查找输出设备，优先按稳定 ID 匹配，失败后回退到显示名。
@@ -33,7 +33,7 @@ fn find_device(host: &cpal::Host, selector: &str) -> Option<cpal::Device> {
 /// 枚举所有输出设备，返回 `(id, name, is_default)` 列表
 /// 纯查询，不涉及流状态，调用方任意线程都能用
 pub fn list_output_devices() -> Vec<(String, String, bool)> {
-    run_in_mta(|| {
+    (|| -> Result<_> {
         let host = cpal::default_host();
         let default_id = host
             .default_output_device()
@@ -60,37 +60,31 @@ pub fn list_output_devices() -> Vec<(String, String, bool)> {
             "枚举音频输出设备"
         );
         Ok(list)
-    })
+    })()
     .unwrap_or_default()
 }
 
 /// 取系统默认输出设备名
 pub fn default_device_name() -> Option<String> {
-    run_in_mta(|| {
+    (|| -> Result<_> {
         let name = cpal::default_host()
             .default_output_device()
             .and_then(|device| persisted_device_name(&device));
         Ok(name)
-    })
+    })()
     .unwrap_or_default()
 }
 
 /// 取系统默认输出设备稳定 ID，供主进程做切换检测（显示名可重复、可被改名）
 pub fn default_device_id() -> Option<String> {
-    run_in_mta(|| {
+    (|| -> Result<_> {
         let id = cpal::default_host()
             .default_output_device()
             .and_then(|device| device_id_string(&device));
         Ok(id)
-    })
+    })()
     .unwrap_or_default()
 }
-
-/// 独占模式协商结果类型：非 Windows 平台无此概念
-#[cfg(target_os = "windows")]
-type ExclusiveFormatOpt = Option<crate::output::wasapi::ExclusiveFormat>;
-#[cfg(not(target_os = "windows"))]
-type ExclusiveFormatOpt = ();
 
 /// 按设备 ID（`None` 为默认设备）解析设备与输出配置。
 /// 设备支持 `requested_sample_rate` 时按该速率打开，否则使用设备默认配置。
@@ -100,9 +94,7 @@ type ExclusiveFormatOpt = ();
 fn open_device_internal(
     device_id: Option<&str>,
     requested_sample_rate: Option<u32>,
-    source_bits: Option<u32>,
-    exclusive: Option<&ExclusiveFallbackCallback>,
-) -> Result<(cpal::Device, SupportedStreamConfig, ExclusiveFormatOpt)> {
+) -> Result<(cpal::Device, SupportedStreamConfig)> {
     let host = cpal::default_host();
     info!(backend = ?host.id(), requested_sample_rate, "协商音频输出流格式");
     let device = match device_id {
@@ -119,31 +111,7 @@ fn open_device_internal(
         .default_output_config()
         .context("读取输出设备配置失败")?;
 
-    #[cfg(target_os = "windows")]
     {
-        let _ = requested_sample_rate;
-        let mut exclusive_format = None;
-        if let Some(on_fallback) = exclusive {
-            // 独占模式：优先按音源采样率/位深协商，失败时回退共享并上报原因
-            match crate::output::wasapi::negotiate_exclusive_format(
-                device_id_string(&device).as_deref(),
-                requested_sample_rate.unwrap_or(default_config.sample_rate()),
-                source_bits.unwrap_or(24),
-                default_config.channels(),
-            ) {
-                Ok(format) => exclusive_format = Some(format),
-                Err(error) => {
-                    warn!(reason = error.reason(), error = %error, "独占模式协商失败，回退共享模式");
-                    on_fallback(error.reason());
-                }
-            }
-        }
-        Ok((device, default_config, exclusive_format))
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = (source_bits, exclusive);
         let config = match requested_sample_rate {
             Some(rate) => {
                 if rate == default_config.sample_rate() {
@@ -189,27 +157,16 @@ fn open_device_internal(
             }
             None => default_config,
         };
-        Ok((device, config, ()))
+        Ok((device, config))
     }
 }
 
+/// Resolve the selected Linux endpoint and requested stream format.
 pub(super) fn open_device(
     device_id: Option<&str>,
     requested_sample_rate: Option<u32>,
-    source_bits: Option<u32>,
-    exclusive: Option<&ExclusiveFallbackCallback>,
-) -> Result<(cpal::Device, SupportedStreamConfig, ExclusiveFormatOpt)> {
-    let id_owned = device_id.map(String::from);
-    // 回退回调只在 MTA 工作线程被调用，Arc 在此克隆进闭包
-    let fallback_owned = exclusive.cloned();
-    run_in_mta(move || {
-        open_device_internal(
-            id_owned.as_deref(),
-            requested_sample_rate,
-            source_bits,
-            fallback_owned.as_ref(),
-        )
-    })
+) -> Result<(cpal::Device, SupportedStreamConfig)> {
+    open_device_internal(device_id, requested_sample_rate)
 }
 
 #[cfg(test)]

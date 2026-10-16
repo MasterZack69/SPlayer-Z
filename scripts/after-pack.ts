@@ -1,91 +1,48 @@
 import { type AfterPackContext, Arch } from "electron-builder";
-import { join } from "path";
-import { rm } from "node:fs/promises";
+import { join } from "node:path";
+import { readdir, rm } from "node:fs/promises";
 
-let hasWarnedCleanupOnce = false;
-const printCleanupWarningOnce = () => {
-  if (!hasWarnedCleanupOnce) {
-    hasWarnedCleanupOnce = true;
-    console.warn(
-      `[AfterPack] 部分文件清理失败。这不会影响 App 构建和运行，但可能导致包体积略大于预期。`,
-    );
-  }
-};
-
-const tryRm = async (path: string, options?: object): Promise<void> => {
+/** Remove dependency files that cannot be used by the packaged Linux architecture.
+ * @param directory - Optional dependency directory
+ * @param keep - Basename predicate for entries retained in the package
+ */
+const trimDirectory = async (directory: string, keep: (name: string) => boolean): Promise<void> => {
+  let entries: string[];
   try {
-    await rm(path, options);
-  } catch (error: any) {
-    printCleanupWarningOnce();
-    console.warn(`[AfterPack] 清理失败 "${path}": ${error.message}`);
+    entries = await readdir(directory);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
   }
+  await Promise.all(
+    entries
+      .filter((entry) => !keep(entry))
+      .map((entry) => rm(join(directory, entry), { recursive: true, force: true })),
+  );
 };
 
+/** Package only Linux x64/ARM64 resources; never bundle other platform prebuilds.
+ * @param context - Electron Builder package context
+ */
 const afterPack = async (context: AfterPackContext): Promise<void> => {
-  const resourceDir = join(
-    context.appOutDir,
-    context.packager.platform.name === "mac"
-      ? `${context.packager.appInfo.productFilename}.app/Contents/Resources`
-      : "resources",
-  );
-
+  if (context.electronPlatformName !== "linux" || ![Arch.x64, Arch.arm64].includes(context.arch)) {
+    throw new Error("Only x86_64 and ARM64 Linux packages are supported");
+  }
+  const arch = context.arch === Arch.x64 ? "x64" : "arm64";
+  const modules = join(context.appOutDir, "resources/app.asar.unpacked/node_modules");
   await Promise.all([
-    trimBetterSqlite3(resourceDir, context),
-    trimFontListLibs(resourceDir, context),
+    trimDirectory(
+      join(modules, "better-sqlite3/prebuilds"),
+      (name) => name === `linux-${arch}` || name === `linux-${arch}.node`,
+    ),
+    trimDirectory(
+      join(modules, "better-sqlite3/lib"),
+      (name) => !/^(?:[^.]+)-(?:x64|arm64)\.js$/.test(name) || name === `linux-${arch}.js`,
+    ),
+    trimDirectory(
+      join(modules, "font-list/libs"),
+      (name) => name === "linux" || name.endsWith(".js"),
+    ),
   ]);
 };
-
-const trimBetterSqlite3 = async (resourceDir: string, context: AfterPackContext) => {
-  const dir = join(resourceDir, "app.asar.unpacked/node_modules/better-sqlite3/");
-  const allPlatform = ["win32", "darwin", "linux", "linuxmusl"];
-  const allArch = ["x64", "arm64"];
-  const keepPlatform = new Set<string>([context.electronPlatformName]); // 暂时不考虑 linuxmusl
-  const keepArch = new Set<string>();
-
-  switch (context.arch) {
-    case Arch.x64:
-      keepArch.add("x64");
-      break;
-    case Arch.arm64:
-      keepArch.add("arm64");
-      break;
-    case Arch.universal:
-      keepArch.add("x64");
-      keepArch.add("arm64");
-      break;
-    default:
-      printCleanupWarningOnce();
-      console.error("[AfterPack] 未知架构: " + context.arch);
-      return;
-  }
-
-  const deletePromises: Promise<void>[] = [];
-  for (const platform of allPlatform) {
-    for (const arch of allArch) {
-      if (keepPlatform.has(platform) && keepArch.has(arch)) continue;
-      const fileName = `${platform}-${arch}`;
-      deletePromises.push(
-        tryRm(join(dir, "prebuilds", `${fileName}.node`), { force: true }),
-        tryRm(join(dir, "lib", `${fileName}.js`), { force: true }),
-      );
-    }
-  }
-
-  await Promise.all(deletePromises);
-};
-
-const trimFontListLibs = async (resourceDir: string, context: AfterPackContext) => {
-  const dir = join(resourceDir, "app.asar.unpacked/node_modules/font-list/libs/");
-  const allPlatform = ["win32", "darwin", "linux"];
-  const keepPlatform = new Set<string>([context.electronPlatformName]);
-
-  const deletePromises: Promise<void>[] = [];
-  for (const platform of allPlatform) {
-    if (keepPlatform.has(platform)) continue;
-    deletePromises.push(tryRm(join(dir, platform), { recursive: true, force: true }));
-  }
-
-  await Promise.all(deletePromises);
-};
-
 export default afterPack;

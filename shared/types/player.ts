@@ -212,7 +212,7 @@ export interface PlayerStatus {
 
 /** 音频输出设备 */
 export interface AudioDevice {
-  /** 稳定设备 ID（cpal `DeviceId`，形如 `wasapi:{0.0.0...}`），持久化与选中判断都用它 */
+  /** Stable Linux CPAL device ID, used for persistence and selection. */
   id: string;
   /** 显示名，可能重复、可被用户改名，仅用于展示 */
   name: string;
@@ -242,8 +242,7 @@ export type PlayerEvent =
   | { type: "toggleLike" }
   | { type: "fftData"; data: FftData }
   | { type: "error"; error: string }
-  | { type: "deviceChanged"; data: { defaultDevice: string | null } }
-  | { type: "outputFallback"; data: { reason: string } };
+  | { type: "deviceChanged"; data: { defaultDevice: string | null } };
 
 /** FFT 数据 */
 export interface FftData {
@@ -263,8 +262,6 @@ export interface IpcResponse<T = void> {
 export interface AudioStreamInfo {
   /** 当前生效的音频输出设备名称 */
   deviceName: string;
-  /** 是否为独占模式输出 */
-  isExclusive: boolean;
   /** 实际输出流采样率（Hz） */
   outputSampleRate: number;
   /** 实际输出流声道数 */

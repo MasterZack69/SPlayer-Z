@@ -21,9 +21,6 @@ const troubleshooting = [
   { text: "Nix and PipeWire", link: "/troubleshooting/nix" },
   { text: "Linux Wayland", link: "/troubleshooting/wayland" },
   { text: "Ubuntu startup", link: "/troubleshooting/ubuntu-sandbox" },
-  { text: "macOS", link: "/troubleshooting/macos" },
-  { text: "macOS damaged-app warnings", link: "/troubleshooting/macos-damaged" },
-  { text: "Unsupported Windows versions", link: "/troubleshooting/windows7" },
 ];
 
 export default defineConfig({

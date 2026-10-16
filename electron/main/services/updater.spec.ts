@@ -7,9 +7,7 @@ const mocks = vi.hoisted(() => ({
   autoCheck: true,
   packaged: true,
   dev: false,
-  mac: false,
-  portable: false,
-  appx: false,
+
   check: vi.fn(),
   download: vi.fn(),
   install: vi.fn(),
@@ -30,15 +28,6 @@ vi.mock("electron", () => ({
 vi.mock("@main/utils/config", () => ({
   get isDev() {
     return mocks.dev;
-  },
-  get isMac() {
-    return mocks.mac;
-  },
-  get isPortable() {
-    return mocks.portable;
-  },
-  get isAppX() {
-    return mocks.appx;
   },
 }));
 vi.mock("@main/store", () => ({
@@ -64,7 +53,7 @@ const info = {
   version: "1.3.0",
   releaseDate: "2026-09-30",
   releaseNotes: "notes",
-  files: [{ url: "app-x64.exe", size: 10, sha512: "hash" }],
+  files: [{ url: "app-x64.AppImage", size: 10, sha512: "hash" }],
 };
 const available = { isUpdateAvailable: true, updateInfo: info };
 const none = { isUpdateAvailable: false, updateInfo: info };
@@ -80,13 +69,10 @@ const deferred = <T>() => {
   return { promise, resolve, reject };
 };
 
-const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
-
-describe.each(["win32", "linux"])("统一更新任务（%s）", (platform) => {
+describe("Linux update tasks", () => {
   beforeEach(() => {
-    // 显式模拟安装平台，避免普通 Node 环境误入 Electron 安装包检测
-    Object.defineProperty(process, "platform", { ...platformDescriptor, value: platform });
-    vi.stubEnv("APPIMAGE", platform === "linux" ? "/opt/SPlayer.AppImage" : undefined);
+    // Simulate an AppImage installation in the Node test environment.
+    vi.stubEnv("APPIMAGE", "/opt/SPlayer.AppImage");
     vi.resetModules();
     vi.clearAllMocks();
     Object.assign(mocks, {
@@ -94,9 +80,6 @@ describe.each(["win32", "linux"])("统一更新任务（%s）", (platform) => {
       autoCheck: true,
       packaged: true,
       dev: false,
-      mac: false,
-      portable: false,
-      appx: false,
     });
     mocks.check.mockReset().mockResolvedValue(available);
     mocks.download.mockReset().mockResolvedValue([]);
@@ -106,7 +89,6 @@ describe.each(["win32", "linux"])("统一更新任务（%s）", (platform) => {
     try {
       (await import("./updater")).disposeUpdater();
     } finally {
-      Object.defineProperty(process, "platform", platformDescriptor);
       vi.unstubAllEnvs();
     }
   });
@@ -272,7 +254,7 @@ describe.each(["win32", "linux"])("统一更新任务（%s）", (platform) => {
     );
   });
 
-  it.each(["dev", "mac", "portable"] as const)("%s 环境只能检查和打开外部下载", async (flag) => {
+  it.each(["dev"] as const)("%s 环境只能检查和打开外部下载", async (flag) => {
     mocks[flag] = true;
     const service = await import("./updater");
     service.initUpdater();
@@ -283,16 +265,6 @@ describe.each(["win32", "linux"])("统一更新任务（%s）", (platform) => {
     expect(service.getUpdateState().mode).toBe("external");
     expect(mocks.download).not.toHaveBeenCalled();
     expect(mocks.install).not.toHaveBeenCalled();
-  });
-
-  it("商店版不检查 GitHub，直接打开商店", async () => {
-    mocks.appx = true;
-    const service = await import("./updater");
-    service.initUpdater();
-    service.checkForUpdates(true);
-    service.openDownloadPage();
-    expect(mocks.check).not.toHaveBeenCalled();
-    expect(mocks.open).toHaveBeenCalledWith("ms-windows-store://updates");
   });
 
   it("销毁时取消下载，迟到错误不会重新检查或产生未处理 error", async () => {

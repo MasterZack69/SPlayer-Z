@@ -25,14 +25,12 @@ import {
   stopDeviceMonitoring,
   requestReinit,
 } from "@main/services/device";
-import { getThumbar } from "@main/services/thumbar";
 import {
   setTraySongName,
   setTrayPlayState,
   setTrayPlayMode,
   setTrayLikeState,
 } from "@main/services/tray";
-import { setTaskbarThumbnailCover } from "@main/services/thumbnail";
 import { getMainWindow, setTaskbarProgress } from "@main/window";
 import { store } from "@main/store";
 import { appName, getSongCacheDir } from "@main/utils/config";
@@ -138,7 +136,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         // 播放中阻止系统休眠，暂停/停止时释放唤醒锁，保证系统可正常休眠
         updatePowerBlocker(state === "playing" || state === "loading");
         // 更新缩略图工具栏和托盘菜单
-        getThumbar()?.updateThumbar(state === "playing");
         setTrayPlayState(state === "playing" ? "playing" : "paused");
         if (state === "playing") {
           mediaService.setPlayState({ status: "Playing" });
@@ -247,13 +244,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         requestReinit(inst);
         break;
       }
-      case "outputFallback": {
-        // 独占模式打开失败已自动回退共享模式，转发原因给渲染端提示
-        const reason = event.reason ?? "unavailable";
-        playerLog.warn(`独占模式不可用，已回退共享模式: ${reason}`);
-        sendToMain("player:event", { type: "outputFallback", data: { reason } });
-        break;
-      }
     }
   });
 };
@@ -326,7 +316,6 @@ const completeTrackLoad = (
   getMainWindow()?.setTitle(header);
   setTraySongName(header);
   setTrayPlayState(autoPlay ? "playing" : "paused");
-  if (!isRemote) setTaskbarThumbnailCover(meta.cover);
   lastfm.onTrackLoaded({
     title: displayTitle,
     artist: displayArtists[0]?.name ?? "",
@@ -345,7 +334,6 @@ const completeTrackLoad = (
         coverUrl,
         durationMs,
       });
-      setTaskbarThumbnailCover(buf);
     });
   }
   const quality = {
@@ -479,14 +467,6 @@ export const registerPlayerIpc = (): void => {
   // 注册实例创建/重建时的回调
   onPlayerCreated(registerNativeEvents);
   onPlayerCreated(startDeviceMonitoring);
-  // 启动时同步独占模式开关到引擎（默认共享，无需处理）
-  onPlayerCreated((inst) => {
-    if (store.get("player.audioOutputMode") === "exclusive") {
-      inst.setExclusiveMode(true).catch((error) => {
-        playerLog.warn("应用独占模式配置失败:", error);
-      });
-    }
-  });
   // 加载音频文件
   ipcMain.handle("player:load", async (_event, source: string, options: LoadOptions = {}) => {
     cancelPendingReinit();
@@ -940,7 +920,6 @@ export const registerPlayerIpc = (): void => {
   // 渲染进程同步当前歌曲喜欢状态到托盘与缩略图工具栏
   ipcMain.on("player:syncLikeState", (_event, liked: boolean) => {
     setTrayLikeState(liked);
-    getThumbar()?.updateLike(liked);
   });
 
   // 转发渲染端发起的播放控制

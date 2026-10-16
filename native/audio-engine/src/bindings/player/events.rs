@@ -56,11 +56,6 @@ impl AudioPlayer {
                     event_type: "outputFailed".into(),
                     ..Default::default()
                 },
-                PlayerEvent::OutputFallback { reason } => JsPlayerEvent {
-                    event_type: "outputFallback".into(),
-                    reason: Some(reason),
-                    ..Default::default()
-                },
             };
             tsfn.call(js_event, ThreadsafeFunctionCallMode::NonBlocking);
         });

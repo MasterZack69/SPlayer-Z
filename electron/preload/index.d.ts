@@ -13,15 +13,9 @@ import { NowPlayingApi } from "@shared/types/nowPlaying";
 import { PluginsApi } from "@shared/types/plugin";
 import { ApisApi } from "@shared/types/apis";
 import { DownloadApi } from "@shared/types/download";
-import {
-  WindowApi,
-  DesktopLyricApi,
-  DynamicIslandApi,
-  TaskbarLyricApi,
-} from "@shared/types/window";
+import { WindowApi } from "@shared/types/window";
 import { HotkeyApi } from "@shared/types/hotkey";
 import { StreamingApi } from "@shared/types/streaming";
-import { RecognitionApi } from "@shared/types/recognition";
 import { LastfmApi } from "@shared/types/lastfm";
 import { IpcResponse } from "@shared/types/player";
 import { StatsApi } from "@shared/types/stats";
@@ -39,8 +33,8 @@ declare global {
       config: ConfigApi;
       player: PlayerApi;
       system: {
-        installType: "nsis" | "portable" | "appx" | "dmg" | "appimage";
-        platform: NodeJS.Platform;
+        installType: "appimage" | "package";
+        platform: "linux";
         osInfo: {
           type: string;
           arch: string;
@@ -73,9 +67,6 @@ declare global {
       library: LibraryApi;
       playlist: PlaylistApi;
       window: WindowApi;
-      desktopLyric: DesktopLyricApi;
-      dynamicIsland: DynamicIslandApi;
-      taskbarLyric: TaskbarLyricApi;
       nowPlaying: NowPlayingApi;
       plugins: PluginsApi;
       apis: ApisApi;
@@ -116,7 +107,6 @@ declare global {
       stats: StatsApi;
       hotkey: HotkeyApi;
       streaming: StreamingApi;
-      recognition: RecognitionApi;
       lastfm: LastfmApi;
       externalApi: {
         restart: () => Promise<ExternalApiStatus>;

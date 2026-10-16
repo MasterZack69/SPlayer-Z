@@ -13,7 +13,6 @@ pub(super) fn format_pipewire_props(sample_rate: u32) -> String {
     props.to_string()
 }
 
-#[cfg(target_os = "linux")]
 pub(super) mod pipewire_props {
     use std::{
         ffi::OsString,

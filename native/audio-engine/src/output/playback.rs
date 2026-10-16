@@ -13,7 +13,7 @@ use crate::dsp::fft::FftAnalyzer;
 use crate::error::{AudioErrorKind, AudioResultExt};
 use crate::output::{AudioOutput, OutputStream};
 
-/// 平台统一的播放控制句柄：持有一条独立输出流（cpal 共享流或 WASAPI 独占流）
+/// Playback owns one Linux CPAL output stream.
 /// 每次加载/seek 由 `attach` 创建，播放期间音量与停止通过原子标志与实时回调通信
 pub struct PlaybackHandle {
     stream: OutputStream,
@@ -23,7 +23,7 @@ pub struct PlaybackHandle {
 }
 
 impl PlaybackHandle {
-    /// 在启动解码前以暂停状态打开输出，确保独占回退后的格式用于重采样
+    /// Prepare output before decoding so resampling uses its negotiated format.
     pub fn prepare(
         output: AudioOutput,
         fft: Arc<FftAnalyzer>,
@@ -33,7 +33,7 @@ impl PlaybackHandle {
 
     /// 复用预载 PCM；设备协商格式不一致时使用新的缓冲区
     pub fn prepare_with_buffer(
-        mut output: AudioOutput,
+        output: AudioOutput,
         fft: Arc<FftAnalyzer>,
         prepared: Option<Arc<Shared>>,
     ) -> Result<(AudioOutput, Arc<Shared>, Arc<Self>)> {
@@ -45,19 +45,8 @@ impl PlaybackHandle {
             .unwrap_or_else(|| Shared::new(output.sample_rate(), output.channels()));
 
         let source = DecoderSource::new(Arc::clone(&shared), Arc::clone(&fft));
-        match Self::attach(&output, source, 1.0, true) {
-            Ok(playback) => Ok((output, shared, Arc::new(playback))),
-            Err(error) => {
-                let Some((on_fallback, reason)) = output.fallback_to_shared(&error) else {
-                    return Err(error);
-                };
-                let shared = Shared::new(output.sample_rate(), output.channels());
-                let source = DecoderSource::new(Arc::clone(&shared), fft);
-                let playback = Self::attach(&output, source, 1.0, true)?;
-                on_fallback(reason);
-                Ok((output, shared, Arc::new(playback)))
-            }
-        }
+        let playback = Self::attach(&output, source, 1.0, true)?;
+        Ok((output, shared, Arc::new(playback)))
     }
 
     /// 提交已准备的输出流，在代次校验后才允许开始消费音频样本
@@ -83,8 +72,7 @@ impl PlaybackHandle {
         let volume = Arc::new(AtomicU32::new(volume.to_bits()));
         let stopped = Arc::new(AtomicBool::new(false));
         let transition = source.control();
-        let stream =
-            output.build_stream(source, Arc::clone(&volume), Arc::clone(&stopped), paused)?;
+        let stream = output.build_stream(source, Arc::clone(&volume), Arc::clone(&stopped))?;
         if !paused {
             stream
                 .play()
@@ -141,29 +129,5 @@ impl PlaybackHandle {
 
     pub fn set_volume(&self, volume: f32) {
         self.volume.store(volume.to_bits(), Ordering::Relaxed);
-    }
-}
-
-impl OutputStream {
-    fn play(&self) -> Result<()> {
-        match self {
-            Self::Shared(stream) => stream.play().map_err(Into::into),
-            #[cfg(target_os = "windows")]
-            Self::Exclusive(stream) => {
-                stream.play();
-                Ok(())
-            }
-        }
-    }
-
-    fn pause(&self) -> Result<()> {
-        match self {
-            Self::Shared(stream) => stream.pause().map_err(Into::into),
-            #[cfg(target_os = "windows")]
-            Self::Exclusive(stream) => {
-                stream.pause();
-                Ok(())
-            }
-        }
     }
 }

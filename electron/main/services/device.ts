@@ -141,7 +141,7 @@ const handleDeviceChange = (notifyListChange: boolean, defaultChanged: boolean):
   }
 };
 
-/** 合并 Windows 在一次插拔过程中连续发出的设备事件 */
+/** Coalesce bursts of Linux endpoint changes into a single recovery operation. */
 let pendingDefaultChange = false;
 const scheduleDeviceChange = (defaultChanged: boolean): void => {
   // 合并窗口内任一事件为默认变化即按默认变化处理
