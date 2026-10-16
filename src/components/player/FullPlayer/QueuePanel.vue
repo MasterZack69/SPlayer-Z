@@ -113,7 +113,12 @@ const {
                 v-if="index === statusStore.playIndex"
                 class="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-cover/100"
               />
-              <SImg :src="item.cover" class="size-12 rounded-lg shrink-0" />
+              <SImg
+                :src="item.cover"
+                :fade="false"
+                loading="eager"
+                class="size-12 rounded-lg shrink-0"
+              />
               <div class="flex-1 min-w-0">
                 <div class="text-base truncate font-medium leading-snug">{{ item.title }}</div>
                 <div

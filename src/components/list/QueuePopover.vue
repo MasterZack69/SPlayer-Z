@@ -111,7 +111,12 @@ const onClear = (): void => {
               ]"
               @click="onPlay(index)"
             >
-              <SImg :src="item.cover" class="size-9 rounded shrink-0" />
+              <SImg
+                :src="item.cover"
+                :fade="false"
+                loading="eager"
+                class="size-9 rounded shrink-0"
+              />
               <div class="flex-1 min-w-0">
                 <div class="text-xs truncate font-medium leading-tight">{{ item.title }}</div>
                 <div

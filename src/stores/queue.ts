@@ -109,8 +109,8 @@ export const insertManyToQueue = (
 };
 
 /**
- * 按 id 替换队列中的曲目数据（标签编辑后同步显示）
- * @param updates - 更新后的 Track 列表
+ * Refresh track metadata while retaining queue-entry identity and mounted rows.
+ * @param updates - Updated tracks supplied by decoding or tag editing.
  */
 export const updateQueueTracks = (updates: readonly Track[]): void => {
   if (updates.length === 0) return;
@@ -119,15 +119,16 @@ export const updateQueueTracks = (updates: readonly Track[]): void => {
     queueEntries.value.some((item) => byId.has(item.track.id)) ||
     (originalQueue.value?.some((item) => byId.has(item.track.id)) ?? false);
   if (!touched) return;
-  queueEntries.value = queueEntries.value.map((item) => ({
-    ...item,
-    track: byId.get(item.track.id) ?? item.track,
-  }));
+  // Entry objects identify queue rows; only the track payload changes on enrichment.
+  queueEntries.value = queueEntries.value.map((item) => {
+    item.track = byId.get(item.track.id) ?? item.track;
+    return item;
+  });
   if (originalQueue.value) {
-    originalQueue.value = originalQueue.value.map((item) => ({
-      ...item,
-      track: byId.get(item.track.id) ?? item.track,
-    }));
+    originalQueue.value = originalQueue.value.map((item) => {
+      item.track = byId.get(item.track.id) ?? item.track;
+      return item;
+    });
   }
   save();
 };

@@ -8,11 +8,17 @@ export interface SImgProps {
   fallback?: string;
   /** alt 文字 */
   alt?: string;
+  /** Animate newly loaded images; disable for recycled virtual-list thumbnails. */
+  fade?: boolean;
+  /** Use eager loading when virtualization already bounds the rendered images. */
+  loading?: "lazy" | "eager";
 }
 
 const props = withDefaults(defineProps<SImgProps>(), {
   fallback: defaultFallback,
   alt: "",
+  fade: true,
+  loading: "lazy",
 });
 
 const emit = defineEmits<{
@@ -21,7 +27,11 @@ const emit = defineEmits<{
 
 const isLoaded = ref(false);
 
-const onLoad = (e: Event) => {
+/**
+ * Reveal a loaded cover and notify its consumer.
+ * @param e - Native load event from the cover image.
+ */
+const onLoad = (e: Event): void => {
   const target = e.target as HTMLImageElement;
   target.style.opacity = "1";
   isLoaded.value = true;
@@ -38,8 +48,8 @@ watch(
 
 <template>
   <div class="relative isolate overflow-hidden">
-    <!-- 占位图：封面加载完后淡出移除 -->
-    <Transition name="fade">
+    <!-- Keep a placeholder beneath covers until loading completes. -->
+    <Transition name="fade" :css="fade">
       <img
         v-if="!isLoaded"
         :src="fallback"
@@ -47,8 +57,9 @@ watch(
         class="absolute w-full h-full object-cover z-0"
       />
     </Transition>
-    <!-- 封面：Transition 控制外层 div 的交叉淡入淡出，img 的 opacity 由 @load 单独控制 -->
+    <!-- Virtualized thumbnails skip the entrance fade to avoid flashes on remount. -->
     <Transition
+      :css="fade"
       enter-active-class="transition-opacity duration-200"
       leave-active-class="transition-opacity duration-200"
       enter-from-class="opacity-0"
@@ -58,9 +69,10 @@ watch(
         <img
           :src="src"
           :alt="alt"
-          class="w-full h-full object-cover opacity-0 transition-opacity duration-200"
+          class="w-full h-full object-cover"
+          :class="fade ? 'opacity-0 transition-opacity duration-200' : ''"
           decoding="async"
-          loading="lazy"
+          :loading="loading"
           @load="onLoad"
           @error="isLoaded = false"
         />

@@ -487,6 +487,7 @@
     }
   },
   "player": {
+    "noOtherTracks": "No other songs in queue",
     "prev": "Previous",
     "next": "Next",
     "transitioning": "Transition",

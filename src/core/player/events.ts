@@ -36,7 +36,7 @@ import {
 /** 防止 ended 事件重入 */
 let endedGuard = false;
 
-/** 按当前播放模式结算并进入下一步 */
+/** Settle the completed track and follow the configured repeat mode. */
 const finishCurrentTrack = async (): Promise<void> => {
   const status = useStatusStore();
   if (endedGuard) return;
@@ -52,7 +52,7 @@ const finishCurrentTrack = async (): Promise<void> => {
     if (repeatOne) {
       await restartCurrentTrack();
     } else {
-      await nextTrack();
+      await nextTrack(true, "automatic");
     }
   } finally {
     endedGuard = false;

@@ -86,11 +86,10 @@ const MAX_CONSECUTIVE_FAILURES = 5;
 const SKIP_ON_ERROR_DELAY_MS = 1000;
 
 /**
- * 单曲级失败兜底
- * 达到连续失败上限 / 队列长度则交 onQueueEnded 停下
- * @param myToken - 调用方进入失败路径时的 token 快照
- * @param getCurrentToken - 取该 token 的最新值，setTimeout 触发时再次比对
- * @param autoPlay - 跳曲后是否自动播放
+ * Skip failed tracks until the queue-wide failure limit stops playback.
+ * @param myToken - Load generation captured when the failure occurred.
+ * @param getCurrentToken - Read the latest generation before a delayed skip.
+ * @param autoPlay - Whether the next track should start playing.
  */
 const skipOnFailure = async (
   myToken: number,
@@ -111,7 +110,7 @@ const skipOnFailure = async (
     return;
   }
   setTimeout(() => {
-    if (myToken === getCurrentToken()) nextTrack(autoPlay);
+    if (myToken === getCurrentToken()) nextTrack(autoPlay, "automatic");
   }, SKIP_ON_ERROR_DELAY_MS);
 };
 
@@ -325,11 +324,10 @@ const loadTrackSourceWithFallback = async (
 };
 
 /**
- * 加载指定 Track 到播放器
- * 乐观更新：立即显示歌曲信息，快速切歌时只有最后一次 load 生效
- * @param track - 要播放的 Track，为 null 时忽略
- * @param context - 本次播放的来源上下文
- * @param autoPlay - 是否自动播放，暂停态恢复（如源失效跳曲）时传 false，全程不发声
+ * Load a track optimistically, allowing only the latest load to take effect.
+ * @param track - Track to load; null leaves playback unchanged.
+ * @param context - Playback source context for this queue entry.
+ * @param autoPlay - Whether to play after loading; false preserves paused recovery.
  */
 const loadTrack = async (
   track: Track | null,
@@ -345,7 +343,7 @@ const loadTrack = async (
     settings.preset.skipKeywordsSongs &&
     shouldSkipKeywordTrack(track, settings.preset.skipTrackKeywords)
   ) {
-    await nextTrack(autoPlay);
+    await nextTrack(autoPlay, "automatic");
     return;
   }
   const myToken = ++trackToken;
@@ -477,8 +475,7 @@ let sourceRecoveryCount = 0;
 let sourceRecoveryTrackId: string | null = null;
 
 /**
- * 源失效恢复
- * 重载一次后仍失败则放弃跳曲，保持恢复前的播放 / 暂停态
+ * Reload a failed source once, then skip while preserving playing or paused state.
  */
 export const recoverFromSourceFailure = async (): Promise<void> => {
   const track = useMediaStore().track;
@@ -487,7 +484,7 @@ export const recoverFromSourceFailure = async (): Promise<void> => {
   const myPauseToken = pauseToken;
   // 本地文件源失效（文件被删/磁盘错误）没有重载意义，直接跳曲
   if (track.source === "local") {
-    await nextTrack(wasPlaying);
+    await nextTrack(wasPlaying, "automatic");
     return;
   }
   if (sourceRecoveryTrackId !== track.id) {
@@ -497,7 +494,7 @@ export const recoverFromSourceFailure = async (): Promise<void> => {
   // 最多重载一次
   if (sourceRecoveryCount >= 1) {
     sourceRecoveryCount = 0;
-    await nextTrack(wasPlaying);
+    await nextTrack(wasPlaying, "automatic");
     return;
   }
   sourceRecoveryCount++;
@@ -506,7 +503,7 @@ export const recoverFromSourceFailure = async (): Promise<void> => {
   const ok = await reloadCurrentTrack();
   if (!ok) {
     sourceRecoveryCount = 0;
-    await nextTrack(wasPlaying && myPauseToken === pauseToken);
+    await nextTrack(wasPlaying && myPauseToken === pauseToken, "automatic");
   }
 };
 
@@ -926,12 +923,20 @@ export const dislikeFmTrack = async (): Promise<void> => {
 };
 
 /**
- * 播放下一首
- * @param autoPlay - 是否自动播放
+ * Advance to another queue entry without restarting a lone track on manual skips.
+ * @param autoPlay - Whether the destination starts playing.
+ * @param trigger - Automatic completion/recovery may wrap a single-entry queue.
  */
-export const nextTrack = async (autoPlay = true): Promise<void> => {
+export const nextTrack = async (
+  autoPlay = true,
+  trigger: "manual" | "automatic" = "manual",
+): Promise<void> => {
   const status = useStatusStore();
   if (queue.queueLength.value === 0) return;
+  if (trigger === "manual" && queue.queueLength.value === 1 && status.playIndex === 0) {
+    toast.info(i18n.global.t("player.noOtherTracks"), { duration: 2000, icon: false });
+    return;
+  }
   // 到末尾了
   if (status.playIndex >= queue.queueLength.value - 1) {
     if (status.shuffleMode === "on" && queue.queueLength.value > 1) {
@@ -951,9 +956,9 @@ export const nextTrack = async (autoPlay = true): Promise<void> => {
 export const isSmartTransitionActive = (): boolean => transitionInFlight;
 
 /**
- * 在当前曲目尾部尝试以备用槽位进行自动交接
- * @param positionMs - 当前曲目的展示位置
- * @param preparedId - 后台通知对应的槽位，用于拒绝迟到通知
+ * Hand off to a prepared track near the end of current playback.
+ * @param positionMs - Current displayed playback position in milliseconds.
+ * @param preparedId - Prepared slot identifier used to reject stale notifications.
  */
 export const trySmartTransition = async (
   positionMs: number,
@@ -1022,7 +1027,7 @@ export const trySmartTransition = async (
           result.error ?? "备用槽位未命中或播放器状态已变化",
         );
       }
-      if (result.error) await nextTrack();
+      if (result.error) await nextTrack(true, "automatic");
       return;
     }
     if (
@@ -1031,7 +1036,7 @@ export const trySmartTransition = async (
       queue.queue.value[candidate.index]?.id !== candidate.track.id
     ) {
       console.warn("[player:transition] 队列或预载槽位已变化，重新加载下一曲");
-      await nextTrack();
+      await nextTrack(true, "automatic");
       return;
     }
     console.info("[player:transition] 音频交接完成", {
@@ -1067,11 +1072,15 @@ export const playAtIndex = async (index: number): Promise<void> => {
   await loadTrack(status.currentTrack, status.currentPlaybackContext);
 };
 
-/** 播放上一首，首位时回绕到末尾 */
+/** Move to the previous entry, leaving single-entry playback untouched. */
 export const prevTrack = async (): Promise<void> => {
   const status = useStatusStore();
   if (status.fmMode) return;
   if (queue.queueLength.value === 0) return;
+  if (queue.queueLength.value === 1 && status.playIndex === 0) {
+    toast.info(i18n.global.t("player.noOtherTracks"), { duration: 2000, icon: false });
+    return;
+  }
   status.playIndex = status.playIndex > 0 ? status.playIndex - 1 : queue.queueLength.value - 1;
   await loadTrack(status.currentTrack, status.currentPlaybackContext);
 };

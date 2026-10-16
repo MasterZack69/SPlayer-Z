@@ -179,3 +179,26 @@ describe("queue", () => {
     expect(queueEntries.value[0]?.context).toEqual(context);
   });
 });
+
+describe("queue metadata identity", () => {
+  it("preserves all entry objects when enriching one playing song", () => {
+    setQueue([track("a"), track("b"), track("b"), track("c")], context);
+    const entries = [...queueEntries.value];
+    shuffleQueue(1);
+    const shuffled = [...queueEntries.value];
+    const original = [...originalQueue.value!];
+    const enriched = { ...track("b"), cover: "cover://b.jpg", title: "Updated B" };
+    updateQueueTracks([enriched]);
+    expect(queueEntries.value).toHaveLength(shuffled.length);
+    for (const [index, item] of queueEntries.value.entries()) {
+      expect(item).toBe(shuffled[index]);
+      expect(entries).toContain(item);
+      expect(item.context).toBe(context);
+      if (item.track.id === "b") expect(item.track).toBe(enriched);
+    }
+    for (const [index, item] of originalQueue.value!.entries()) {
+      expect(item).toBe(original[index]);
+      if (item.track.id === "b") expect(item.track).toBe(enriched);
+    }
+  });
+});

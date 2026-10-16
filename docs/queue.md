@@ -12,6 +12,12 @@ An insertion line marks the drop position. Drag near the top or bottom of the li
 
 Dropping or using the arrow keys changes the order without playing the dragged song, restarting the current song, or resetting its playback position. The playing entry remains the same even when moved. Duplicate songs are separate queue entries and can be moved independently.
 
+## Next and previous
+
+With only one song in the queue, manually pressing Next or Previous shows **No other songs in queue** and leaves playback and its position unchanged. A paused song stays paused. Automatic end-of-track repeat still follows the selected repeat mode.
+
+Queue thumbnails load eagerly within the virtualized row window and do not fade in again when scrolling. Track metadata updates preserve existing row identity rather than refreshing every cover when the playing song changes.
+
 ## Other actions
 
 Click a song to start that queue entry. Use the row's remove action to remove an entry, the locate control to reveal the current entry, and the clear control to clear the queue after confirmation. Closing the panel does not clear the queue.

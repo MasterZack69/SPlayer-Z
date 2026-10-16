@@ -3,10 +3,11 @@ import { defineComponent, h, nextTick, reactive, ref, type PropType } from "vue"
 import { mount } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import SImg from "../ui/SImg.vue";
 import QueuePopover from "./QueuePopover.vue";
 import QueuePanel from "../player/FullPlayer/QueuePanel.vue";
 import messages from "@/i18n/locales/en-US.json";
-import { queue, queueEntries, setQueue } from "@/stores/queue";
+import { queue, queueEntries, setQueue, updateQueueTracks } from "@/stores/queue";
 import type { Track } from "@shared/types/player";
 
 const actions = vi.hoisted(() => ({
@@ -63,7 +64,6 @@ const Button = defineComponent({
     return () => h("button", [slots.default?.(), slots.icon?.()]);
   },
 });
-const Image = defineComponent({ props: { src: String }, setup: () => () => h("div") });
 const Dialog = defineComponent({ setup: () => () => null });
 const Icon = defineComponent({ setup: () => () => h("svg") });
 
@@ -73,7 +73,7 @@ const setupQueue = (component: typeof QueuePopover | typeof QueuePanel) =>
     attachTo: document.body,
     global: {
       plugins: [createI18n({ legacy: false, locale: "en-US", messages: { "en-US": messages } })],
-      components: { SVirtualList: VirtualList, SButton: Button, SImg: Image, SDialog: Dialog },
+      components: { SVirtualList: VirtualList, SButton: Button, SImg, SDialog: Dialog },
       stubs: {
         IconLucideLocate: Icon,
         IconLucideTrash2: Icon,
@@ -89,6 +89,7 @@ beforeEach(() => {
     ["First", "Second", "Third"].map((title) => ({
       id: title,
       title,
+      cover: `https://covers.example/${title}.jpg`,
       source: "local",
       duration: 1000,
       artists: [],
@@ -145,6 +146,26 @@ describe.each([
     window.dispatchEvent(new MouseEvent("mouseup"));
     expect(actions.moveInQueue).not.toHaveBeenCalled();
     expect(queue.value[0].title).toBe("Third");
+    wrapper.unmount();
+  });
+
+  it("retains every cover node when the playing song receives metadata", async () => {
+    const wrapper = setupQueue(component);
+    const covers = wrapper.findAll('img[decoding="async"]');
+    expect(covers).toHaveLength(3);
+    for (const cover of covers) {
+      expect(cover.attributes("loading")).toBe("eager");
+      expect(cover.classes()).not.toContain("opacity-0");
+    }
+    const nodes = covers.map((cover) => cover.element);
+    status.playIndex = 2;
+    updateQueueTracks([{ ...queue.value[2], duration: 2000 }]);
+    await nextTick();
+    const updated = wrapper.findAll('img[decoding="async"]');
+    updated.forEach((cover, index) => expect(cover.element).toBe(nodes[index]));
+    expect(wrapper.findAllComponents(SImg).every((image) => image.props("fade") === false)).toBe(
+      true,
+    );
     wrapper.unmount();
   });
 

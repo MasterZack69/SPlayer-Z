@@ -487,6 +487,7 @@
     }
   },
   "player": {
+    "noOtherTracks": "队列中没有其他歌曲",
     "prev": "上一首",
     "next": "下一首",
     "transitioning": "过渡",
