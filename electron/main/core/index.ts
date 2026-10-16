@@ -1,14 +1,8 @@
 import { app, BrowserWindow } from "electron";
 import { configureLinuxGraphics } from "@main/utils/chromium";
-import { electronApp, optimizer } from "@electron-toolkit/utils";
-import {
-  createMainWindow,
-  restoreLyricWindows,
-  getMainWindow,
-  focusMainWindow,
-  getTaskbarLyricWindow,
-} from "@main/window";
-import { isMac } from "@main/utils/config";
+import { optimizer } from "@electron-toolkit/utils";
+import { createMainWindow, getMainWindow, focusMainWindow } from "@main/window";
+
 import { registerIpcHandlers } from "@main/ipc";
 import { init as initMedia, shutdown as shutdownMedia } from "@main/services/media";
 import { init as initLastfm } from "@main/services/lastfm";
@@ -36,19 +30,16 @@ const configureMemoryOptimizations = (): void => {
   app.commandLine.appendSwitch("disable-features", [...disabled].join(","));
 };
 
-/** 内存指标采样间隔 */
+/** Memory sampling interval. */
 const MEMORY_LOG_INTERVAL_MS = 10 * 60 * 1000;
-/** 启动后首次采样延迟，避开启动期波动 */
+/** Delay the first sample to avoid startup fluctuations. */
 const MEMORY_LOG_FIRST_DELAY_MS = 60 * 1000;
 
-/** 记录各进程内存工作集，用于量化内存表现与防劣化对比 */
+/** Record process working sets for memory regression comparisons. */
 const logProcessMemory = (): void => {
-  // pid → 窗口名，让 Tab 进程能区分主窗口与各歌词窗口
+  // Label the main renderer process in memory samples.
   const windowPids = new Map<number, string>();
-  const namedWindows: Array<[string, Electron.BrowserWindow | null]> = [
-    ["main", getMainWindow()],
-    ["taskbar-lyric", getTaskbarLyricWindow()],
-  ];
+  const namedWindows: Array<[string, Electron.BrowserWindow | null]> = [["main", getMainWindow()]];
   for (const [name, win] of namedWindows) {
     if (win && !win.isDestroyed()) windowPids.set(win.webContents.getOSProcessId(), name);
   }
@@ -58,18 +49,18 @@ const logProcessMemory = (): void => {
     const label = detail ? `${metric.type}(${detail})` : metric.type;
     return `${label} ${mb}MB`;
   });
-  coreLog.info(`内存占用: ${parts.join(" | ")}`);
+  coreLog.info(`Memory usage: ${parts.join(" | ")}`);
 };
 
 /**
- * 初始化应用
+ * Initialize the application.
  */
 export const initApp = (): void => {
   configureMemoryOptimizations();
-  configureLinuxGraphics(app.commandLine, process.platform, process.env);
-  // 初始化日志
+  configureLinuxGraphics(app.commandLine, process.env);
+  // Initialize logging.
   initLogger();
-  // 单例锁
+  // Enforce a single application instance.
   const gotLock = app.requestSingleInstanceLock();
   if (!gotLock) {
     app.quit();
@@ -82,73 +73,54 @@ export const initApp = (): void => {
     const files = extractAudioFiles(commandLine);
     if (files.length > 0) captureAudioFiles(files);
   });
-  // macOS 通过 open-url 接收协议唤起
-  app.on("open-url", (event, url) => {
-    event.preventDefault();
-    captureOrpheusUrl(url);
-  });
-  // macOS 通过 open-file 接收外部文件打开
-  app.on("open-file", (event, path) => {
-    event.preventDefault();
-    captureAudioFiles([path]);
-  });
-  // 注册缓存协议方案
+  // Register the cache protocol scheme.
   registerCacheScheme();
-  // 其他初始化
+  // Initialize application services.
   app.whenReady().then(() => {
-    electronApp.setAppUserModelId("top.imsyy.splayer-next");
-    // 注册 cache:// 协议处理
+    // Handle cache:// requests.
     handleCacheProtocol();
     app.on("browser-window-created", (_, window) => {
       optimizer.watchWindowShortcuts(window);
     });
-    // 注册 IPC
+    // Register IPC handlers.
     registerIpcHandlers(() => {});
-    // 初始化数据库
+    // Initialize the database.
     initDatabase();
-    // 创建主窗口
+    // Create the main window.
     const mainWindow = createMainWindow();
-    // 播放配置同步前准备系统媒体控件，对外服务等待启动层退出。
+    // Initialize MPRIS before renderer playback settings are synchronized.
     mainWindow.once("show", () => {
       initMedia();
     });
-    // 注册 orpheus 协议并处理冷启动唤起
+    // Register the orpheus protocol and handle cold-start requests.
     initOrpheusRegistration();
     const coldOrpheusUrl = extractOrpheusUrl(process.argv);
     if (coldOrpheusUrl) captureOrpheusUrl(coldOrpheusUrl);
     const coldAudioFiles = extractAudioFiles(process.argv);
     if (coldAudioFiles.length > 0) captureAudioFiles(coldAudioFiles);
-    // 启动歌曲缓存
+    // Initialize the song cache.
     void initSongCache();
-    // 初始化 Last.fm 集成
+    // Initialize Last.fm.
     initLastfm();
-    // 恢复歌词相关窗口
-    restoreLyricWindows();
-    // 注册全局快捷键
+
+    // Register global shortcuts.
     initGlobalHotkey();
     initUpdater();
-    // 周期记录各进程内存
+    // Sample process memory periodically.
     setTimeout(logProcessMemory, MEMORY_LOG_FIRST_DELAY_MS);
     setInterval(logProcessMemory, MEMORY_LOG_INTERVAL_MS);
     app.on("activate", () => {
-      if (isMac) {
-        if (getMainWindow()) focusMainWindow();
-        else createMainWindow();
-        return;
-      }
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
-    coreLog.info("应用初始化完成");
+    coreLog.info("Application initialized.");
   });
-  // 所有窗口关闭时退出应用
+  // Exit when all windows close.
   app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-      app.quit();
-    }
+    app.quit();
   });
-  /** 退出前释放资源 */
+  /** Release resources before exiting. */
   app.on("before-quit", () => {
-    coreLog.info("应用即将退出，清理资源");
+    coreLog.info("Application exiting; releasing resources.");
     shutdownMedia();
     closeDatabase();
     disposeUpdater();

@@ -1,8 +1,9 @@
+import { assertSupportedPlatform } from "./shared/utils/platform";
 import type { Configuration } from "electron-builder";
 import { readFileSync } from "node:fs";
 import { SUPPORTED_AUDIO_EXTENSIONS } from "./shared/utils/audioFile";
 
-/** 音频后缀注册为文件关联 */
+/** Register supported audio extensions as desktop file associations. */
 const fileAssociations = [...SUPPORTED_AUDIO_EXTENSIONS].map((extension) => {
   const ext = extension.slice(1);
   return {
@@ -23,14 +24,16 @@ if (
   updateChannel !== "alpha" &&
   updateChannel !== "nightly"
 ) {
-  throw new Error(`不支持的更新通道: ${updateChannel}`);
+  throw new Error(`Unsupported update channel: ${updateChannel}`);
 }
 if (packageVersion.includes("-") && !prereleaseChannel) {
-  throw new Error(`不支持的预发布版本格式: ${packageVersion}`);
+  throw new Error(`Unsupported prerelease version: ${packageVersion}`);
 }
 if (updateChannel !== inferredUpdateChannel) {
-  throw new Error(`版本 ${packageVersion} 与更新通道 ${updateChannel} 不匹配`);
+  throw new Error(`Version ${packageVersion} does not match update channel ${updateChannel}`);
 }
+
+assertSupportedPlatform();
 
 const config: Configuration = {
   appId: "top.imsyy.splayer-next",
@@ -63,7 +66,7 @@ const config: Configuration = {
     "!**/{CHANGELOG,README,readme}*",
     "!**/node_modules/better-sqlite3/{deps,src}/**",
   ],
-  // 保留的语言
+  // Packaged application locales.
   electronLanguages: ["zh-CN", "en-US"],
   asarUnpack: ["public/**"],
   extraResources: [
@@ -74,16 +77,6 @@ const config: Configuration = {
     },
     {
       from: "native/media-ctrl",
-      to: "native",
-      filter: ["*.node"],
-    },
-    {
-      from: "native/taskbar-lyric",
-      to: "native",
-      filter: ["*.node"],
-    },
-    {
-      from: "native/taskbar-thumbnail",
       to: "native",
       filter: ["*.node"],
     },
@@ -99,59 +92,6 @@ const config: Configuration = {
       to: "LICENSE",
     },
   ],
-  win: {
-    executableName: "SPlayer-Next",
-    icon: "public/icons/logo.ico",
-    artifactName: "${productName}-${version}-${arch}.${ext}",
-    forceCodeSigning: false,
-    target: ["nsis", "portable"],
-    protocols: [{ name: "Orpheus Protocol", schemes: ["orpheus"] }],
-  },
-  nsis: {
-    oneClick: false,
-    guid: "top.imsyy.splayer-next",
-    installerIcon: "public/icons/logo.ico",
-    uninstallerIcon: "public/icons/logo.ico",
-    installerHeader: "build/installer/header.bmp",
-    installerSidebar: "build/installer/sidebar.bmp",
-    uninstallerSidebar: "build/installer/sidebar.bmp",
-    include: "build/installer/installer.nsh",
-    installerLanguages: ["en_US", "zh_CN"],
-    artifactName: "${productName}-${version}-${arch}-setup.${ext}",
-    shortcutName: "SPlayer Next",
-    uninstallDisplayName: "SPlayer Next",
-    createDesktopShortcut: "always",
-    allowElevation: true,
-    allowToChangeInstallationDirectory: true,
-    license: "build/license.txt",
-  },
-  portable: {
-    artifactName: "${productName}-${version}-${arch}-portable.${ext}",
-  },
-  mac: {
-    executableName: "SPlayer-Next",
-    icon: "public/icons/icon.icns",
-    artifactName: "${productName}-${version}-${arch}.${ext}",
-    identity: null,
-    hardenedRuntime: false,
-    notarize: false,
-    darkModeSupport: true,
-    category: "public.app-category.music",
-    entitlementsInherit: "public/entitlements.mac.plist",
-    extendInfo: {
-      NSCameraUsageDescription: "Application requests access to the device's camera.",
-      NSMicrophoneUsageDescription: "Application requests access to the device's microphone.",
-      NSDocumentsFolderUsageDescription:
-        "Application requests access to the user's Documents folder.",
-      NSDownloadsFolderUsageDescription:
-        "Application requests access to the user's Downloads folder.",
-      CFBundleURLTypes: [{ CFBundleURLName: "Orpheus Protocol", CFBundleURLSchemes: ["orpheus"] }],
-    },
-    target: ["dmg", "zip"],
-  },
-  dmg: {
-    artifactName: "${productName}-${version}-${arch}.${ext}",
-  },
   linux: {
     executableName: "SPlayer-Next",
     icon: "public/icons/favicon-512x512.png",

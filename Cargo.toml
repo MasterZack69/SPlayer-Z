@@ -1,10 +1,7 @@
 [workspace]
 members = [
   "./native/audio-engine",
-  "./native/audio-capture",
   "./native/media-ctrl",
-  "./native/taskbar-lyric",
-  "./native/taskbar-thumbnail",
   "./native/opencc",
 ]
 resolver = "3"
@@ -19,8 +16,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "local-time"] 
 tracing-appender = "0.2"
 time = { version = "0.3", features = ["macros", "formatting"] }
 tokio = { version = "1" }
-windows = "0.62"
-windows-core = "0.62.2"
 
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }

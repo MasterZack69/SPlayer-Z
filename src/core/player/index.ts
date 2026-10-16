@@ -859,7 +859,7 @@ export const saveTrackTags = async (edits: TagEditRequest[]): Promise<TagWriteOu
   if (touchesCurrent) {
     resumeMs = Math.round(playback.getCurrentTime());
     wasPlaying = status.isPlaying;
-    // Windows 下引擎持有文件句柄，必须先停止才能写入
+    // Release the engine file handle before replacing audio tags.
     await stop();
   }
 

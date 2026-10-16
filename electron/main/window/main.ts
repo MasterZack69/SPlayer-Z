@@ -2,14 +2,11 @@ import { app, BrowserWindow, dialog, shell } from "electron";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
 import { createWindow } from "./create";
-import { initThumbar } from "@main/services/thumbar";
-import { enableTaskbarThumbnail } from "@main/services/thumbnail";
 import { initTray } from "@main/services/tray";
 import { store } from "@main/store";
 import { handleCacheProtocolOnPartition, MAIN_PARTITION } from "@main/utils/protocol";
 import { isAppQuitting } from "@main/utils/lifecycle";
 import { broadcast } from "@main/utils/broadcast";
-import { isWin } from "@main/utils/config";
 import { CURRENT_AGREEMENT_VERSION } from "@shared/constants/agreement";
 import { coreLog } from "@main/utils/logger";
 
@@ -49,14 +46,6 @@ export const createMainWindow = (): BrowserWindow => {
   });
 
   // Electron 43 在混合 DPI 下会先按主屏缩放创建窗口，定位到目标屏幕后需重新应用边界
-  if (isWin && saved?.x != null && saved?.y != null) {
-    mainWindow.setBounds({
-      width: saved.width,
-      height: saved.height,
-      x: saved.x,
-      y: saved.y,
-    });
-  }
 
   startupShown = false;
   firstPaint = new Promise((resolve) => {
@@ -65,14 +54,6 @@ export const createMainWindow = (): BrowserWindow => {
 
   // 初始化托盘
   initTray();
-
-  // 自定义任务栏缩略图
-  enableTaskbarThumbnail(mainWindow);
-
-  // 缩略图工具栏
-  mainWindow.once("show", () => {
-    initThumbar(mainWindow!);
-  });
 
   mainWindow.webContents.on("did-finish-load", () => {
     if (startupShown) applyMainWindowZoom();

@@ -4,7 +4,7 @@
   "productName": "SPlayer-Next",
   "desktopName": "top.imsyy.splayer_next",
   "version": "1.2.0-beta.1",
-  "description": "Cross-platform desktop music player with rich lyric support and wide audio format compatibility",
+  "description": "Linux desktop music player with local lyrics and self-hosted media libraries",
   "type": "module",
   "packageManager": "pnpm@11.5.2",
   "main": "./out/main/index.js",
@@ -36,7 +36,7 @@
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
     "test": "pnpm test:node && pnpm test:web",
-    "test:node": "tsx --test \"electron/**/*.test.ts\" \"src/**/*.test.ts\"",
+    "test:node": "tsx --test \"electron/**/*.test.ts\" \"src/**/*.test.ts\" \"scripts/*.test.ts\" \".github/scripts/*.test.cjs\"",
     "test:web": "vitest run --config vitest.config.ts",
     "test:web:watch": "vitest --config vitest.config.ts",
     "test:native": "cargo test --workspace",
@@ -47,8 +47,6 @@
     "build": "rimraf dist && pnpm build:native && pnpm typecheck && electron-vite build",
     "postinstall": "node node_modules/electron/install.js && electron-rebuild -f -w better-sqlite3",
     "build:unpack": "pnpm build && electron-builder --dir --config electron-builder.config.ts",
-    "build:win": "pnpm build && tsx scripts/gen-license.ts && electron-builder --config electron-builder.config.ts --win",
-    "build:mac": "pnpm build && electron-builder --config electron-builder.config.ts --mac",
     "build:linux": "pnpm build && electron-builder --config electron-builder.config.ts --linux",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
@@ -137,5 +135,12 @@
     "*.{json,yaml,yml,md,css,scss}": [
       "prettier --write"
     ]
-  }
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
 }

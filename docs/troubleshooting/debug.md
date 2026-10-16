@@ -6,11 +6,11 @@ Include the SPlayer-Z commit or version, OS and architecture, installation forma
 
 Use the app's **Open log directory** control in Settings → About rather than guessing a path. Application logs live under `{userData}/app-data/logs/`; native logs are under its `native/` subdirectory. Current builds can retain the upstream `SPlayer-Next` data-directory name.
 
-Typical user-data roots are `%APPDATA%/SPlayer-Next` on Windows, `~/Library/Application Support/SPlayer-Next` on macOS, and `${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Next` on Linux. Portable Windows builds use `UserData` beside the executable. Check the actual build and path before moving files.
+The Linux user-data root is usually `${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Next`. Check the actual build and path before moving files.
 
 ## Developer tools
 
-Use the Developer Tools command when available. In development, the common shortcuts are Ctrl+Shift+I on Windows/Linux and Cmd+Option+I on macOS. Console shows renderer errors; Network helps diagnose failed media-server requests. Main-process and Rust errors may only appear in application logs or the terminal.
+Use the Developer Tools command when available. In development, the shortcut is Ctrl+Shift+I on Linux. Console shows renderer errors; Network helps diagnose failed media-server requests. Main-process and Rust errors may only appear in application logs or the terminal.
 
 ## Common checks
 

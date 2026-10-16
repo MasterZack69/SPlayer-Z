@@ -1,7 +1,7 @@
 import os from "os";
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
-import type { ExternalApiStatus, McpStatus, TaskbarLyricSettings } from "@shared/types/settings";
+import type { ExternalApiStatus, McpStatus } from "@shared/types/settings";
 import type {
   PluginInfo,
   PluginResolveUrlArgs,
@@ -16,14 +16,12 @@ import type {
   StreamingFavoriteChange,
   StreamingSyncState,
 } from "@shared/types/streaming";
-import type { RecognitionConfig, RecognitionEvent } from "@shared/types/recognition";
 import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
 import type { TagEditRequest } from "@shared/types/tagEditor";
 import type { UpdateEvent } from "@shared/types/update";
 import type { CloudUploadProgress } from "@shared/types/cloudUpload";
 import type { MusicCommentQuery } from "@shared/types/comment";
 import type { AiModelSaveInput } from "@shared/types/ai";
-import type { DesktopLyricUnlockButtonBounds } from "@shared/types/window";
 import type {
   LegacyPlaylistRecord,
   PlaylistCreateInput,
@@ -39,17 +37,9 @@ const subscribe = <T>(channel: string, callback: (data: T) => void): (() => void
   return () => ipcRenderer.removeListener(channel, handler);
 };
 
-/**
- * 推断安装类型
- * @returns nsis | portable | appx | dmg | appimage
- */
-const getInstallType = (): "nsis" | "portable" | "appx" | "dmg" | "appimage" => {
-  if (process.env.PORTABLE_EXECUTABLE_DIR) return "portable";
-  if (process.execPath.includes("WindowsApps")) return "appx";
-  if (process.platform === "darwin") return "dmg";
-  if (process.platform === "linux") return "appimage";
-  return "nsis";
-};
+/** Identify the actual Linux installation format without guessing AppImage for every package. */
+const getInstallType = (): "appimage" | "package" =>
+  process.env.APPIMAGE ? "appimage" : "package";
 
 // 暴露给渲染进程的自定义 API
 const api = {
@@ -185,7 +175,7 @@ const api = {
   },
   system: {
     installType: getInstallType(),
-    platform: process.platform,
+    platform: "linux" as const,
     osInfo: {
       type: os.type(),
       arch: os.arch(),
@@ -311,33 +301,6 @@ const api = {
     ready: (): Promise<void> => ipcRenderer.invoke("window:ready"),
     startupComplete: (): Promise<void> => ipcRenderer.invoke("window:startupComplete"),
     startupFailed: (error: string): void => ipcRenderer.send("window:startupFailed", error),
-    // 切换桌面歌词窗口
-    toggleDesktopLyric: () => ipcRenderer.invoke("window:toggleDesktopLyric"),
-    // 关闭桌面歌词窗口
-    closeDesktopLyric: () => ipcRenderer.invoke("window:closeDesktopLyric"),
-    // 查询桌面歌词窗口是否打开
-    isDesktopLyricOpen: () => ipcRenderer.invoke("window:isDesktopLyricOpen"),
-    // 订阅桌面歌词窗口开关状态
-    onDesktopLyricVisibilityChange: (callback: (open: boolean) => void) =>
-      subscribe<boolean>("desktopLyric:visibilityChange", callback),
-    // 切换灵动岛窗口
-    toggleDynamicIsland: () => ipcRenderer.invoke("window:toggleDynamicIsland"),
-    // 关闭灵动岛窗口
-    closeDynamicIsland: () => ipcRenderer.invoke("window:closeDynamicIsland"),
-    // 查询灵动岛窗口是否打开
-    isDynamicIslandOpen: () => ipcRenderer.invoke("window:isDynamicIslandOpen"),
-    // 订阅灵动岛窗口开关状态
-    onDynamicIslandVisibilityChange: (callback: (open: boolean) => void) =>
-      subscribe<boolean>("dynamicIsland:visibilityChange", callback),
-    // 切换任务栏歌词窗口
-    toggleTaskbarLyric: () => ipcRenderer.invoke("window:toggleTaskbarLyric"),
-    // 关闭任务栏歌词窗口
-    closeTaskbarLyric: () => ipcRenderer.invoke("window:closeTaskbarLyric"),
-    // 查询任务栏歌词窗口是否打开
-    isTaskbarLyricOpen: () => ipcRenderer.invoke("window:isTaskbarLyricOpen"),
-    // 订阅任务栏歌词窗口开关状态
-    onTaskbarLyricVisibilityChange: (callback: (open: boolean) => void) =>
-      subscribe<boolean>("taskbarLyric:visibilityChange", callback),
     // 主窗口控制
     minimize: () => ipcRenderer.send("window:minimize"),
     toggleMaximize: () => ipcRenderer.send("window:toggleMaximize"),
@@ -350,68 +313,6 @@ const api = {
       subscribe<boolean>("window:fullscreenChange", callback),
     hide: () => ipcRenderer.send("window:hide"),
     quit: () => ipcRenderer.send("window:quit"),
-  },
-  desktopLyric: {
-    // 订阅桌面歌词配置变化
-    onConfigChange: (callback: (config: unknown) => void) =>
-      subscribe("desktopLyric:configChange", callback),
-    // 将窗口高度锁定到指定像素
-    setHeight: (height: number) => ipcRenderer.invoke("desktopLyric:setHeight", height),
-    // 上报解锁按钮在窗口内容区内的命中区域
-    setUnlockButtonBounds: (bounds: DesktopLyricUnlockButtonBounds) =>
-      ipcRenderer.send("desktopLyric:setUnlockButtonBounds", bounds),
-    // 拖拽移动；只传位置，尺寸由主进程权威 cachedSize 写回
-    move: (x: number, y: number) => ipcRenderer.send("desktopLyric:move", x, y),
-    // 拖拽结束后保存最终位置
-    saveState: () => ipcRenderer.send("desktopLyric:saveState"),
-    // 订阅主进程 screen 光标位置轮询
-    onCursorInside: (callback: (inside: boolean) => void) =>
-      subscribe<boolean>("desktopLyric:cursorInside", callback),
-  },
-  dynamicIsland: {
-    // 订阅灵动岛配置变化
-    onConfigChange: (callback: (config: unknown) => void) =>
-      subscribe("dynamicIsland:configChange", callback),
-    // 拖拽移动；只传位置，尺寸由主进程权威写回
-    move: (x: number, y: number) => ipcRenderer.send("dynamicIsland:move", x, y),
-    // 拖拽结束后保存最终位置；主进程会在落点近顶部时自动吸附回居中
-    saveState: () => ipcRenderer.send("dynamicIsland:saveState"),
-    // 渲染端上报目标宽度，主进程立即 resize
-    resize: (width: number) => ipcRenderer.send("dynamicIsland:resize", width),
-    setShape: (width: number | null) => ipcRenderer.send("dynamicIsland:setShape", width),
-    // 渲染端上报目标高度
-    setHeight: (height: number) => ipcRenderer.send("dynamicIsland:setHeight", height),
-    // 查询当前吸附模式
-    getMode: () => ipcRenderer.invoke("dynamicIsland:getMode"),
-    // 订阅吸附模式变化：snapped（顶部居中）/ floating（自由位置）
-    onModeChange: (callback: (mode: "snapped" | "floating") => void) =>
-      subscribe<"snapped" | "floating">("dynamicIsland:modeChange", callback),
-    // 订阅主进程 screen 光标位置判定（非遮挡模式下用于悬停隐藏）
-    onCursorInside: (callback: (inside: boolean) => void) =>
-      subscribe<boolean>("dynamicIsland:cursorInside", callback),
-  },
-  taskbarLyric: {
-    setContentWidth: (width: number) => ipcRenderer.send("taskbarLyric:setContentWidth", width),
-    // 订阅布局变化（锚定方向、是否居中、系统类型、任务栏主题）
-    onLayout: (
-      callback: (data: {
-        isCentered: boolean;
-        systemType: string;
-        isLight: boolean;
-        anchor: "left" | "right";
-        maxWidth: number;
-      }) => void,
-    ) =>
-      subscribe<{
-        isCentered: boolean;
-        systemType: string;
-        isLight: boolean;
-        anchor: "left" | "right";
-        maxWidth: number;
-      }>("taskbarLyric:layout", callback),
-    // 订阅任务栏歌词配置变化
-    onConfigChange: (callback: (config: TaskbarLyricSettings) => void) =>
-      subscribe<TaskbarLyricSettings>("taskbarLyric:configChange", callback),
   },
   plugins: {
     // 列出所有已安装插件
@@ -702,31 +603,6 @@ const api = {
      */
     getLyrics: (serverId: string, trackId: string, hint?: { artist?: string; title?: string }) =>
       ipcRenderer.invoke("streaming:getLyrics", serverId, trackId, hint),
-  },
-  recognition: {
-    /** 当前平台是否支持听歌识曲 */
-    isSupported: () => ipcRenderer.invoke("recognition:isSupported"),
-    /**
-     * 启动一次识别
-     * @param config - 采集来源与时长
-     */
-    start: (config: RecognitionConfig) => ipcRenderer.invoke("recognition:start", config),
-    /** 取消当前识别 */
-    cancel: () => ipcRenderer.invoke("recognition:cancel"),
-    /**
-     * 提交渲染进程采集的麦克风 PCM（macOS/Linux 路径）
-     * @param pcm - 8 kHz 单声道样本
-     */
-    submitPcm: (pcm: Float32Array) => ipcRenderer.invoke("recognition:submitPcm", pcm),
-    /**
-     * 订阅识别进度事件
-     * @param callback - 进度 / 结果 / 错误
-     * @returns 取消订阅函数
-     */
-    onEvent: (callback: (event: RecognitionEvent) => void) => {
-      ipcRenderer.removeAllListeners("recognition:event");
-      return subscribe<RecognitionEvent>("recognition:event", callback);
-    },
   },
   lastfm: {
     // 发起授权

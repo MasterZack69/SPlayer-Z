@@ -158,7 +158,7 @@ const mirrored = (url: string): string => (mirror.value ? mirror.value + url : u
 const formatSize = (bytes: number): string =>
   bytes ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : "";
 
-const PLATFORM_ORDER = ["Windows", "macOS", "Linux"];
+const PLATFORM_ORDER = ["Linux"];
 
 const archGuideUrl = "/download#nixos-and-nix";
 
@@ -214,9 +214,7 @@ const recommended = computed(() => {
 const detectEnvironment = (): void => {
   if (typeof navigator === "undefined") return;
   const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes("win")) userPlatform.value = "Windows";
-  else if (ua.includes("mac")) userPlatform.value = "macOS";
-  else if (ua.includes("linux")) userPlatform.value = "Linux";
+  if (ua.includes("linux")) userPlatform.value = "Linux";
   userArch.value = ua.includes("arm64") || ua.includes("aarch64") ? "ARM64" : "x64";
 };
 

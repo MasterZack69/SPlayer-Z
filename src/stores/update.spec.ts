@@ -134,15 +134,4 @@ describe("更新快照与用户入口", () => {
     expect(store.dialogOpen).toBe(false);
     expect(api.download).not.toHaveBeenCalled();
   });
-
-  it("商店版统一入口直接打开商店", async () => {
-    api.getState.mockResolvedValue({ ...initial, mode: "store" });
-    const { useUpdateStore } = await import("./update");
-    const store = useUpdateStore();
-    await flushPromises();
-    api.check.mockClear();
-    store.checkManually();
-    expect(api.openDownloadPage).toHaveBeenCalledOnce();
-    expect(api.check).not.toHaveBeenCalled();
-  });
 });

@@ -6,7 +6,6 @@
     "downloading": "下载中",
     "installNow": "立即重启安装",
     "goDownload": "前往下载页",
-    "goStore": "前往商店更新",
     "upToDate": "当前通道暂无更高版本",
     "readyToast": "更新已就绪，可重启安装",
     "failed": "更新失败，请稍后重试",
@@ -762,7 +761,6 @@
       "general": "常规设置",
       "player": "播放设置",
       "lyric": "歌词设置",
-      "externalLyric": "外部歌词",
       "appearance": "外观设置",
       "hotkeys": "快捷键配置",
       "services": "网络与服务",
@@ -793,9 +791,6 @@
       "lyricAMLLOptimize": "歌词优化",
       "lyricSpring": "弹簧动画",
       "lyricLayout": "布局与透明度",
-      "desktopLyric": "桌面歌词",
-      "dynamicIsland": "灵动岛歌词",
-      "taskbarLyric": "任务栏歌词",
       "theme": "主题与颜色",
       "appearanceStyle": "外观风格",
       "layout": "布局",
@@ -838,7 +833,6 @@
       "commit": "提交",
       "date": "日期"
     },
-    "storeVersion": "Store",
     "language": {
       "label": "界面语言",
       "description": "切换应用的显示语言"
@@ -948,17 +942,6 @@
     "rememberDeviceVolume": {
       "label": "独立设备音量记忆",
       "description": "切换或插拔不同音频输出设备时，分别保存并恢复各自的音量大小"
-    },
-    "audioOutputMode": {
-      "label": "音频输出模式",
-      "description": "切换当前 Windows WASAPI 音频的输出模式",
-      "shared": "共享模式",
-      "exclusive": "WASAPI 独占模式",
-      "fallback": {
-        "deviceBusy": "设备无法以独占模式打开，已回退共享模式",
-        "formatUnsupported": "设备不支持独占模式所需的音频格式，已回退共享模式",
-        "unavailable": "独占模式暂不可用，已回退共享模式"
-      }
     },
     "pauseOnDeviceSwitch": {
       "label": "切换时暂停播放",
@@ -1116,9 +1099,6 @@
         "volumeDown": "音量减小",
         "cycleRepeat": "切换循环模式",
         "toggleShuffle": "切换随机播放",
-        "toggleDesktopLyric": "切换桌面歌词",
-        "toggleDynamicIsland": "切换灵动岛",
-        "toggleTaskbarLyric": "切换任务栏歌词",
         "openPlayer": "打开播放界面",
         "closePlayer": "关闭播放界面",
         "togglePlaylist": "展开 / 收起播放队列",
@@ -1136,8 +1116,6 @@
       "restartRequiredContent": "此设置需要重启应用后生效。确定保存并立即重启吗？",
       "testChannelTitle": "切换到测试通道",
       "testChannelContent": "Beta 与 Alpha 通道会提前收到测试版本，其中 Alpha 版本可能非常不稳定。确定切换吗？",
-      "exclusiveModeTitle": "切换到独占模式",
-      "exclusiveModeContent": "独占模式绕过系统混音器，优先使用音源采样率与位深，适合外接 DAC / Hi-Fi 设备。播放器的音量、均衡器等处理仍然生效，不保证逐位无损输出。独占期间其他应用可能无法播放声音；独占不可用时会尝试共享模式，若设备被其他应用独占，共享模式也可能无法播放。确定切换吗？",
       "preloadCacheTitle": "开启预载所需的缓存？",
       "preloadCacheContent": "歌曲预载需要缓存下一首音频。继续将同时开启歌曲缓存和流媒体缓存，可能增加网络流量和磁盘占用"
     },
@@ -1271,215 +1249,6 @@
     "wordFadeWidth": {
       "label": "渐变宽度",
       "description": "逐字高亮掩码的渐变宽度比例"
-    },
-    "desktopLyricEnabled": {
-      "label": "开启桌面歌词",
-      "description": "在桌面显示一个独立的歌词悬浮窗口"
-    },
-    "desktopLyricFontSize": {
-      "label": "字号",
-      "description": "桌面歌词的文字大小（像素）"
-    },
-    "desktopLyricFontWeight": {
-      "label": "字重",
-      "description": "桌面歌词的文字粗细"
-    },
-    "desktopLyricShowTranslation": {
-      "label": "显示翻译",
-      "description": "在桌面歌词中显示翻译文本"
-    },
-    "desktopLyricDoubleLine": {
-      "label": "双行显示",
-      "description": "同时显示当前行与下一行"
-    },
-    "desktopLyricAlign": {
-      "label": "对齐方式",
-      "description": "歌词文本的水平对齐",
-      "left": "居左",
-      "center": "居中",
-      "right": "居右",
-      "justify": "两端对齐"
-    },
-    "desktopLyricWordByWord": {
-      "label": "逐字高亮",
-      "description": "按单词进度逐字渲染高亮"
-    },
-    "desktopLyricAutoGenerateWordByWord": {
-      "label": "自动生成逐字效果",
-      "description": "关闭后仅真正的逐字歌词生效"
-    },
-    "desktopLyricPlayedColor": {
-      "label": "已播放颜色",
-      "description": "已播放的歌词文字颜色"
-    },
-    "desktopLyricUnplayedColor": {
-      "label": "未播放颜色",
-      "description": "未播放的歌词文字颜色"
-    },
-    "desktopLyricStrokeColor": {
-      "label": "描边颜色",
-      "description": "歌词文字的描边颜色，透明则视为关闭描边"
-    },
-    "desktopLyricBackgroundMask": {
-      "label": "文本背景遮罩",
-      "description": "为每行歌词文字加半透明背景色块，提升弱对比下的可读性"
-    },
-    "desktopLyricBackgroundMaskColor": {
-      "label": "遮罩颜色",
-      "description": "文本背景遮罩的颜色与透明度"
-    },
-    "desktopLyricAlwaysShowSongInfo": {
-      "label": "常驻显示歌曲信息",
-      "description": "始终显示歌曲名与艺术家，关闭后仅悬停时显示"
-    },
-    "desktopLyricAnimation": {
-      "label": "切换动画",
-      "description": "歌词行切换时的滑入 / 滑出过渡动画"
-    },
-    "desktopLyricLimitBounds": {
-      "label": "限制在屏幕内",
-      "description": "拖拽时把窗口边界限制在当前屏幕的工作区范围内"
-    },
-    "desktopLyricAlwaysOnTop": {
-      "label": "窗口置顶",
-      "description": "桌面歌词窗口始终保持在最前"
-    },
-    "desktopLyricLocked": {
-      "label": "锁定窗口",
-      "description": "锁定后鼠标点击将穿透到下层窗口，无法拖动"
-    },
-    "desktopLyricUseCSSDrag": {
-      "label": "使用 CSS 拖拽",
-      "description": "使用 CSS -webkit-app-region 拖拽，在 Wayland 环境建议启用"
-    },
-    "dynamicIslandEnabled": {
-      "label": "开启灵动岛",
-      "description": "在屏幕顶部显示一个简洁的悬浮歌词窗口，可拖离至任意位置"
-    },
-    "dynamicIslandScale": {
-      "label": "缩放比例",
-      "description": "窗口高度与字号同步缩放，100% 为默认大小"
-    },
-    "dynamicIslandFontWeight": {
-      "label": "字重",
-      "description": "灵动岛歌词的文字粗细"
-    },
-    "dynamicIslandWordByWord": {
-      "label": "逐字高亮",
-      "description": "按单词进度逐字渲染高亮"
-    },
-    "dynamicIslandTransition": {
-      "label": "切换动画",
-      "description": "选择灵动岛宽度与歌词行的切换方式",
-      "bounce": "灵动回弹",
-      "smooth": "平滑过渡"
-    },
-    "dynamicIslandDoubleLine": {
-      "label": "总是显示双行",
-      "description": "即使没有翻译可用也保持双行布局"
-    },
-    "dynamicIslandShowTranslation": {
-      "label": "显示翻译",
-      "description": "有翻译的句子在副行显示翻译"
-    },
-    "dynamicIslandPlayedColor": {
-      "label": "已播放颜色",
-      "description": "当前已唱到部分的文字颜色"
-    },
-    "dynamicIslandUnplayedColor": {
-      "label": "未播放颜色",
-      "description": "尚未唱到部分及艺术家名的文字颜色"
-    },
-    "dynamicIslandBackgroundColor": {
-      "label": "背景颜色",
-      "description": "窗口背板的颜色与透明度"
-    },
-    "dynamicIslandAlwaysOnTop": {
-      "label": "窗口置顶",
-      "description": "灵动岛窗口始终保持在最前"
-    },
-    "dynamicIslandNotchFusion": {
-      "label": "刘海融合",
-      "description": "在 MacBook 刘海屏上让灵动岛从物理刘海向下扩展"
-    },
-    "dynamicIslandSnapCentered": {
-      "label": "吸附时居中",
-      "description": "关闭后吸附到顶部时保留拖动到的水平位置"
-    },
-    "dynamicIslandNonOcclusive": {
-      "label": "非遮挡模式",
-      "description": "鼠标穿透窗口，悬停时隐藏内容"
-    },
-    "dynamicIslandUseCSSDrag": {
-      "label": "使用 CSS 拖拽",
-      "description": "使用 CSS -webkit-app-region 拖拽，在 Wayland 环境建议启用"
-    },
-    "taskbarLyricEnabled": {
-      "label": "开启任务栏歌词",
-      "description": "将歌词嵌入 Windows 任务栏中显示"
-    },
-    "taskbarLyricPosition": {
-      "label": "显示位置",
-      "description": "歌词在任务栏中的位置，自动模式下根据任务栏对齐方式选择",
-      "auto": "自动",
-      "left": "左侧",
-      "right": "右侧"
-    },
-    "taskbarLyricAutoMaxWidth": {
-      "label": "自动宽度",
-      "description": "自动使用任务栏可用区域作为最大宽度；关闭后手动设置最大宽度"
-    },
-    "taskbarLyricAutoAdjustOccupiedSpace": {
-      "label": "按内容收缩窗口",
-      "description": "在自动宽度范围内，根据当前主行和悬浮控件缩小实际占用空间"
-    },
-    "taskbarLyricMaxWidth": {
-      "label": "最大宽度",
-      "description": "超出可用空间时仍以可用空间为准，避免挤占"
-    },
-    "taskbarLyricLeftMargin": {
-      "label": "左边距",
-      "description": "歌词与可用空间左侧的间距，用于避开任务栏上的其他组件"
-    },
-    "taskbarLyricRightMargin": {
-      "label": "右边距",
-      "description": "歌词与可用空间右侧的间距，用于避开任务栏上的其他组件"
-    },
-    "taskbarLyricColorMode": {
-      "label": "配色模式",
-      "description": "任务栏歌词的文字与背景配色",
-      "taskbar": "跟随任务栏",
-      "taskbarInverse": "跟随任务栏（反向）",
-      "light": "浅色",
-      "dark": "深色"
-    },
-    "taskbarLyricShowBackground": {
-      "label": "显示背景",
-      "description": "获焦时显示半透明背景，增强歌词与任务栏的区分"
-    },
-    "taskbarLyricFontSize": {
-      "label": "字号",
-      "description": "任务栏歌词的文字大小（像素）"
-    },
-    "taskbarLyricFontWeight": {
-      "label": "字重",
-      "description": "任务栏歌词的文字粗细"
-    },
-    "taskbarLyricShowCover": {
-      "label": "显示封面",
-      "description": "在歌词旁显示当前曲目的封面缩略图"
-    },
-    "taskbarLyricDoubleLine": {
-      "label": "双行显示",
-      "description": "同时显示当前歌词与翻译或下一行"
-    },
-    "taskbarLyricShowTranslation": {
-      "label": "显示翻译",
-      "description": "双行模式下优先显示翻译，无翻译时回退到下一行"
-    },
-    "taskbarLyricWordByWord": {
-      "label": "逐字高亮",
-      "description": "按单词进度逐字渲染高亮"
     },
     "playerBgType": {
       "label": "播放器背景",
@@ -1634,8 +1403,7 @@
       "fieldLabel": "{name}字体",
       "groups": {
         "general": "通用字体",
-        "appLyric": "歌词字体",
-        "externalLyric": "外部歌词字体"
+        "appLyric": "歌词字体"
       },
       "fields": {
         "global": "全局",
@@ -1643,10 +1411,7 @@
         "lyricChinese": "中文歌词",
         "lyricJapanese": "日语歌词",
         "lyricKorean": "韩语歌词",
-        "lyricLatin": "英语 / 拉丁文字歌词",
-        "desktopLyric": "桌面歌词",
-        "dynamicIsland": "灵动岛歌词",
-        "taskbarLyric": "任务栏歌词"
+        "lyricLatin": "英语 / 拉丁文字歌词"
       }
     },
     "systemMediaControls": {
@@ -1727,10 +1492,6 @@
     "taskbarProgress": {
       "label": "任务栏播放进度",
       "description": "在任务栏图标上显示当前播放进度"
-    },
-    "taskbarThumbnailCover": {
-      "label": "任务栏封面预览",
-      "description": "悬停任务栏时以专辑封面作为窗口预览，关闭则显示系统默认的实时窗口"
     },
     "networkProxyProtocol": {
       "label": "网络代理",

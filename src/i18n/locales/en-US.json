@@ -6,7 +6,6 @@
     "downloading": "Downloading",
     "installNow": "Restart & Install",
     "goDownload": "Go to Download",
-    "goStore": "Update in Store",
     "upToDate": "No newer version is available on this channel",
     "readyToast": "Update ready — restart to install",
     "failed": "Update failed, please try again later",
@@ -36,7 +35,7 @@
         },
         "lyrics": {
           "title": "Rich Lyrics",
-          "desc": "AMLL word-by-word lyrics, plus desktop, Dynamic Island and taskbar lyrics"
+          "desc": "AMLL line-synced and word-by-word lyrics"
         }
       }
     },
@@ -762,7 +761,6 @@
       "general": "General",
       "player": "Player",
       "lyric": "Lyrics",
-      "externalLyric": "External Lyrics",
       "appearance": "Appearance",
       "hotkeys": "Hotkey Settings",
       "services": "Services",
@@ -793,9 +791,6 @@
       "lyricAMLLOptimize": "Lyric Optimization",
       "lyricSpring": "Spring Animation",
       "lyricLayout": "Layout & Opacity",
-      "desktopLyric": "Desktop Lyric",
-      "dynamicIsland": "Dynamic Island Lyric",
-      "taskbarLyric": "Taskbar Lyric",
       "theme": "Theme",
       "appearanceStyle": "Appearance Style",
       "layout": "Layout",
@@ -838,7 +833,6 @@
       "commit": "Commit",
       "date": "Date"
     },
-    "storeVersion": "Store",
     "language": {
       "label": "Language",
       "description": "Switch the display language"
@@ -948,17 +942,6 @@
     "rememberDeviceVolume": {
       "label": "Remember Device Volume",
       "description": "Independently save and restore volume for each audio output device"
-    },
-    "audioOutputMode": {
-      "label": "Audio Output Mode",
-      "description": "Select the current Windows WASAPI audio output mode",
-      "shared": "Shared Mode",
-      "exclusive": "WASAPI Exclusive Mode",
-      "fallback": {
-        "deviceBusy": "The device could not be opened exclusively and has fallen back to shared mode",
-        "formatUnsupported": "The device does not support the required exclusive-mode format, falling back to shared mode",
-        "unavailable": "Exclusive mode is currently unavailable, falling back to shared mode"
-      }
     },
     "pauseOnDeviceSwitch": {
       "label": "Pause on Device Switch",
@@ -1116,9 +1099,6 @@
         "volumeDown": "Volume down",
         "cycleRepeat": "Cycle repeat mode",
         "toggleShuffle": "Toggle shuffle",
-        "toggleDesktopLyric": "Toggle desktop lyric",
-        "toggleDynamicIsland": "Toggle Dynamic Island",
-        "toggleTaskbarLyric": "Toggle taskbar lyric",
         "openPlayer": "Open player view",
         "closePlayer": "Close player view",
         "togglePlaylist": "Show / hide queue",
@@ -1136,8 +1116,6 @@
       "restartRequiredContent": "This setting requires an app restart. Save and relaunch now?",
       "testChannelTitle": "Switch to a Test Channel",
       "testChannelContent": "Beta and Alpha channels receive test releases early. Alpha releases may be highly unstable. Switch anyway?",
-      "exclusiveModeTitle": "Switch to Exclusive Mode",
-      "exclusiveModeContent": "Exclusive mode bypasses the system mixer and prefers the source sample rate and bit depth, making it suitable for external DACs / Hi-Fi gear. Player volume, EQ and other processing still apply, so bit-perfect output is not guaranteed. Other apps may be unable to play audio while exclusive. If exclusive mode is unavailable, shared mode will be attempted; it may also fail if another app holds the device exclusively. Switch anyway?",
       "preloadCacheTitle": "Enable the caches required for preloading?",
       "preloadCacheContent": "Preloading requires caching the next track's audio. Continuing will enable both song caching and streaming caching, which may increase network traffic and disk usage"
     },
@@ -1271,215 +1249,6 @@
     "wordFadeWidth": {
       "label": "Fade Width",
       "description": "Gradient width ratio for word highlight mask"
-    },
-    "desktopLyricEnabled": {
-      "label": "Enable Desktop Lyric",
-      "description": "Show a floating lyric window on desktop"
-    },
-    "desktopLyricFontSize": {
-      "label": "Font Size",
-      "description": "Desktop lyric text size (px)"
-    },
-    "desktopLyricFontWeight": {
-      "label": "Font Weight",
-      "description": "Desktop lyric text weight"
-    },
-    "desktopLyricShowTranslation": {
-      "label": "Show Translation",
-      "description": "Display translated lyrics on desktop lyric"
-    },
-    "desktopLyricDoubleLine": {
-      "label": "Double Line",
-      "description": "Show current and next line together"
-    },
-    "desktopLyricAlign": {
-      "label": "Alignment",
-      "description": "Horizontal alignment of lyric text",
-      "left": "Left",
-      "center": "Center",
-      "right": "Right",
-      "justify": "Justify"
-    },
-    "desktopLyricWordByWord": {
-      "label": "Word by Word",
-      "description": "Render highlight progress per word"
-    },
-    "desktopLyricAutoGenerateWordByWord": {
-      "label": "Auto-generate Word Effect",
-      "description": "When off, only real per-word lyrics apply"
-    },
-    "desktopLyricPlayedColor": {
-      "label": "Played Color",
-      "description": "Color of played lyric text"
-    },
-    "desktopLyricUnplayedColor": {
-      "label": "Unplayed Color",
-      "description": "Color of unplayed lyric text"
-    },
-    "desktopLyricStrokeColor": {
-      "label": "Stroke Color",
-      "description": "Outline color of lyric text; transparent means stroke is off"
-    },
-    "desktopLyricBackgroundMask": {
-      "label": "Text Background Mask",
-      "description": "Add a translucent background block behind each lyric line for readability"
-    },
-    "desktopLyricBackgroundMaskColor": {
-      "label": "Mask Color",
-      "description": "Color and opacity of the text background mask"
-    },
-    "desktopLyricAlwaysShowSongInfo": {
-      "label": "Always Show Song Info",
-      "description": "Always show track title and artist; otherwise show only on hover"
-    },
-    "desktopLyricAnimation": {
-      "label": "Line Transition",
-      "description": "Enable slide-in / slide-out animation when lyric line switches"
-    },
-    "desktopLyricLimitBounds": {
-      "label": "Confine to Screen",
-      "description": "Clamp window position within the current display's work area while dragging"
-    },
-    "desktopLyricAlwaysOnTop": {
-      "label": "Always On Top",
-      "description": "Keep desktop lyric window above others"
-    },
-    "desktopLyricLocked": {
-      "label": "Lock Window",
-      "description": "Make window click-through and non-draggable"
-    },
-    "desktopLyricUseCSSDrag": {
-      "label": "Enable CSS Drag",
-      "description": "Enable CSS-based drag, recommended for Wayland environments"
-    },
-    "dynamicIslandEnabled": {
-      "label": "Enable Dynamic Island",
-      "description": "Show a compact floating lyric window at the top of the screen; drag it anywhere"
-    },
-    "dynamicIslandScale": {
-      "label": "Scale",
-      "description": "Scale window height and font size together; 100% is the default size"
-    },
-    "dynamicIslandFontWeight": {
-      "label": "Font Weight",
-      "description": "Lyric text weight in the Dynamic Island"
-    },
-    "dynamicIslandWordByWord": {
-      "label": "Word Highlight",
-      "description": "Render progressive word-by-word highlight"
-    },
-    "dynamicIslandTransition": {
-      "label": "Transition",
-      "description": "Choose how the island width and lyric lines transition",
-      "bounce": "Dynamic Bounce",
-      "smooth": "Smooth Transition"
-    },
-    "dynamicIslandDoubleLine": {
-      "label": "Always Two Lines",
-      "description": "Keep two-line layout even when no translation is available"
-    },
-    "dynamicIslandShowTranslation": {
-      "label": "Show Translation",
-      "description": "Show translation as the secondary line when available"
-    },
-    "dynamicIslandPlayedColor": {
-      "label": "Played Color",
-      "description": "Color of already-sung lyric text"
-    },
-    "dynamicIslandUnplayedColor": {
-      "label": "Unplayed Color",
-      "description": "Color of upcoming lyric text and artist name"
-    },
-    "dynamicIslandBackgroundColor": {
-      "label": "Background Color",
-      "description": "Background color and opacity of the island"
-    },
-    "dynamicIslandAlwaysOnTop": {
-      "label": "Always On Top",
-      "description": "Keep the Dynamic Island window above others"
-    },
-    "dynamicIslandNotchFusion": {
-      "label": "Notch Fusion",
-      "description": "Expand the island from the physical MacBook notch"
-    },
-    "dynamicIslandSnapCentered": {
-      "label": "Center When Snapped",
-      "description": "When off, snapping to the top keeps the dragged horizontal position"
-    },
-    "dynamicIslandNonOcclusive": {
-      "label": "Non-Occlusive Mode",
-      "description": "Click-through window; hide on hover"
-    },
-    "dynamicIslandUseCSSDrag": {
-      "label": "Enable CSS Drag",
-      "description": "Enable CSS-based drag, recommended for Wayland environments"
-    },
-    "taskbarLyricEnabled": {
-      "label": "Enable Taskbar Lyric",
-      "description": "Embed lyrics into the Windows taskbar"
-    },
-    "taskbarLyricPosition": {
-      "label": "Position",
-      "description": "Lyric position in the taskbar. Auto mode picks based on taskbar alignment",
-      "auto": "Auto",
-      "left": "Left",
-      "right": "Right"
-    },
-    "taskbarLyricAutoMaxWidth": {
-      "label": "Auto Width",
-      "description": "Use the available taskbar area as the maximum width; disable to set it manually"
-    },
-    "taskbarLyricAutoAdjustOccupiedSpace": {
-      "label": "Shrink Window to Content",
-      "description": "Within the automatic width, shrink the actual window to the primary lyric and hover controls"
-    },
-    "taskbarLyricMaxWidth": {
-      "label": "Max Width",
-      "description": "Capped by available space to avoid squeezing"
-    },
-    "taskbarLyricLeftMargin": {
-      "label": "Left Margin",
-      "description": "Gap between the lyric and the left edge of available space, to avoid other taskbar widgets"
-    },
-    "taskbarLyricRightMargin": {
-      "label": "Right Margin",
-      "description": "Gap between the lyric and the right edge of available space, to avoid other taskbar widgets"
-    },
-    "taskbarLyricColorMode": {
-      "label": "Color Mode",
-      "description": "Text and background color scheme of the taskbar lyric",
-      "taskbar": "Follow Taskbar",
-      "taskbarInverse": "Follow Taskbar (Inverted)",
-      "light": "Light",
-      "dark": "Dark"
-    },
-    "taskbarLyricShowBackground": {
-      "label": "Show Background",
-      "description": "Show a translucent background while focused"
-    },
-    "taskbarLyricFontSize": {
-      "label": "Font Size",
-      "description": "Taskbar lyric text size (px)"
-    },
-    "taskbarLyricFontWeight": {
-      "label": "Font Weight",
-      "description": "Taskbar lyric text weight"
-    },
-    "taskbarLyricShowCover": {
-      "label": "Show Cover",
-      "description": "Show the current track's cover thumbnail beside the lyric"
-    },
-    "taskbarLyricDoubleLine": {
-      "label": "Double Line",
-      "description": "Show current lyric together with translation or next line"
-    },
-    "taskbarLyricShowTranslation": {
-      "label": "Show Translation",
-      "description": "In double-line mode, prefer translation; fall back to the next line when unavailable"
-    },
-    "taskbarLyricWordByWord": {
-      "label": "Word by Word",
-      "description": "Render highlight progress per word"
     },
     "playerBgType": {
       "label": "Player Background",
@@ -1619,7 +1388,7 @@
     },
     "fontConfig": {
       "label": "Font Settings",
-      "description": "Configure fonts for the app, lyrics, and external lyric windows",
+      "description": "Configure fonts for the app and lyrics",
       "title": "Font Settings",
       "loading": "Loading system fonts",
       "placeholder": "Enter a font name",
@@ -1634,8 +1403,7 @@
       "fieldLabel": "{name} font",
       "groups": {
         "general": "General",
-        "appLyric": "Lyric Font",
-        "externalLyric": "External Lyric Windows"
+        "appLyric": "Lyric Font"
       },
       "fields": {
         "global": "global",
@@ -1643,10 +1411,7 @@
         "lyricChinese": "Chinese lyrics",
         "lyricJapanese": "Japanese lyrics",
         "lyricKorean": "Korean lyrics",
-        "lyricLatin": "English / Latin-script lyrics",
-        "desktopLyric": "desktop lyric",
-        "dynamicIsland": "dynamic island lyric",
-        "taskbarLyric": "taskbar lyric"
+        "lyricLatin": "English / Latin-script lyrics"
       }
     },
     "systemMediaControls": {
@@ -1727,10 +1492,6 @@
     "taskbarProgress": {
       "label": "Taskbar Progress",
       "description": "Show playback progress on the taskbar icon"
-    },
-    "taskbarThumbnailCover": {
-      "label": "Taskbar Cover Preview",
-      "description": "Use the album cover as the window preview when hovering the taskbar; disable to show the system's live window"
     },
     "networkProxyProtocol": {
       "label": "Network Proxy",

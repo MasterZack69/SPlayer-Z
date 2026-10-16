@@ -56,12 +56,6 @@ export const buildRegistry = (): void => {
   handlers.set("player.cycleRepeat", () => player.cycleRepeatMode());
   // 随机模式
   handlers.set("player.toggleShuffle", () => player.toggleShuffleMode());
-  // 桌面歌词
-  // 灵动岛
-  // 任务栏歌词
-  handlers.set("window.toggleTaskbarLyric", () => {
-    window.api.window.toggleTaskbarLyric().catch(() => {});
-  });
   // 打开播放器
   handlers.set("view.openPlayer", () => {
     useStatusStore().isPlayerExpanded = true;

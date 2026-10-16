@@ -15,17 +15,7 @@ const LINUX_FORMATS = [
   { suffix: ".tar.gz", format: "tar.gz" },
 ];
 
-const FORMAT_ORDER = [
-  "installer",
-  "dmg",
-  "AppImage",
-  "deb",
-  "rpm",
-  "pacman",
-  "portable",
-  "zip",
-  "tar.gz",
-];
+const FORMAT_ORDER = ["AppImage", "deb", "rpm", "pacman", "tar.gz"];
 
 /**
  * Prefer standard installers over portable packages and archives.
@@ -57,26 +47,16 @@ export const parseDownloadAsset = (
     return null;
   }
 
-  let platform = "";
-  let format = "";
-  if (lower.endsWith(".exe")) {
-    platform = "Windows";
-    format = lower.includes("portable") ? "portable" : "installer";
-  } else if (lower.endsWith(".dmg") || lower.endsWith(".zip")) {
-    platform = "macOS";
-    format = lower.endsWith(".dmg") ? "dmg" : "zip";
-  } else {
-    const linuxFormat = LINUX_FORMATS.find((item) => lower.endsWith(item.suffix));
-    if (!linuxFormat) return null;
-    platform = "Linux";
-    ({ format } = linuxFormat);
-  }
-
-  let arch = "universal";
+  const linuxFormat = LINUX_FORMATS.find((item) => lower.endsWith(item.suffix));
+  if (!linuxFormat) return null;
+  const platform = "Linux";
+  const { format } = linuxFormat;
+  let arch = "";
   if (lower.includes("arm64") || lower.includes("aarch64")) arch = "ARM64";
   else if (lower.includes("x64") || lower.includes("amd64") || lower.includes("x86_64")) {
     arch = "x64";
   }
+  if (!arch) return null;
   return { fileName: name, url, size, platform, arch, format };
 };
 
@@ -92,15 +72,10 @@ export const selectRecommendedAssets = (
   platform: string,
   arch: string,
 ): DownloadAsset[] => {
-  if (!platform) return [];
-  const samePlatform = assets.filter((asset) => asset.platform === platform);
-  const matched = arch
-    ? samePlatform.filter((asset) => asset.arch === arch || asset.arch === "universal")
-    : samePlatform;
-  const candidates = sortDownloadAssets(matched.length ? matched : samePlatform);
-  if (platform === "Linux") {
-    const appImages = candidates.filter((asset) => asset.format === "AppImage");
-    return (appImages.length ? appImages : candidates).slice(0, 1);
-  }
-  return candidates.slice(0, 2);
+  if (platform !== "Linux" || !["x64", "ARM64"].includes(arch)) return [];
+  const candidates = sortDownloadAssets(
+    assets.filter((asset) => asset.platform === "Linux" && asset.arch === arch),
+  );
+  const appImages = candidates.filter((asset) => asset.format === "AppImage");
+  return (appImages.length ? appImages : candidates).slice(0, 1);
 };

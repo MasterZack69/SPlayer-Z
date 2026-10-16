@@ -53,9 +53,7 @@ pub struct SeekTake {
     pub was_playing: bool,
     /// 当前音频源原始采样率
     pub original_sample_rate: u32,
-    /// 当前音频源有效位深，独占模式重建协商候选的优先依据
-    pub original_bits: u32,
-    /// 输出配置随 seek 移交到工作线程，开流失败时允许回退共享格式
+    /// Transfer output configuration to the seek worker.
     pub output: AudioOutput,
     pub fft: Arc<FftAnalyzer>,
     /// 本次 seek 的 token，commit_seeked 时比对最新值，不一致说明已被新 load/seek/stop 取代
@@ -207,7 +205,6 @@ impl InnerPlayer {
             current_source: self.current_source.clone(),
             was_playing: self.state == PlayerState::Playing,
             original_sample_rate: self.original_sample_rate,
-            original_bits: self.original_bits,
             output,
             fft: Arc::clone(&self.fft),
             token,

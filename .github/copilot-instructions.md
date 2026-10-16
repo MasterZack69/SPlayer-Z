@@ -12,7 +12,7 @@ Target **dev**. Preserve the root **README.md** unless explicitly authorized. Ke
 
 The app is local-first with authorized Subsonic-compatible, Jellyfin, and Emby servers. Use the shared SongList, categorized global/contextual search, Home statistics, AMLL lyrics, and shared draggable queue. Do not reactivate retired platform logins, public catalogs, plugins, external control services, lyric lookup, or auxiliary lyric windows to resolve stale references.
 
-The audio engine uses FFmpeg and **CPAL**, not rodio. Nix uses system FFmpeg and explicit audio/D-Bus dependencies. Windows-specific integration still exists and must remain target-gated; Linux changes do not require Windows testing.
+The audio engine uses FFmpeg and **CPAL**, not rodio. Nix uses system FFmpeg and explicit audio/D-Bus dependencies. Only x86_64 and ARM64 Linux are supported. Do not restore removed Windows/macOS integrations or targets.
 
 ## Implementation safeguards
 

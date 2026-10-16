@@ -92,12 +92,6 @@ export const HOTKEY_ACTIONS: HotkeyActionMeta[] = [
     allowGlobal: true,
   },
   {
-    id: "window.toggleTaskbarLyric",
-    labelKey: "settings.hotkeys.actions.toggleTaskbarLyric",
-    defaultBinding: { inApp: "CommandOrControl+B", global: null },
-    allowGlobal: true,
-  },
-  {
     id: "view.openPlayer",
     labelKey: "settings.hotkeys.actions.openPlayer",
     defaultBinding: { inApp: "CommandOrControl+Enter", global: null },

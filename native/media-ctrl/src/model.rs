@@ -53,7 +53,6 @@ impl MediaEvent {
             volume: None,
         }
     }
-    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     pub const fn set_volume(volume: f64) -> Self {
         Self {
             type_: MediaEventType::SetVolume,

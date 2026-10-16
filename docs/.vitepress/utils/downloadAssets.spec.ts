@@ -14,25 +14,24 @@ describe("parseDownloadAsset", () => {
     expect(parse(name)).toMatchObject({ platform: "Linux", arch, format });
   });
 
-  it.each(["latest-linux.yml", "app.exe.blockmap", "splayer-debug.zip", "checksums.txt"])(
-    "ignores non-package asset %s",
-    (name) => {
-      expect(parse(name)).toBeNull();
-    },
-  );
+  it.each([
+    "latest-linux.yml",
+    "app.exe.blockmap",
+    "app-x64.exe",
+    "app-arm64.dmg",
+    "app-ia32.deb",
+    "app-armv7l.AppImage",
+    "splayer-debug.zip",
+    "checksums.txt",
+  ])("ignores non-package asset %s", (name) => {
+    expect(parse(name)).toBeNull();
+  });
 });
 
 describe("selectRecommendedAssets", () => {
-  it("prefers the installer on Windows", () => {
-    const assets = [
-      parse("splayer-next-1.0.0-portable-x64.exe"),
-      parse("splayer-next-1.0.0-x64.exe"),
-    ].filter((asset) => asset !== null);
-
-    expect(selectRecommendedAssets(assets, "Windows", "x64").map((asset) => asset.format)).toEqual([
-      "installer",
-      "portable",
-    ]);
+  it("never recommends an incompatible CPU architecture", () => {
+    const assets = [parse("splayer-next-1.0.0-x64.AppImage")].filter((asset) => asset !== null);
+    expect(selectRecommendedAssets(assets, "Linux", "ARM64")).toEqual([]);
   });
 
   it("recommends the matching architecture AppImage on Linux", () => {
@@ -58,17 +57,17 @@ describe("selectRecommendedAssets", () => {
 });
 
 describe("sortDownloadAssets", () => {
-  it("Prefer standard installers over portable packages and archives.", () => {
+  it("prefers AppImage over distribution packages and archives", () => {
     const assets = [
-      parse("splayer-next-1.0.0-portable-x64.exe"),
-      parse("splayer-next-1.0.0-x64.zip"),
-      parse("splayer-next-1.0.0-x64.exe"),
+      parse("splayer-next-1.0.0-x64.tar.gz"),
+      parse("splayer-next-1.0.0-x64.deb"),
+      parse("splayer-next-1.0.0-x64.AppImage"),
     ].filter((asset) => asset !== null);
 
     expect(sortDownloadAssets(assets).map((asset) => asset.format)).toEqual([
-      "installer",
-      "portable",
-      "zip",
+      "AppImage",
+      "deb",
+      "tar.gz",
     ]);
   });
 });

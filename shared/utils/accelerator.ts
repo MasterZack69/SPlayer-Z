@@ -1,19 +1,19 @@
 /**
- * Electron Accelerator 字符串解析、规范化、匹配、显示工具
- * 在解析/匹配/显示时按平台展开 CommandOrControl
+ * Parse, normalize, match, and display Electron accelerators.
+ * Resolve CommandOrControl to Ctrl on Linux.
  */
 
-/** 解析后的加速键结构 */
+/** Parsed accelerator. */
 export interface ParsedAccelerator {
   ctrl: boolean;
   meta: boolean;
   alt: boolean;
   shift: boolean;
-  /** event.code 形式的物理键码（如 "KeyA"、"Space"、"ArrowLeft"） */
+  /** Physical KeyboardEvent.code, such as "KeyA", "Space", or "ArrowLeft". */
   code: string;
 }
 
-/** Modifier token 集合（不区分大小写） */
+/** Case-insensitive modifier tokens, including saved-setting aliases. */
 const MODIFIER_TOKENS = new Set([
   "ctrl",
   "control",
@@ -29,17 +29,17 @@ const MODIFIER_TOKENS = new Set([
 ]);
 
 /**
- * 把 Accelerator 中的 key token（最后一段非 modifier）规范成 KeyboardEvent.code 形式
- * Electron Accelerator 用的是 key 字符（如 "A"、"Right"），需要映射到 code
+ * Convert the final non-modifier token into KeyboardEvent.code.
+ * Electron uses key names such as "A" and "Right" rather than physical codes.
  */
 const keyToCode = (token: string): string => {
   const t = token.trim();
   if (!t) return "";
-  // 字母
+  // Letters.
   if (/^[A-Za-z]$/.test(t)) return `Key${t.toUpperCase()}`;
-  // 数字
+  // Digits.
   if (/^[0-9]$/.test(t)) return `Digit${t}`;
-  // 方向键
+  // Arrow keys.
   const arrow: Record<string, string> = {
     left: "ArrowLeft",
     right: "ArrowRight",
@@ -48,9 +48,9 @@ const keyToCode = (token: string): string => {
   };
   const lower = t.toLowerCase();
   if (lower in arrow) return arrow[lower];
-  // 功能键 F1-F24
+  // Function keys F1-F24.
   if (/^f([1-9]|1[0-9]|2[0-4])$/i.test(t)) return `F${t.slice(1)}`;
-  // 常见键
+  // Common keys.
   const map: Record<string, string> = {
     space: "Space",
     spacebar: "Space",
@@ -82,16 +82,15 @@ const keyToCode = (token: string): string => {
     "`": "Backquote",
   };
   if (lower in map) return map[lower];
-  // 兜底：原样返回
+  // Preserve unrecognized key names.
   return t;
 };
 
 /**
- * 解析 Accelerator 字符串
- * @param accel 加速键字符串，如 "CommandOrControl+Shift+R"
- * @param isMac 当前平台是否为 macOS（用于展开 CommandOrControl）
+ * Parse an Electron accelerator.
+ * @param accel Accelerator such as "CommandOrControl+Shift+R".
  */
-export const parseAccelerator = (accel: string, isMac: boolean): ParsedAccelerator | null => {
+export const parseAccelerator = (accel: string): ParsedAccelerator | null => {
   if (!accel) return null;
   const tokens = accel
     .split("+")
@@ -131,12 +130,11 @@ export const parseAccelerator = (accel: string, isMac: boolean): ParsedAccelerat
           break;
         case "commandorcontrol":
         case "cmdorctrl":
-          if (isMac) result.meta = true;
-          else result.ctrl = true;
+          result.ctrl = true;
           break;
       }
     } else {
-      // 非 modifier 视为最终键（理论上只应有一个）
+      // Treat the non-modifier token as the final key.
       result.code = keyToCode(token);
     }
   }
@@ -146,8 +144,8 @@ export const parseAccelerator = (accel: string, isMac: boolean): ParsedAccelerat
 };
 
 /**
- * 规范化 Accelerator：固定 modifier 顺序、统一大小写
- * 顺序：CommandOrControl > Cmd > Ctrl > Alt > Shift > Key
+ * Normalize modifier order and key casing.
+ * Order: CommandOrControl > Super > Ctrl > Alt > Shift > Key.
  */
 export const normalizeAccelerator = (accel: string): string => {
   if (!accel) return "";
@@ -168,11 +166,11 @@ export const normalizeAccelerator = (accel: string): string => {
     else key = t;
   }
   if (!key) return "";
-  // 字母统一大写
+  // Uppercase letter keys.
   if (/^[a-z]$/.test(key)) key = key.toUpperCase();
   const parts: string[] = [];
   if (mods.cmdOrCtrl) parts.push("CommandOrControl");
-  if (mods.cmd) parts.push("Cmd");
+  if (mods.cmd) parts.push("Super");
   if (mods.ctrl) parts.push("Ctrl");
   if (mods.alt) parts.push("Alt");
   if (mods.shift) parts.push("Shift");
@@ -180,7 +178,7 @@ export const normalizeAccelerator = (accel: string): string => {
   return parts.join("+");
 };
 
-/** 直接对已解析结构与事件比较，避免热路径重复解析字符串 */
+/** Compare a parsed accelerator without reparsing on the hot path. */
 export const matchParsed = (event: KeyboardEvent, parsed: ParsedAccelerator): boolean => {
   if (event.ctrlKey !== parsed.ctrl) return false;
   if (event.metaKey !== parsed.meta) return false;
@@ -190,11 +188,10 @@ export const matchParsed = (event: KeyboardEvent, parsed: ParsedAccelerator): bo
 };
 
 /**
- * 把 Accelerator 渲染为人类可读字符串
- * @param accel Accelerator 字符串
- * @param isMac 当前平台是否 macOS（决定符号样式）
+ * Format an accelerator for display.
+ * @param accel Electron accelerator.
  */
-export const formatAccelerator = (accel: string | null, isMac: boolean): string => {
+export const formatAccelerator = (accel: string | null): string => {
   if (!accel) return "";
   const tokens = accel
     .split("+")
@@ -204,20 +201,20 @@ export const formatAccelerator = (accel: string | null, isMac: boolean): string 
   for (const t of tokens) {
     const lower = t.toLowerCase();
     if (lower === "commandorcontrol" || lower === "cmdorctrl") {
-      out.push(isMac ? "⌘" : "Ctrl");
+      out.push("Ctrl");
     } else if (lower === "cmd" || lower === "command" || lower === "meta" || lower === "super") {
-      out.push(isMac ? "⌘" : "Win");
+      out.push("Super");
     } else if (lower === "ctrl" || lower === "control") {
-      out.push(isMac ? "⌃" : "Ctrl");
+      out.push("Ctrl");
     } else if (lower === "alt" || lower === "option") {
-      out.push(isMac ? "⌥" : "Alt");
+      out.push("Alt");
     } else if (lower === "shift") {
-      out.push(isMac ? "⇧" : "Shift");
+      out.push("Shift");
     } else if (lower === "left" || lower === "right" || lower === "up" || lower === "down") {
       const arrow: Record<string, string> = { left: "←", right: "→", up: "↑", down: "↓" };
       out.push(arrow[lower]);
     } else if (lower === "enter" || lower === "return") {
-      out.push(isMac ? "↵" : "Enter");
+      out.push("Enter");
     } else if (lower === "space" || lower === "spacebar") {
       out.push("Space");
     } else if (/^[a-z]$/.test(lower)) {
@@ -226,17 +223,16 @@ export const formatAccelerator = (accel: string | null, isMac: boolean): string 
       out.push(t);
     }
   }
-  return isMac ? out.join("") : out.join(" + ");
+  return out.join(" + ");
 };
 
 /**
- * 从 KeyboardEvent 反推为 Accelerator 字符串
- * @param event 键盘事件
- * @param isMac 平台
- * @returns null 表示当前事件不构成有效组合（如只按了 modifier 单键）
+ * Build an accelerator from a keyboard event.
+ * @param event Keyboard event.
+ * @returns null for incomplete combinations, such as a modifier key alone.
  */
-export const eventToAccelerator = (event: KeyboardEvent, isMac: boolean): string | null => {
-  // modifier 单按视为未完成
+export const eventToAccelerator = (event: KeyboardEvent): string | null => {
+  // A modifier by itself is an incomplete combination.
   const isModifierKey =
     event.code === "ControlLeft" ||
     event.code === "ControlRight" ||
@@ -250,7 +246,7 @@ export const eventToAccelerator = (event: KeyboardEvent, isMac: boolean): string
     event.code === "OSRight";
   if (isModifierKey) return null;
 
-  // 按 code 反向算 token
+  // Convert the physical key code back into an accelerator token.
   const codeToToken = (code: string): string => {
     if (code.startsWith("Key")) return code.slice(3); // KeyA → A
     if (code.startsWith("Digit")) return code.slice(5);
@@ -284,12 +280,11 @@ export const eventToAccelerator = (event: KeyboardEvent, isMac: boolean): string
   };
 
   const parts: string[] = [];
-  // mac 上 metaKey=Cmd 视作 CommandOrControl，非 mac 上 ctrlKey=Ctrl 视作 CommandOrControl；
-  // 另一个 cmd-like 键（mac 的 Ctrl / 非 mac 的 Win）独立保留，避免共按时丢 modifier
-  const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
-  const otherCmdLike = isMac ? event.ctrlKey : event.metaKey;
+  // Linux Ctrl and Super are independent modifiers, including when pressed together.
+  const cmdOrCtrl = event.ctrlKey;
+  const otherCmdLike = event.metaKey;
   if (cmdOrCtrl) parts.push("CommandOrControl");
-  if (otherCmdLike) parts.push(isMac ? "Ctrl" : "Cmd");
+  if (otherCmdLike) parts.push("Super");
   if (event.altKey) parts.push("Alt");
   if (event.shiftKey) parts.push("Shift");
   parts.push(codeToToken(event.code));

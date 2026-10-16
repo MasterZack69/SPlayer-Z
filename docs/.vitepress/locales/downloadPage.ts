@@ -20,10 +20,6 @@ export const DOWNLOAD_PAGE_COPY = {
       alpha: { name: "Alpha", description: "Early features intended for testing only." },
     },
     formats: {
-      installer: "Windows installer",
-      portable: "Windows portable",
-      dmg: "macOS installer (.dmg)",
-      zip: "macOS archive (.zip)",
       AppImage: "Linux AppImage",
       deb: "Debian / Ubuntu (.deb)",
       rpm: "Fedora / RHEL (.rpm)",

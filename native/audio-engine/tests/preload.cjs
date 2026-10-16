@@ -135,32 +135,27 @@ test("交叉过渡遵守下一曲 CUE 边界并拒绝过短片段", { timeout: 1
   assert.equal(player.getStatus().isFinished, true);
 });
 
-for (const exclusive of [false, true]) {
-  test(
-    `同一输出流完成交叉过渡（${exclusive ? "独占" : "共享"}输出）`,
-    { skip: exclusive && process.env.SPLAYER_TEST_EXCLUSIVE !== "1", timeout: 30000 },
-    async (t) => {
-      const directory = fs.mkdtempSync(path.join(os.tmpdir(), "splayer-transition-"));
-      const current = path.join(directory, "current.wav");
-      const next = path.join(directory, "next.wav");
-      const player = new AudioPlayer();
-      t.after(() => {
-        player.stop();
-        fs.rmSync(directory, { recursive: true, force: true });
-      });
-      if (exclusive) await player.setExclusiveMode(true);
-      writeWav(current, 48000, 5);
-      writeWav(next, 44100, 6, 0.1);
-      await player.load(current, true);
-      assert.equal(await player.prepareNext("transition", next), true);
-      const result = await player.transitionToPrepared("transition", next, 4, "standard");
-      assert.ok(result, "应在当前输出流中提交下一曲");
-      assert.equal(result.duration, 6);
-      assert.equal(player.getStatus().state, "playing");
-      assert.equal(player.getDuration(), 6);
-      assert.ok(player.getPosition() > 0, "交叉过渡期间下一曲应推进位置");
-    },
-  );
+{
+  test("Crossfade completes on the same Linux output stream", { timeout: 30000 }, async (t) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "splayer-transition-"));
+    const current = path.join(directory, "current.wav");
+    const next = path.join(directory, "next.wav");
+    const player = new AudioPlayer();
+    t.after(() => {
+      player.stop();
+      fs.rmSync(directory, { recursive: true, force: true });
+    });
+    writeWav(current, 48000, 5);
+    writeWav(next, 44100, 6, 0.1);
+    await player.load(current, true);
+    assert.equal(await player.prepareNext("transition", next), true);
+    const result = await player.transitionToPrepared("transition", next, 4, "standard");
+    assert.ok(result, "应在当前输出流中提交下一曲");
+    assert.equal(result.duration, 6);
+    assert.equal(player.getStatus().state, "playing");
+    assert.equal(player.getDuration(), 6);
+    assert.ok(player.getPosition() > 0, "交叉过渡期间下一曲应推进位置");
+  });
 }
 
 test("停止播放会取消尚未完成的交叉过渡", { timeout: 30000 }, async (t) => {
@@ -182,10 +177,10 @@ test("停止播放会取消尚未完成的交叉过渡", { timeout: 30000 }, asy
   assert.equal(await pending, null);
 });
 
-for (const exclusive of [false, true]) {
+{
   test(
-    `混音开始后手动切歌取消旧交接（${exclusive ? "独占" : "共享"}输出）`,
-    { skip: exclusive && process.env.SPLAYER_TEST_EXCLUSIVE !== "1", timeout: 30000 },
+    "Manual track changes cancel the old transition after mixing starts",
+    { timeout: 30000 },
     async (t) => {
       const directory = fs.mkdtempSync(path.join(os.tmpdir(), "splayer-transition-replace-"));
       const current = path.join(directory, "current.wav");
@@ -196,7 +191,6 @@ for (const exclusive of [false, true]) {
         player.stop();
         fs.rmSync(directory, { recursive: true, force: true });
       });
-      if (exclusive) await player.setExclusiveMode(true);
       writeWav(current, 48000, 6);
       writeWav(prepared, 48000, 6, 0.1);
       writeWav(selected, 48000, 7, 0.2);
@@ -212,11 +206,10 @@ for (const exclusive of [false, true]) {
   );
 }
 
-for (const exclusive of [false, true]) {
+{
   test(
-    `双槽位预载与复用（${exclusive ? "独占" : "共享"}输出）`,
+    "Two-slot preloading and buffer reuse",
     {
-      skip: exclusive && process.env.SPLAYER_TEST_EXCLUSIVE !== "1",
       timeout: 30000,
     },
     async (t) => {
@@ -228,7 +221,6 @@ for (const exclusive of [false, true]) {
         player.stop();
         fs.rmSync(directory, { recursive: true, force: true });
       });
-      if (exclusive) await player.setExclusiveMode(true);
       writeWav(current, 48000, 8);
       const initial = await player.load(current, false);
       writeWav(next, initial.sampleRate, 6);

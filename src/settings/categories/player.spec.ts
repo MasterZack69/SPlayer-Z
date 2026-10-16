@@ -31,7 +31,6 @@ vi.mock("@/settings/useSettingModel", () => ({
 }));
 vi.mock("@/components/settings/custom/DeviceSelector.vue", () => ({ default: {} }));
 vi.mock("~icons/lucide/play", () => ({ default: {} }));
-vi.mock("@/utils/config", () => ({ isWin: true }));
 vi.mock("@/core/player", () => ({ getActiveDeviceId: vi.fn() }));
 vi.mock("@/services/deviceVolume", () => ({ setDeviceVolume: vi.fn() }));
 vi.mock("@/stores/status", () => ({ useStatusStore: () => ({ volume: 1 }) }));

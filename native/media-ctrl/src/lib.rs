@@ -1,5 +1,11 @@
-//! 跨平台系统媒体控件（Windows SMTC / Linux MPRIS / macOS MPNowPlaying）+ Discord RPC。
+//! Linux MPRIS media controls and optional Discord RPC.
 //! 通过 NAPI-RS 暴露给 Node.js，作为 Electron 主进程的原生模块。
+
+#[cfg(not(all(
+    target_os = "linux",
+    any(target_arch = "x86_64", target_arch = "aarch64")
+)))]
+compile_error!("SPlayer supports only x86_64 and aarch64 Linux");
 
 mod discord;
 mod logger;

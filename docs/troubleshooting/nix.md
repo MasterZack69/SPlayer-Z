@@ -21,7 +21,7 @@ nix build .#checks.x86_64-linux.cargo-check
 nix build .#checks.x86_64-linux.cargo-test
 ```
 
-Replace `x86_64-linux` with your supported host system. These are host checks, not Windows cross-compilation. A dirty Git tree warning is not itself a compiler failure; inspect the full derivation log and ensure new source files are tracked.
+Replace `x86_64-linux` with `aarch64-linux` on ARM64 Linux. These checks run natively on the matching host. A dirty Git tree warning is not itself a compiler failure; inspect the full derivation log and ensure new source files are tracked.
 
 ## Real PipeWire output tests
 

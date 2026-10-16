@@ -5,10 +5,20 @@
   "types": "index.d.ts",
   "napi": {
     "binaryName": "media-ctrl",
-    "triples": {}
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ]
   },
   "scripts": {
     "build": "napi build --release --no-const-enum",
     "build:debug": "napi build --no-const-enum"
-  }
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
 }

@@ -14,7 +14,7 @@ const utf8StrictDecoder = new TextDecoder("utf-8", { fatal: true });
  * 检测顺序：
  * 1. BOM 标记（UTF-8 BOM / UTF-16 LE/BE BOM）
  * 2. 严格 UTF-8 验证（fatal TextDecoder，含过长编码/代理区检查）
- * 3. 回退 gb18030（向下兼容 GBK / GB2312，覆盖中文 Windows 环境常见编码）
+ * 3. 回退 gb18030（向下兼容 GBK / GB2312，legacy lyric and metadata encodings）
  *
  * @param buf - 文件原始字节
  * @returns 解码后的字符串
@@ -35,7 +35,7 @@ export const decodeAuto = (buf: Buffer): string => {
   try {
     return utf8StrictDecoder.decode(buf);
   } catch {
-    // 非 UTF-8 时回退 gb18030（中文 Windows 最常见的非 UTF-8 编码）
+    // 非 UTF-8 时回退 gb18030（legacy non-UTF-8 lyric encodings）
     return gb18030Decoder.decode(buf);
   }
 };

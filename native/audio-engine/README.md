@@ -1,6 +1,6 @@
 # audio-engine
 
-Rust audio engine exposed to the Electron main process through NAPI-RS. FFmpeg handles decoding, CPAL provides cross-platform output, and Windows exclusive output uses WASAPI directly.
+Rust audio engine exposed to the Electron main process through NAPI-RS. FFmpeg handles decoding, CPAL provides Linux PipeWire/PulseAudio/ALSA output on x86_64 and aarch64.
 
 ## Source layout
 

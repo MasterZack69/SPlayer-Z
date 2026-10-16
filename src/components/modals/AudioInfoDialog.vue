@@ -133,25 +133,12 @@ const currentDeviceName = computed(() => {
   return matchedDevice?.name || t("settings.outputDevice.default");
 });
 
-/** 当前音频输出模式 */
-const isExclusive = computed(() => {
-  if (streamInfo.value != null) {
-    return streamInfo.value.isExclusive;
-  }
-  return settings.system.player.audioOutputMode === "exclusive";
-});
-const outputModeText = computed(() => {
-  return isExclusive.value
-    ? t("settings.audioOutputMode.exclusive")
-    : t("settings.audioOutputMode.shared");
-});
-
 /** 重采样状态 */
 const isResampling = computed(() => {
   if (streamInfo.value != null) {
     return streamInfo.value.isResampling;
   }
-  return !isExclusive.value;
+  return false;
 });
 const resamplingStatusText = computed(() => {
   return isResampling.value ? t("common.enabled") : t("common.disabled");
@@ -221,7 +208,6 @@ const sections = computed<InfoSection[]>(() => [
     title: t("quality.outputSection"),
     items: [
       { label: t("quality.codec"), value: codecText.value },
-      { label: t("quality.outputMode"), value: outputModeText.value },
       { label: t("quality.resampling"), value: resamplingStatusText.value },
       { label: t("settings.outputDevice.label"), value: currentDeviceName.value, colSpan: true },
     ],

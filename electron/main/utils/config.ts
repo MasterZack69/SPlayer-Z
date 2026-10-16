@@ -10,22 +10,6 @@ import { defaultCacheDir } from "./paths";
  */
 export const isDev = is.dev;
 
-/** 是否为 Windows 系统 */
-export const isWin = process.platform === "win32";
-/** 是否为 macOS 系统 */
-export const isMac = process.platform === "darwin";
-/** 是否为 Linux 系统 */
-export const isLinux = process.platform === "linux";
-
-/** 是否为便携版 */
-export const isPortable = !!process.env.PORTABLE_EXECUTABLE_DIR;
-
-/**
- * 是否为 AppX/MSIX 安装包
- * AppX 应用安装在 WindowsApps 目录下，路径包含该标识
- */
-export const isAppX = isWin && process.execPath.includes("WindowsApps");
-
 /**
  * 软件版本
  * @returns string

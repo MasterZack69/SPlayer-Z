@@ -57,4 +57,4 @@ Renderer IndexedDB stores include `splayer/library` and `splayer/queue`. Store r
 
 English is the default renderer and main-process locale. A saved language choice takes precedence. The first setup page chooses language before the remaining steps.
 
-System media controls, optional Discord presence, and optional Last.fm remain supported integrations. Desktop and Dynamic Island lyric entrypoints are disabled; Windows taskbar integration remains platform-specific. Treat future Windows removal as a separate change, not an existing assumption.
+System media controls, optional Discord presence, and optional Last.fm remain supported integrations. Only x86_64 and ARM64 Linux are supported. The Windows/macOS backends, taskbar integrations, and retired external lyric windows are removed. Linux uses CPAL output, PipeWire device monitoring, and MPRIS media controls.
