@@ -227,12 +227,18 @@ const getItemTop = (index: number): number => {
   return (itemTops.value[index] || 0) + props.paddingTop;
 };
 
-/** 根据 Y 轴偏移量计算放置位置（供拖拽排序使用） */
+/**
+ * Find a drop gap, clamping padding and out-of-bounds positions to the list edges.
+ * @param offsetY - Scroll-content offset including the list's top padding.
+ * @returns Row index and the nearest edge for the insertion indicator.
+ */
 const getDropInfoByOffset = (offsetY: number): { index: number; position: "top" | "bottom" } => {
   const len = props.items.length;
   if (len === 0) return { index: 0, position: "top" };
-  // 扣掉 paddingTop，落到 itemTops 坐标系
   const adjusted = offsetY - props.paddingTop;
+  if (adjusted <= 0) return { index: 0, position: "top" };
+  if (adjusted >= totalHeight.value - props.paddingTop)
+    return { index: len - 1, position: "bottom" };
   if (props.itemFixed) {
     const index = Math.floor(adjusted / props.itemHeight);
     const remainder = ((adjusted % props.itemHeight) + props.itemHeight) % props.itemHeight;

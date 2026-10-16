@@ -621,13 +621,15 @@
     "resampling": "重采样"
   },
   "playlist": {
-    "title": "播放列表",
-    "empty": "播放列表为空",
+    "title": "播放队列",
+    "empty": "播放队列为空",
     "unknownArtist": "未知艺术家",
     "clearList": "清空列表",
     "locateCurrent": "当前播放",
-    "clearConfirmTitle": "清空播放列表",
-    "clearConfirmContent": "确认清空全部播放列表吗？此操作不可撤销！"
+    "clearConfirmTitle": "清空播放队列",
+    "clearConfirmContent": "确认清空全部播放队列吗？此操作不可撤销！",
+    "moveTrack": "移动队列中的 {title}",
+    "reorderHint": "拖动以调整顺序，或在聚焦时使用上、下方向键"
   },
   "liked": {
     "title": "我喜欢的音乐",
@@ -1118,7 +1120,7 @@
         "toggleTaskbarLyric": "切换任务栏歌词",
         "openPlayer": "打开播放界面",
         "closePlayer": "关闭播放界面",
-        "togglePlaylist": "展开 / 收起播放列表",
+        "togglePlaylist": "展开 / 收起播放队列",
         "openSearch": "打开搜索",
         "searchInPage": "页面内搜索",
         "openSettings": "打开设置"

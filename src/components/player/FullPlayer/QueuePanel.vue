@@ -17,6 +17,15 @@ const {
   clearConfirmOpen,
   clearAll,
   scrollToCurrent,
+  moveByKeyboard,
+  getQueueItemKey,
+  isDragging,
+  draggedIndex,
+  dropIndicator,
+  dragLabelData,
+  dragLabelPosition,
+  handlePointerDown,
+  guardDragClick,
 } = useQueuePanel({ listRef });
 </script>
 
@@ -61,10 +70,12 @@ const {
     <div
       v-if="queueLength > 0"
       class="flex-1 min-h-0"
+      :class="{ 'cursor-grabbing select-none': isDragging }"
       :style="{
         maskImage:
           'linear-gradient(180deg, transparent 0px, #000 32px, #000 calc(100% - 32px), transparent 100%)',
       }"
+      @click.capture="guardDragClick"
     >
       <SVirtualList
         ref="listRef"
@@ -76,23 +87,31 @@ const {
         cover
         height="100%"
         :default-scroll-index="Math.max(0, statusStore.playIndex)"
-        :get-item-key="(item: Track) => item.id"
+        :get-item-key="getQueueItemKey"
       >
         <template #default="{ item, index }: { item: Track; index: number }">
           <div class="relative pl-1 pr-20 py-1">
             <div
-              class="group relative flex items-center gap-3 px-2.5 h-16 rounded-xl cursor-pointer transition-[background-color] duration-150"
-              :class="
+              v-if="isDragging && dropIndicator.index === index"
+              :class="[
+                'absolute left-3 right-20 h-0.5 rounded-full z-10 pointer-events-none bg-cover/100',
+                dropIndicator.position === 'top' ? 'top-0' : 'bottom-0',
+              ]"
+            />
+            <div
+              class="group relative flex items-center gap-3 px-2.5 h-16 rounded-xl cursor-pointer transition-[background-color,opacity] duration-150"
+              :class="[
                 index === statusStore.playIndex
                   ? 'bg-cover/14 text-cover'
-                  : 'hover:bg-cover/8 active:bg-cover/12'
-              "
+                  : 'hover:bg-cover/8 active:bg-cover/12',
+                isDragging && draggedIndex === index ? 'opacity-30' : 'opacity-100',
+              ]"
               @click="playAt(index)"
             >
               <!-- 当前播放：左侧 indicator -->
               <span
                 v-if="index === statusStore.playIndex"
-                class="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-cover"
+                class="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-cover/100"
               />
               <SImg :src="item.cover" class="size-12 rounded-lg shrink-0" />
               <div class="flex-1 min-w-0">
@@ -104,6 +123,20 @@ const {
                   {{ formatArtists(item.artists) }}
                 </div>
               </div>
+              <button
+                type="button"
+                class="queue-drag-handle bg-transparent border-0 shrink-0 flex items-center justify-center size-7 rounded cursor-grab active:cursor-grabbing touch-none select-none opacity-50 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 disabled:opacity-20 disabled:cursor-default"
+                :aria-label="t('playlist.moveTrack', { title: item.title })"
+                :title="t('playlist.reorderHint')"
+                :disabled="queueLength < 2"
+                @mousedown.stop="handlePointerDown($event, index, item.title)"
+                @touchstart.stop="handlePointerDown($event, index, item.title)"
+                @click.stop
+                @keydown.up.prevent.stop="moveByKeyboard(index, -1)"
+                @keydown.down.prevent.stop="moveByKeyboard(index, 1)"
+              >
+                <IconLucideGripVertical class="size-4" />
+              </button>
               <SButton
                 type="cover"
                 variant="ghost"
@@ -139,5 +172,17 @@ const {
         </SButton>
       </template>
     </SDialog>
+    <Teleport to="body">
+      <div
+        v-if="isDragging && dragLabelData"
+        class="fixed z-9999 pointer-events-none max-w-60 truncate px-4 py-2 rounded-full text-sm font-medium shadow-lg bg-surface-bright text-on-surface"
+        :style="{
+          top: `${dragLabelPosition.top + 12}px`,
+          left: `${dragLabelPosition.left + 12}px`,
+        }"
+      >
+        {{ dragLabelData.name }}
+      </div>
+    </Teleport>
   </div>
 </template>

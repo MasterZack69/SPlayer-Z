@@ -621,13 +621,15 @@
     "resampling": "Resampling"
   },
   "playlist": {
-    "title": "Playlist",
-    "empty": "Playlist is empty",
+    "title": "Queue",
+    "empty": "Queue is empty",
     "unknownArtist": "Unknown Artist",
     "clearList": "Clear All",
     "locateCurrent": "Now Playing",
-    "clearConfirmTitle": "Clear Playlist",
-    "clearConfirmContent": "Are you sure you want to clear the entire playlist? This cannot be undone."
+    "clearConfirmTitle": "Clear Queue",
+    "clearConfirmContent": "Are you sure you want to clear the entire queue? This cannot be undone.",
+    "moveTrack": "Move {title} in queue",
+    "reorderHint": "Drag to reorder, or use the Up and Down arrow keys when focused"
   },
   "liked": {
     "title": "Liked Songs",
@@ -1118,7 +1120,7 @@
         "toggleTaskbarLyric": "Toggle taskbar lyric",
         "openPlayer": "Open player view",
         "closePlayer": "Close player view",
-        "togglePlaylist": "Show / hide playlist",
+        "togglePlaylist": "Show / hide queue",
         "openSearch": "Open search",
         "searchInPage": "Search in page",
         "openSettings": "Open settings"

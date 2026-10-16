@@ -2,8 +2,6 @@
 import type { Track } from "@shared/types/player";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import { useQueuePanel } from "@/composables/useQueuePanel";
-import { useDragSort } from "@/composables/useDragSort";
-import * as player from "@/core/player";
 
 const emit = defineEmits<{ close: [] }>();
 
@@ -19,21 +17,16 @@ const {
   clearConfirmOpen,
   clearAll,
   scrollToCurrent,
-} = useQueuePanel({ listRef });
-
-const {
+  moveByKeyboard,
+  getQueueItemKey,
   isDragging,
   draggedIndex,
   dropIndicator,
   dragLabelData,
   dragLabelPosition,
   handlePointerDown,
-} = useDragSort({
-  virtualListRef: listRef,
-  itemCount: queueLength,
-  onReorder: (from, to) => player.moveInQueue(from, to),
-  triggerMode: "longpress",
-});
+  guardDragClick,
+} = useQueuePanel({ listRef });
 
 /** 点歌后关闭弹层 */
 const onPlay = (index: number): void => {
@@ -88,6 +81,7 @@ const onClear = (): void => {
       v-if="queueLength > 0"
       class="flex-1 min-h-0 py-1"
       :class="{ 'cursor-grabbing select-none': isDragging }"
+      @click.capture="guardDragClick"
     >
       <SVirtualList
         ref="listRef"
@@ -96,7 +90,7 @@ const onClear = (): void => {
         item-fixed
         height="100%"
         :default-scroll-index="Math.max(0, statusStore.playIndex)"
-        :get-item-key="(item: Track) => item.id"
+        :get-item-key="getQueueItemKey"
       >
         <template #default="{ item, index }: { item: Track; index: number }">
           <div class="relative px-2 py-0.5">
@@ -116,8 +110,6 @@ const onClear = (): void => {
                 isDragging && draggedIndex === index ? 'opacity-30' : 'opacity-100',
               ]"
               @click="onPlay(index)"
-              @mousedown="handlePointerDown($event, index, item.title)"
-              @touchstart.passive="handlePointerDown($event, index, item.title)"
             >
               <SImg :src="item.cover" class="size-9 rounded shrink-0" />
               <div class="flex-1 min-w-0">
@@ -131,6 +123,20 @@ const onClear = (): void => {
                   {{ formatArtists(item.artists) }}
                 </div>
               </div>
+              <button
+                type="button"
+                class="queue-drag-handle bg-transparent border-0 shrink-0 flex items-center justify-center size-7 rounded cursor-grab active:cursor-grabbing touch-none select-none opacity-50 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 disabled:opacity-20 disabled:cursor-default"
+                :aria-label="t('playlist.moveTrack', { title: item.title })"
+                :title="t('playlist.reorderHint')"
+                :disabled="queueLength < 2"
+                @mousedown.stop="handlePointerDown($event, index, item.title)"
+                @touchstart.stop="handlePointerDown($event, index, item.title)"
+                @click.stop
+                @keydown.up.prevent.stop="moveByKeyboard(index, -1)"
+                @keydown.down.prevent.stop="moveByKeyboard(index, 1)"
+              >
+                <IconLucideGripVertical class="size-4" />
+              </button>
               <SButton
                 variant="ghost"
                 circle

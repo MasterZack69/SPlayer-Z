@@ -1,11 +1,12 @@
 import type { Ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { Track } from "@shared/types/player";
+import type { PlaybackQueueItem, Track } from "@shared/types/player";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 import { useStatusStore } from "@/stores/status";
 import { useMediaStore } from "@/stores/media";
 import { useThemeStore } from "@/stores/theme";
-import { clearQueue, queue, queueLength } from "@/stores/queue";
+import { clearQueue, queue, queueLength, queueEntries } from "@/stores/queue";
+import { useDragSort } from "@/composables/useDragSort";
 import * as player from "@/core/player";
 
 export interface UseQueuePanelOptions {
@@ -13,9 +14,8 @@ export interface UseQueuePanelOptions {
 }
 
 /**
- * 播放队列面板的共享逻辑（与拖排序解耦）
- * 视觉表达交给具体组件，这里只管：播放、移除、清空、定位
- * 拖排序按需在 consumer 里直接调 useDragSort，避免不需要的组件白付出 ref/closure 开销
+ * Share queue actions and drag ordering between the popover and Now Playing.
+ * @param options - Virtual list used for scroll geometry and locating the current track.
  */
 export const useQueuePanel = (options: UseQueuePanelOptions) => {
   const { t } = useI18n();
@@ -36,6 +36,50 @@ export const useQueuePanel = (options: UseQueuePanelOptions) => {
   /** 移除单首 */
   const removeAt = (index: number): void => {
     player.removeFromQueue(index);
+  };
+
+  const entryKeys = new WeakMap<PlaybackQueueItem, number>();
+  let nextEntryKey = 0;
+
+  /**
+   * Keep duplicate songs distinct and preserve handle focus when entries move.
+   * @param _track - Track supplied by the virtual list.
+   * @param index - Current queue-entry position.
+   * @returns A stable key without retaining entries after they leave the queue.
+   */
+  const getQueueItemKey = (_track: Track, index: number): number => {
+    const entry = queueEntries.value[index];
+    let key = entryKeys.get(entry);
+    if (key === undefined) {
+      key = nextEntryKey++;
+      entryKeys.set(entry, key);
+    }
+    return key;
+  };
+
+  const drag = useDragSort({
+    virtualListRef: options.listRef,
+    itemCount: queueLength,
+    onReorder: (from, to) => player.moveInQueue(from, to),
+  });
+
+  // Queue replacement or removal invalidates the indices captured by an active drag.
+  watch(queueEntries, () => drag.cleanupDragState(), { flush: "sync" });
+
+  /**
+   * Move a focused queue row with the arrow keys without starting playback.
+   * @param index - Current queue position.
+   * @param direction - One position up or down.
+   */
+  const moveByKeyboard = (index: number, direction: -1 | 1): void => {
+    const target = index + direction;
+    if (target < 0 || target >= queueLength.value) return;
+    const handle = document.activeElement;
+    player.moveInQueue(index, target);
+    // Moving a keyed DOM row can blur its button in Chromium.
+    void nextTick(() => {
+      if (handle instanceof HTMLElement && handle.isConnected) handle.focus();
+    });
   };
 
   const clearConfirmOpen = ref(false);
@@ -59,6 +103,9 @@ export const useQueuePanel = (options: UseQueuePanelOptions) => {
   };
 
   return {
+    ...drag,
+    moveByKeyboard,
+    getQueueItemKey,
     statusStore,
     queue,
     queueLength,

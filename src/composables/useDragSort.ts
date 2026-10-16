@@ -36,8 +36,11 @@ export const useDragSort = (options: DragSortOptions) => {
   const dropIndicator = reactive({ index: -1, position: "none" as string });
   const dragLabelData = ref<{ name: string } | null>(null);
   const dragLabelPosition = reactive({ top: 0, left: 0 });
+  const suppressClick = ref(false);
+  let clickResetTimer: ReturnType<typeof setTimeout> | null = null;
   let listRect: DOMRect | null = null;
   let autoScrollRafId: number | null = null;
+  let autoScrollAmount = 0;
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingIndex = -1;
   let pendingLabelText = "";
@@ -53,9 +56,15 @@ export const useDragSort = (options: DragSortOptions) => {
     return { x: (event as MouseEvent).clientX, y: (event as MouseEvent).clientY };
   };
 
-  /** 激活拖拽，绑定移动和释放监听 */
+  /**
+   * Capture the selected row and attach drag listeners while the pointer is held.
+   * @param event - Mouse or touch input from the handle.
+   * @param index - Source queue position.
+   * @param labelText - Track title displayed beside the pointer.
+   */
   const activateDrag = (event: MouseEvent | TouchEvent, index: number, labelText: string) => {
     if (event.cancelable) event.preventDefault();
+    suppressClick.value = true;
     isDragging.value = true;
     draggedIndex.value = index;
     targetIndex.value = index;
@@ -67,6 +76,9 @@ export const useDragSort = (options: DragSortOptions) => {
     window.addEventListener("touchmove", handleDragMove, { passive: false });
     window.addEventListener("mouseup", handleDragEnd);
     window.addEventListener("touchend", handleDragEnd);
+    window.addEventListener("touchcancel", cleanupDragState);
+    window.addEventListener("blur", cleanupDragState);
+    window.addEventListener("keydown", handleKeyDown);
   };
 
   /** 处理拖拽移动，更新标签位置并计算目标索引 */
@@ -82,18 +94,41 @@ export const useDragSort = (options: DragSortOptions) => {
     calculateTargetIndex(clientY);
   };
 
-  /** 处理拖拽释放，触发排序回调 */
+  /** Commit the drop before releasing listeners and the drag label. */
   const handleDragEnd = () => {
-    if (draggedIndex.value !== targetIndex.value && targetIndex.value !== -1) {
-      onReorder(draggedIndex.value, targetIndex.value);
-    }
+    const from = draggedIndex.value;
+    const to = targetIndex.value;
     cleanupDragState();
+    if (from !== to && to !== -1) onReorder(from, to);
   };
 
-  /** 重置所有拖拽状态并移除事件监听 */
+  /** Cancel a drag without changing the queue when Escape is pressed.
+   * @param event - Keyboard event received while dragging.
+   */
+  const handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === "Escape") cleanupDragState();
+  };
+
+  /** Block the synthetic click following a drag from starting a song.
+   * @param event - Click captured by the queue list.
+   */
+  const guardDragClick = (event: MouseEvent): void => {
+    if (!suppressClick.value) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  /** Remove drag listeners, timers, and scrolling while suppressing the release click. */
   const cleanupDragState = () => {
     stopAutoScroll();
     cancelLongPress();
+    if (clickResetTimer !== null) clearTimeout(clickResetTimer);
+    if (suppressClick.value) {
+      clickResetTimer = setTimeout(() => {
+        suppressClick.value = false;
+        clickResetTimer = null;
+      }, 0);
+    }
     isDragging.value = false;
     draggedIndex.value = -1;
     targetIndex.value = -1;
@@ -104,6 +139,9 @@ export const useDragSort = (options: DragSortOptions) => {
     window.removeEventListener("touchmove", handleDragMove);
     window.removeEventListener("mouseup", handleDragEnd);
     window.removeEventListener("touchend", handleDragEnd);
+    window.removeEventListener("touchcancel", cleanupDragState);
+    window.removeEventListener("blur", cleanupDragState);
+    window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("mousemove", handleLongPressMove);
     window.removeEventListener("touchmove", handleLongPressMove);
     window.removeEventListener("mouseup", handleLongPressCancel);
@@ -156,21 +194,26 @@ export const useDragSort = (options: DragSortOptions) => {
     }
   };
 
-  /** 启动 RAF 驱动的自动滚动循环 */
+  /**
+   * Scroll towards the active edge and recalculate the destination each frame.
+   * @param amount - Signed pixels to scroll per animation frame.
+   */
   const startAutoScroll = (amount: number) => {
+    autoScrollAmount = amount;
     if (autoScrollRafId !== null) return;
-    let expectedScroll = virtualListRef.value?.getScrollTop() || 0;
     const scrollStep = () => {
       if (!isDragging.value) return stopAutoScroll();
-      const actualScroll = virtualListRef.value?.getScrollTop() || 0;
-      if (Math.abs(actualScroll - expectedScroll) > Math.abs(amount) * 3) {
-        expectedScroll = actualScroll;
+      const list = virtualListRef.value;
+      if (list?.scrollRef) {
+        const scroll = list.scrollRef;
+        const next = Math.max(
+          0,
+          Math.min(scroll.scrollTop + autoScrollAmount, scroll.scrollHeight - scroll.clientHeight),
+        );
+        list.scrollTo(next, "auto");
+        listRect = list.wrapperRef?.getBoundingClientRect() ?? null;
+        calculateTargetIndex(dragLabelPosition.top, scroll.scrollTop);
       }
-      expectedScroll = Math.max(0, expectedScroll + amount);
-      virtualListRef.value?.scrollTo(expectedScroll, "auto");
-      const wrapper = virtualListRef.value?.wrapperRef;
-      if (wrapper) listRect = wrapper.getBoundingClientRect();
-      calculateTargetIndex(dragLabelPosition.top, expectedScroll);
       autoScrollRafId = requestAnimationFrame(scrollStep);
     };
     autoScrollRafId = requestAnimationFrame(scrollStep);
@@ -213,8 +256,16 @@ export const useDragSort = (options: DragSortOptions) => {
     window.removeEventListener("touchend", handleLongPressCancel);
   };
 
-  /** 统一入口：handle 模式立即激活，longpress 模式延迟激活 */
+  /**
+   * Begin dragging from a primary mouse button or a single touch.
+   * @param event - Input event from the drag handle.
+   * @param index - Queue position being moved.
+   * @param labelText - Track title shown beside the pointer.
+   */
   const handlePointerDown = (event: MouseEvent | TouchEvent, index: number, labelText: string) => {
+    if (itemCount.value < 2 || index < 0 || index >= itemCount.value || isDragging.value) return;
+    if ("button" in event && event.button !== 0) return;
+    if ("touches" in event && event.touches.length !== 1) return;
     if (triggerMode === "handle") {
       activateDrag(event, index, labelText);
       return;
@@ -242,10 +293,12 @@ export const useDragSort = (options: DragSortOptions) => {
 
   onUnmounted(() => {
     cleanupDragState();
+    if (clickResetTimer !== null) clearTimeout(clickResetTimer);
   });
 
   return {
     isDragging,
+    guardDragClick,
     draggedIndex,
     dropIndicator,
     dragLabelData,

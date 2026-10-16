@@ -1318,14 +1318,24 @@ export const playFiles = async (filePaths: string[]): Promise<void> => {
 };
 
 /**
- * 移动队列中的歌曲位置，自动调整 playIndex
- * @param fromIndex - 原位置
- * @param toIndex - 目标位置
+ * Reorder a queue entry while preserving the current track and playback position.
+ * @param fromIndex - Existing queue position.
+ * @param toIndex - Destination position after removal of the source entry.
  */
 export const moveInQueue = (fromIndex: number, toIndex: number): void => {
+  const length = queue.queueLength.value;
+  if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex)) return;
+  if (
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= length ||
+    toIndex >= length
+  )
+    return;
   const status = useStatusStore();
   queue.moveInQueue(fromIndex, toIndex);
-  // 根据移动方向调整 playIndex
+  // Keep the active entry selected even when another entry crosses it.
   if (status.playIndex === fromIndex) {
     status.playIndex = toIndex;
   } else if (fromIndex < status.playIndex && toIndex >= status.playIndex) {
