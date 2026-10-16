@@ -2,16 +2,15 @@
 import type { LyricLine } from "@shared/types/lyrics";
 import { useSettingsStore } from "@/stores/settings";
 import AMLLLyrics from "./AMLLLyrics.vue";
-import DefaultLyrics from "./DefaultLyrics.vue";
 import LyricCredit from "./LyricCredit.vue";
 
 const props = withDefaults(
   defineProps<{
-    /** 歌词行数据数组 */
+    /** Timed lyric lines. */
     lyricLines: LyricLine[];
-    /** 初始播放时间（毫秒） */
+    /** Initial playback position in milliseconds. */
     initialTime?: number;
-    /** 是否正在播放 */
+    /** Whether playback is running. */
     playing?: boolean;
   }>(),
   {
@@ -26,30 +25,31 @@ const emit = defineEmits<{
 
 const settings = useSettingsStore();
 
-type LyricEngineInstance = {
+type LyricPlayerInstance = {
   setCurrentTime: (time: number, isSeeking?: boolean) => void;
   freeze: () => void;
   resume: () => void;
 };
 
-const activeEngineRef = ref<LyricEngineInstance | null>(null);
+const lyricPlayerRef = ref<LyricPlayerInstance | null>(null);
 
-const springConfig = computed(() => ({
-  mass: settings.lyric.springMass,
-  damping: settings.lyric.springDamping,
-  stiffness: settings.lyric.springStiffness,
-}));
-
+/**
+ * Synchronize AMLL with playback.
+ * @param time - Playback position in milliseconds.
+ * @param isSeeking - Whether this update is an explicit seek.
+ */
 const setCurrentTime = (time: number, isSeeking = false) => {
-  activeEngineRef.value?.setCurrentTime(time, isSeeking);
+  lyricPlayerRef.value?.setCurrentTime(time, isSeeking);
 };
 
+/** Suspend lyric rendering while the player is hidden. */
 const freeze = () => {
-  activeEngineRef.value?.freeze();
+  lyricPlayerRef.value?.freeze();
 };
 
+/** Resume lyric rendering with the latest buffered lines. */
 const resume = () => {
-  activeEngineRef.value?.resume();
+  lyricPlayerRef.value?.resume();
 };
 
 defineExpose({
@@ -61,8 +61,7 @@ defineExpose({
 
 <template>
   <AMLLLyrics
-    v-if="settings.lyric.engine === 'amll'"
-    ref="activeEngineRef"
+    ref="lyricPlayerRef"
     :lyric-lines="props.lyricLines"
     :initial-time="props.initialTime"
     :playing="props.playing"
@@ -83,34 +82,4 @@ defineExpose({
       </slot>
     </template>
   </AMLLLyrics>
-  <DefaultLyrics
-    v-else
-    ref="activeEngineRef"
-    :lyric-lines="props.lyricLines"
-    :initial-time="props.initialTime"
-    :playing="props.playing"
-    :align-position="settings.lyric.alignPosition"
-    :word-fade-width="settings.lyric.wordFadeWidth"
-    :spring-config="springConfig"
-    :alignment="settings.lyric.alignment"
-    :inactive-alpha="settings.lyric.inactiveAlpha"
-    :hide-passed-lines="settings.lyric.hidePassedLines"
-    :enable-blur="settings.lyric.enableBlur"
-    :enable-word-highlight="settings.lyric.enableWordHighlight"
-    :enable-float-animation="settings.lyric.enableFloatAnimation"
-    :enable-emphasize-effect="settings.lyric.enableEmphasizeEffect"
-    :enable-scale="settings.lyric.enableScale"
-    :bg-always-below="settings.lyric.bgAlwaysBelow"
-    :show-translation="settings.lyric.showTranslation"
-    :show-ruby="settings.lyric.showRuby"
-    :show-romanization="settings.lyric.showRomanization"
-    :show-word-romanization="settings.lyric.showWordRomanization"
-    @seek="emit('seek', $event)"
-  >
-    <template #bottom>
-      <slot name="bottom">
-        <LyricCredit />
-      </slot>
-    </template>
-  </DefaultLyrics>
 </template>

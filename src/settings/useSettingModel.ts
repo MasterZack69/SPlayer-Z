@@ -5,8 +5,9 @@ import { virtualBindings } from "./virtualBindings";
 import { computed, type WritableComputedRef } from "vue";
 
 /**
- * 根据 binding 配置创建与 store 双向绑定的 computed
- * 仅在 SettingsItem 组件内按需调用
+ * Bind a settings control to its reactive store or IPC-backed configuration.
+ * @param binding - Store and property path displayed by the control.
+ * @returns A writable value for the settings component.
  */
 export const useSettingModel = (binding: {
   store: "settings" | "theme";
@@ -40,7 +41,6 @@ export const useSettingModel = (binding: {
     get: () => getByPath(store, binding.path),
     set: (v) => {
       setByPath(store, binding.path, v);
-      store.afterLocalChange(binding.path, v);
     },
   });
 };

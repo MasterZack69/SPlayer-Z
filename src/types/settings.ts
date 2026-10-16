@@ -5,7 +5,6 @@ import type { TransitionPreference } from "@shared/types/player";
 import { ALL_PLATFORMS } from "@shared/types/platform";
 import type { CjkTransformMode } from "@shared/types/opencc";
 import type { QualityLevel } from "@/utils/quality";
-import type { LyricAlignment } from "lyric-dom";
 
 /** 播放器背景类型 */
 export type PlayerBgType = "blur" | "solid" | "animation";
@@ -42,25 +41,8 @@ export type LayoutMode = "default" | "sidebar-full" | "floating";
 /** 路由切换动效 */
 export type RouteTransition = "none" | "fade" | "slide" | "zoom";
 
-/** 弹簧动画预设 */
-export type SpringPreset =
-  "default" | "smooth" | "responsive" | "jello" | "heavy" | "noBounce" | "custom";
-
 /** 歌词混合模式 */
 export type LyricBlendMode = "normal" | "screen" | "plus-lighter";
-
-/** 弹簧预设参数映射 */
-export const SPRING_PRESETS: Record<
-  Exclude<SpringPreset, "custom">,
-  { mass: number; damping: number; stiffness: number }
-> = {
-  default: { mass: 0.9, damping: 15, stiffness: 90 },
-  smooth: { mass: 1.2, damping: 22, stiffness: 80 },
-  responsive: { mass: 0.5, damping: 18, stiffness: 150 },
-  jello: { mass: 0.6, damping: 8, stiffness: 120 },
-  heavy: { mass: 2.0, damping: 25, stiffness: 60 },
-  noBounce: { mass: 1.0, damping: 30, stiffness: 100 },
-};
 
 /** 音源排序：来源偏好为「智能选择」时，按此顺序依次尝试匹配 */
 export type LyricSourceOrder = Platform[];
@@ -178,41 +160,21 @@ export interface LyricSettings {
   enableScale: boolean;
   /** 是否始终将背景行置于主行下方 */
   bgAlwaysBelow: boolean;
-  /** 逐字高亮效果 */
-  enableWordHighlight: boolean;
-  /** 逐字上浮动画 */
-  enableFloatAnimation: boolean;
-  /** 强调效果（缩放 + 辉光 + 正弦浮动） */
-  enableEmphasizeEffect: boolean;
   /** 逐行模糊效果 */
   enableBlur: boolean;
   /** 隐藏已播放行 */
   hidePassedLines: boolean;
-  /** 弹簧动画预设 */
-  springPreset: SpringPreset;
-  /** 弹簧质量 */
-  springMass: number;
-  /** 弹簧阻尼 */
-  springDamping: number;
-  /** 弹簧刚度 */
-  springStiffness: number;
   /** 激活行对齐位置（0~1） */
   alignPosition: number;
-  /** 歌词水平对齐方式 */
-  alignment: LyricAlignment;
   /** 逐字掩码渐变宽度 */
   wordFadeWidth: number;
-  /** 非激活行透明度 */
-  inactiveAlpha: number;
   /** 启用歌词排除 */
   enableExcludeLyrics: boolean;
   /** 用户自定义关键词 */
   excludeLyricsUserKeywords: string[];
   /** 用户自定义正则 */
   excludeLyricsUserRegexes: string[];
-  /** 歌词引擎类型 */
-  engine: "physics" | "amll";
-  /** AM 歌词是否启用物理回弹与缩放 */
+  /** Enable AMLL spring-based scrolling. */
   useAMSpring: boolean;
   /** AMLL 垂直位移弹簧参数 */
   amllVerticalSpringMass: number;

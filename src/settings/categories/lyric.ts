@@ -4,9 +4,6 @@ import LyricFormatOrderConfig from "@/components/settings/custom/LyricFormatOrde
 import ExcludeLyricsConfig from "@/components/settings/custom/ExcludeLyricsConfig.vue";
 import IconLucideMic2 from "~icons/lucide/mic-2";
 
-/** 当前歌词引擎 */
-const lyricEngine = () => useSettingsStore().lyric.engine;
-
 const lyricCategory: SettingCategory = {
   id: "lyric",
   icon: IconLucideMic2,
@@ -69,22 +66,6 @@ const lyricCategory: SettingCategory = {
     {
       id: "lyricGeneral",
       items: [
-        {
-          key: "engine",
-          type: "select",
-          binding: { store: "settings", path: "lyric.engine" },
-          options: [
-            { value: "physics", labelKey: "settings.lyricEngine.physics" },
-            { value: "amll", labelKey: "settings.lyricEngine.amll" },
-          ],
-          defaultValue: "physics",
-          confirm: {
-            when: (next) => next === "amll",
-            titleKey: "settings.confirm.highResourceTitle",
-            contentKey: "settings.confirm.highResourceContent",
-            type: "warning",
-          },
-        },
         {
           key: "adaptiveFontSize",
           type: "switch",
@@ -162,19 +143,6 @@ const lyricCategory: SettingCategory = {
       id: "lyricDisplay",
       items: [
         {
-          key: "lyricAlignment",
-          type: "select",
-          binding: { store: "settings", path: "lyric.alignment" },
-          options: [
-            { value: "auto", labelKey: "settings.lyricAlignment.auto" },
-            { value: "left", labelKey: "settings.lyricAlignment.left" },
-            { value: "center", labelKey: "settings.lyricAlignment.center" },
-            { value: "right", labelKey: "settings.lyricAlignment.right" },
-          ],
-          defaultValue: "auto",
-          visible: () => lyricEngine() === "physics",
-        },
-        {
           key: "enableScale",
           type: "switch",
           binding: { store: "settings", path: "lyric.enableScale" },
@@ -185,27 +153,6 @@ const lyricCategory: SettingCategory = {
           type: "switch",
           binding: { store: "settings", path: "lyric.bgAlwaysBelow" },
           defaultValue: false,
-        },
-        {
-          key: "enableWordHighlight",
-          type: "switch",
-          binding: { store: "settings", path: "lyric.enableWordHighlight" },
-          defaultValue: true,
-          visible: () => lyricEngine() === "physics",
-        },
-        {
-          key: "enableFloatAnimation",
-          type: "switch",
-          binding: { store: "settings", path: "lyric.enableFloatAnimation" },
-          defaultValue: false,
-          visible: () => lyricEngine() === "physics",
-        },
-        {
-          key: "enableEmphasizeEffect",
-          type: "switch",
-          binding: { store: "settings", path: "lyric.enableEmphasizeEffect" },
-          defaultValue: false,
-          visible: () => lyricEngine() === "physics",
         },
         {
           key: "enableBlur",
@@ -223,7 +170,7 @@ const lyricCategory: SettingCategory = {
     },
     {
       id: "lyricAMLLOptimize",
-      visible: () => lyricEngine() === "amll",
+
       items: [
         {
           key: "amllCleanUnintentionalOverlaps",
@@ -261,60 +208,11 @@ const lyricCategory: SettingCategory = {
       id: "lyricSpring",
       items: [
         {
-          key: "springPreset",
-          type: "select",
-          binding: { store: "settings", path: "lyric.springPreset" },
-          options: [
-            { value: "default", labelKey: "settings.springPreset.default" },
-            { value: "smooth", labelKey: "settings.springPreset.smooth" },
-            { value: "responsive", labelKey: "settings.springPreset.responsive" },
-            { value: "jello", labelKey: "settings.springPreset.jello" },
-            { value: "heavy", labelKey: "settings.springPreset.heavy" },
-            { value: "noBounce", labelKey: "settings.springPreset.noBounce" },
-            { value: "custom", labelKey: "settings.springPreset.custom" },
-          ],
-          defaultValue: "default",
-          visible: () => lyricEngine() === "physics",
-          childrenCondition: () => useSettingsStore().lyric.springPreset === "custom",
-          children: [
-            {
-              key: "springMass",
-              type: "slider",
-              binding: { store: "settings", path: "lyric.springMass" },
-              min: 0.1,
-              max: 5,
-              step: 0.1,
-              defaultValue: 0.9,
-              marks: { 0.1: "0.1", 0.9: "0.9", 5: "5" },
-            },
-            {
-              key: "springDamping",
-              type: "slider",
-              binding: { store: "settings", path: "lyric.springDamping" },
-              min: 1,
-              max: 50,
-              step: 0.5,
-              defaultValue: 15,
-              marks: { 1: "1", 15: "15", 50: "50" },
-            },
-            {
-              key: "springStiffness",
-              type: "slider",
-              binding: { store: "settings", path: "lyric.springStiffness" },
-              min: 10,
-              max: 300,
-              step: 5,
-              defaultValue: 90,
-              marks: { 10: "10", 90: "90", 300: "300" },
-            },
-          ],
-        },
-        {
           key: "useAMSpring",
           type: "switch",
           binding: { store: "settings", path: "lyric.useAMSpring" },
           defaultValue: true,
-          visible: () => lyricEngine() === "amll",
+
           hideChildren: true,
           childrenCondition: () => useSettingsStore().lyric.useAMSpring,
           children: [
@@ -416,17 +314,6 @@ const lyricCategory: SettingCategory = {
           step: 0.1,
           defaultValue: 0.5,
           marks: { 0.1: "0.1", 0.5: "0.5", 1: "1" },
-        },
-        {
-          key: "inactiveAlpha",
-          type: "slider",
-          binding: { store: "settings", path: "lyric.inactiveAlpha" },
-          min: 0,
-          max: 1,
-          step: 0.05,
-          defaultValue: 0.2,
-          marks: { 0: "0", 0.2: "0.2", 1: "1" },
-          visible: () => lyricEngine() === "physics",
         },
       ],
     },

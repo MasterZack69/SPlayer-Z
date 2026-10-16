@@ -1120,14 +1120,6 @@
         "openSettings": "打开设置"
       }
     },
-    "engine": {
-      "label": "歌词渲染引擎",
-      "description": "选择用于歌词渲染与滚动的动效引擎"
-    },
-    "lyricEngine": {
-      "physics": "默认",
-      "amll": "AMLL"
-    },
     "confirm": {
       "highResourceTitle": "高占用功能",
       "enableTitle": "确认开启",
@@ -1143,8 +1135,8 @@
       "preloadCacheContent": "歌曲预载需要缓存下一首音频。继续将同时开启歌曲缓存和流媒体缓存，可能增加网络流量和磁盘占用"
     },
     "useAMSpring": {
-      "label": "弹簧动画调试开关",
-      "description": "为 applemusic-like-lyrics 启用物理弹性回弹与焦点行缩放效果"
+      "label": "弹簧动画",
+      "description": "为歌词滚动启用物理弹簧动画"
     },
     "amllVerticalSpringMass": {
       "label": "垂直回弹质量",
@@ -1253,29 +1245,9 @@
       "label": "歌词缩放",
       "description": "聚焦播放行，非激活行轻微缩小"
     },
-    "lyricAlignment": {
-      "label": "歌词水平对齐",
-      "description": "自动按演唱声部分左右显示，也可统一靠左、居中或靠右",
-      "auto": "自动",
-      "left": "靠左",
-      "center": "居中",
-      "right": "靠右"
-    },
     "bgAlwaysBelow": {
       "label": "背景歌词置于下方",
       "description": "始终将背景和声歌词显示在主歌词行下方"
-    },
-    "enableWordHighlight": {
-      "label": "逐字高亮",
-      "description": "逐字显示歌词高亮进度"
-    },
-    "enableFloatAnimation": {
-      "label": "逐字上浮",
-      "description": "播放到的文字向上微浮"
-    },
-    "enableEmphasizeEffect": {
-      "label": "强调效果",
-      "description": "长音节文字显示缩放和辉光动画"
     },
     "enableBlur": {
       "label": "逐行模糊",
@@ -1285,29 +1257,6 @@
       "label": "隐藏已播放行",
       "description": "播放过的歌词行自动隐藏"
     },
-    "springPreset": {
-      "label": "弹簧预设",
-      "description": "歌词滚动动画的弹簧物理参数预设",
-      "default": "默认",
-      "smooth": "更平滑",
-      "responsive": "快速跟手",
-      "jello": "果冻感",
-      "heavy": "厚重缓慢",
-      "noBounce": "无弹跳",
-      "custom": "自定义"
-    },
-    "springMass": {
-      "label": "质量",
-      "description": "值越大运动越迟钝，惯性越大"
-    },
-    "springDamping": {
-      "label": "阻尼",
-      "description": "值越大振荡衰减越快，运动越平滑"
-    },
-    "springStiffness": {
-      "label": "刚度",
-      "description": "值越大弹簧回弹越快，频率越高"
-    },
     "alignPosition": {
       "label": "对齐位置",
       "description": "当前行在歌词区域中的垂直位置（0 = 顶部，1 = 底部）"
@@ -1315,10 +1264,6 @@
     "wordFadeWidth": {
       "label": "渐变宽度",
       "description": "逐字高亮掩码的渐变宽度比例"
-    },
-    "inactiveAlpha": {
-      "label": "非激活行透明度",
-      "description": "非当前行的基础透明度，同时影响翻译和音译的透明度"
     },
     "desktopLyricEnabled": {
       "label": "开启桌面歌词",

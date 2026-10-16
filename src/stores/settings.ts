@@ -4,7 +4,6 @@ import type {
   AppearanceSettings,
   SidebarNavGroup,
   SidebarPlaylistOrder,
-  SpringPreset,
   PresetSettings,
 } from "@/types/settings";
 import {
@@ -14,7 +13,6 @@ import {
   SIDEBAR_NAV_PLACEMENT_FIXES,
   SIDEBAR_GROUP_MY_PLAYLISTS,
   SIDEBAR_GROUP_SUBSCRIBED,
-  SPRING_PRESETS,
 } from "@/types/settings";
 import type { SystemConfig, LocaleCode } from "@shared/types/settings";
 import { ALL_PLATFORMS } from "@shared/types/platform";
@@ -240,23 +238,13 @@ export const useSettingsStore = defineStore(
       showWordRomanization: true,
       enableScale: true,
       bgAlwaysBelow: false,
-      enableWordHighlight: true,
-      enableFloatAnimation: false,
-      enableEmphasizeEffect: false,
       enableBlur: false,
       hidePassedLines: false,
-      springPreset: "default",
-      springMass: 0.9,
-      springDamping: 15,
-      springStiffness: 90,
       alignPosition: 0.35,
-      alignment: "auto",
       wordFadeWidth: 0.5,
-      inactiveAlpha: 0.2,
       enableExcludeLyrics: true,
       excludeLyricsUserKeywords: [],
       excludeLyricsUserRegexes: [],
-      engine: "physics",
       useAMSpring: true,
       amllVerticalSpringMass: 1,
       amllVerticalSpringDamping: 15,
@@ -357,16 +345,6 @@ export const useSettingsStore = defineStore(
       }
     };
 
-    /** 本地配置写入后处理 */
-    const afterLocalChange = (path: string, value: unknown): void => {
-      if (path === "lyric.springPreset" && value !== "custom") {
-        const params = SPRING_PRESETS[value as Exclude<SpringPreset, "custom">];
-        lyric.springMass = params.mass;
-        lyric.springDamping = params.damping;
-        lyric.springStiffness = params.stiffness;
-      }
-    };
-
     return {
       locale,
       appearance,
@@ -379,7 +357,6 @@ export const useSettingsStore = defineStore(
       isTaskbarLyricOpen,
       syncSystem,
       setSystem,
-      afterLocalChange,
     };
   },
   {
@@ -399,6 +376,21 @@ export const useSettingsStore = defineStore(
           player.transitionPreference !== "eager"
         ) {
           player.transitionPreference = "standard";
+        }
+        // Remove persisted controls belonging to the retired lyric renderer.
+        for (const key of [
+          "engine",
+          "alignment",
+          "inactiveAlpha",
+          "enableWordHighlight",
+          "enableFloatAnimation",
+          "enableEmphasizeEffect",
+          "springPreset",
+          "springMass",
+          "springDamping",
+          "springStiffness",
+        ]) {
+          delete (lyric as unknown as Record<string, unknown>)[key];
         }
         if (typeof lyric.detectBackgroundLyrics !== "boolean") {
           lyric.detectBackgroundLyrics = true;

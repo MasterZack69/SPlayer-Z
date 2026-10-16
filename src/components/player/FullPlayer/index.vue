@@ -104,18 +104,6 @@ watch(
   () => lyricRef.value?.setCurrentTime(getCurrentTime() + status.lyricOffsetMs),
 );
 
-// 切换歌词引擎时，重新计算初始并推送时间
-watch(
-  () => settings.lyric.engine,
-  () => {
-    initialLyricTimeMs.value = getCurrentTime() + status.lyricOffsetMs;
-    nextTick(() => {
-      lyricRef.value?.setCurrentTime(getCurrentTime() + status.lyricOffsetMs);
-      if (isPlaying.value) lyricRef.value?.resume();
-    });
-  },
-);
-
 const fullscreenCover = computed(() => settings.player.coverLayout === "fullscreen");
 const coverWidth = computed(() => `${settings.player.coverLyricRatio * 100}%`);
 

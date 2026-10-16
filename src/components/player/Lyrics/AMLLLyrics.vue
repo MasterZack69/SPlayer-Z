@@ -9,6 +9,12 @@ import { useStatusStore } from "@/stores/status";
 import { getCurrentTime } from "@/services/playback";
 import "@applemusic-like-lyrics/core/style.css";
 import LyricCredit from "./LyricCredit.vue";
+import {
+  observeLyricMarkdown,
+  prepareLyricMarkdown,
+  type FormattedLyricLine,
+  type LyricTextStyle,
+} from "@/utils/lyric/markdown";
 
 const props = withDefaults(
   defineProps<{
@@ -72,7 +78,8 @@ const contentVisible = ref(false);
 // 父组件的冻结标志
 const isFrozen = ref(false);
 // 冻结期间缓存的待应用歌词
-let pendingLyrics: LyricLine[] | null = null;
+let pendingLyrics: FormattedLyricLine[] | null = null;
+let stopMarkdownObserver: (() => void) | undefined;
 // 页面隐藏状态的响应式跟踪
 const isPageHidden = ref(false);
 // 之前隐藏的标记，用于检测从隐藏恢复的时刻
@@ -105,7 +112,7 @@ const processedLyrics = computed(() => {
         return newWord;
       });
     }
-    return newLine;
+    return prepareLyricMarkdown(newLine, settings.lyric.amllNormalizeSpaces);
   });
 });
 
@@ -119,10 +126,16 @@ const handleLineClick = (event: Event) => {
   }
 };
 
-// 为所有主歌词行设置 html lang 属性
+/**
+ * Apply language tags and safe emphasis to the current AMLL lyric groups.
+ * @param player - The initialized player whose DOM may have been rebuilt.
+ */
 const processLyricLanguage = (player = playerRef.value) => {
+  stopMarkdownObserver?.();
+  stopMarkdownObserver = undefined;
   const lyricGroups = player?.currentLyricGroups;
-  if (!Array.isArray(lyricGroups) || lyricGroups.length === 0) return;
+  if (!player || !Array.isArray(lyricGroups) || lyricGroups.length === 0) return;
+  const targets = new Map<HTMLElement, LyricTextStyle[]>();
 
   for (const group of lyricGroups) {
     for (const line of [group.mainLine, group.bgLine]) {
@@ -130,6 +143,13 @@ const processLyricLanguage = (player = playerRef.value) => {
       const lyricLineElement = line?.getElement();
       if (!lyricLine || !lyricLineElement) continue;
 
+      const styles = (lyricLine as FormattedLyricLine).inlineStyles;
+      if (styles) {
+        [styles.main, styles.translation, styles.romanization].forEach((ranges, index) => {
+          const element = lyricLineElement.children[index];
+          if (ranges.length && element instanceof HTMLElement) targets.set(element, ranges);
+        });
+      }
       const lyricMainLineElement = lyricLineElement.firstChild;
       if (lyricMainLineElement instanceof HTMLElement) {
         const language = (lyricLine as LyricLine).language;
@@ -138,9 +158,13 @@ const processLyricLanguage = (player = playerRef.value) => {
       }
     }
   }
+  stopMarkdownObserver = observeLyricMarkdown(player.getElement(), targets);
 };
 
-/** 同步播放器配置 */
+/**
+ * Synchronize display and spring settings with AMLL.
+ * @param player - The player receiving the current preferences.
+ */
 const syncPlayerOptions = (player = playerRef.value): void => {
   if (!player) return;
   player.setAlignPosition(props.alignPosition);
@@ -151,7 +175,7 @@ const syncPlayerOptions = (player = playerRef.value): void => {
 
   const useSpring = settings.lyric.useAMSpring;
   player.setEnableSpring(useSpring);
-  player.setEnableScale(useSpring);
+  player.setEnableScale(settings.lyric.enableScale);
   player.setAlwaysPostpositionBackground(props.bgAlwaysBelow ?? false);
   player.setLinePosYSpringParams({
     mass: settings.lyric.amllVerticalSpringMass,
@@ -238,6 +262,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  stopMarkdownObserver?.();
   document.removeEventListener("visibilitychange", handleVisibility);
   pauseRaf();
   initialized.value = false;
@@ -281,6 +306,7 @@ watch(
     props.enableBlur,
     props.bgAlwaysBelow,
     settings.lyric.useAMSpring,
+    settings.lyric.enableScale,
     settings.lyric.amllVerticalSpringMass,
     settings.lyric.amllVerticalSpringDamping,
     settings.lyric.amllVerticalSpringStiffness,

@@ -1120,14 +1120,6 @@
         "openSettings": "Open settings"
       }
     },
-    "engine": {
-      "label": "Lyric Engine",
-      "description": "Choose the engine type used for lyric rendering and scrolling"
-    },
-    "lyricEngine": {
-      "physics": "Default",
-      "amll": "AMLL"
-    },
     "confirm": {
       "highResourceTitle": "Resource-Intensive Feature",
       "enableTitle": "Confirm enabling",
@@ -1143,8 +1135,8 @@
       "preloadCacheContent": "Preloading requires caching the next track's audio. Continuing will enable both song caching and streaming caching, which may increase network traffic and disk usage"
     },
     "useAMSpring": {
-      "label": "Spring Animation Debug Switch",
-      "description": "Enable spring bounce and active line scaling effects for applemusic-like-lyrics"
+      "label": "Spring Animation",
+      "description": "Use spring physics for lyric scrolling"
     },
     "amllVerticalSpringMass": {
       "label": "Vertical Spring Mass",
@@ -1253,29 +1245,9 @@
       "label": "Lyric Scale",
       "description": "Scale down inactive lines slightly to highlight current line"
     },
-    "lyricAlignment": {
-      "label": "Lyric Alignment",
-      "description": "Automatically place singers on opposite sides, or align all lines left, center, or right",
-      "auto": "Auto",
-      "left": "Left",
-      "center": "Center",
-      "right": "Right"
-    },
     "bgAlwaysBelow": {
       "label": "Background Lyrics Always Below",
       "description": "Always place background vocal lines below the main lyric line"
-    },
-    "enableWordHighlight": {
-      "label": "Word Highlight",
-      "description": "Show word-by-word lyric highlight progress"
-    },
-    "enableFloatAnimation": {
-      "label": "Word Float",
-      "description": "Active words float up slightly"
-    },
-    "enableEmphasizeEffect": {
-      "label": "Emphasize Effect",
-      "description": "Scale and glow animation for long syllables"
     },
     "enableBlur": {
       "label": "Line Blur",
@@ -1285,29 +1257,6 @@
       "label": "Hide Passed Lines",
       "description": "Auto-hide lyrics lines that have been played"
     },
-    "springPreset": {
-      "label": "Spring Preset",
-      "description": "Physics preset for lyric scroll spring animation",
-      "default": "Default",
-      "smooth": "Smoother",
-      "responsive": "Fast Responsive",
-      "jello": "Jello",
-      "heavy": "Heavy & Slow",
-      "noBounce": "No Bounce",
-      "custom": "Custom"
-    },
-    "springMass": {
-      "label": "Mass",
-      "description": "Higher values make motion sluggish with more inertia"
-    },
-    "springDamping": {
-      "label": "Damping",
-      "description": "Higher values decay oscillation faster, smoother motion"
-    },
-    "springStiffness": {
-      "label": "Stiffness",
-      "description": "Higher values make spring snap back faster"
-    },
     "alignPosition": {
       "label": "Align Position",
       "description": "Vertical position of active line (0 = top, 1 = bottom)"
@@ -1315,10 +1264,6 @@
     "wordFadeWidth": {
       "label": "Fade Width",
       "description": "Gradient width ratio for word highlight mask"
-    },
-    "inactiveAlpha": {
-      "label": "Inactive Opacity",
-      "description": "Base opacity for non-active lines, also applied to translations and romanizations"
     },
     "desktopLyricEnabled": {
       "label": "Enable Desktop Lyric",

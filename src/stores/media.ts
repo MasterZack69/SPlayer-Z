@@ -7,8 +7,8 @@ import {
   extractLyricAuthors,
   findLyricIndex,
   normalizeLyricLines,
-  parseLyric,
 } from "lyric-kit";
+import { parsePlaybackLyric } from "@/utils/lyric/parse";
 import { applyLyricExclude } from "@/utils/lyric/lyricStripper";
 import { applyLyricCjkTransform } from "@/utils/lyric/cjkTransform";
 
@@ -148,9 +148,9 @@ export const useMediaStore = defineStore("media", () => {
   );
 
   /**
-   * 原子写入歌词
-   * @param source - 歌词源
-   * @param input - 主歌词 + 可选翻译 / 音译；传 null 即清空
+   * Parse and atomically replace the current playback lyrics.
+   * @param source - Lyric origin and format.
+   * @param input - Original lyrics and optional auxiliary tracks; null clears lyrics.
    */
   const setLyric = (source: LyricData, input: LyricInput | null): void => {
     let nextLines: LyricLine[] = [];
@@ -158,22 +158,12 @@ export const useMediaStore = defineStore("media", () => {
     const settings = useSettingsStore();
     if (source && input) {
       try {
-        const result = parseLyric(
-          {
-            content: input.content,
-            format: source.format,
-            translation: input.translation,
-            translationFormat: input.translationFormat,
-            romaji: input.romaji,
-            romajiFormat: input.romajiFormat,
-          },
-          {
-            detectBackground: settings.lyric.detectBackgroundLyrics,
-            preferredLang: settings.locale,
-            cleanKangxi: true,
-            extractMetadata: true,
-          },
-        );
+        const result = parsePlaybackLyric(input, source.format, {
+          detectBackground: settings.lyric.detectBackgroundLyrics,
+          preferredLang: settings.locale,
+          cleanKangxi: true,
+          extractMetadata: true,
+        });
         nextLines = applyLyricExclude(result.lines, track.value);
         normalizeLyricLines(nextLines);
         applyLyricLanguages(nextLines);
