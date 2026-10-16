@@ -1,3 +1,5 @@
+#![cfg(target_os = "windows")]
+
 //! Windows 任务栏缩略图自定义原生模块
 //!
 //! 借助 DWM 的 iconic representation，把任务栏悬停缩略图 / Peek 全尺寸预览
