@@ -47,16 +47,13 @@ export const useUpdateStore = defineStore("update", () => {
     .getState()
     .then(async (state) => {
       applyState(state);
-      if (phase.value === "idle" && mode.value !== "store")
-        applyState(await window.api.update.check(false));
+      if (phase.value === "idle") applyState(await window.api.update.check(false));
     })
     .catch(console.warn);
 
-  /** 检查入口统一处理已有更新和商店安装形式。 */
+  /** Show an available update or request a new check. */
   const checkManually = (): void => {
-    if (mode.value === "store") {
-      void window.api.update.openDownloadPage();
-    } else if (hasUpdate.value && errorSource.value !== "download") {
+    if (hasUpdate.value && errorSource.value !== "download") {
       dialogOpen.value = true;
     } else {
       void window.api.update

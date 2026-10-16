@@ -19,7 +19,6 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@main": fileURLToPath(new URL("./electron/main", import.meta.url)),
       "@shared": fileURLToPath(new URL("./shared", import.meta.url)),
-      "@windows": fileURLToPath(new URL("./windows", import.meta.url)),
       "@root": fileURLToPath(new URL("./", import.meta.url)),
     },
   },
@@ -32,12 +31,7 @@ export default defineConfig({
   ],
   test: {
     environment: "happy-dom",
-    include: [
-      "electron/**/*.spec.ts",
-      "src/**/*.spec.ts",
-      "windows/**/*.spec.ts",
-      "docs/**/*.spec.ts",
-    ],
+    include: ["electron/**/*.spec.ts", "src/**/*.spec.ts", "docs/**/*.spec.ts"],
     clearMocks: true,
     restoreMocks: true,
   },
