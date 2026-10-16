@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "Folders" });
 
 import type { Track } from "@shared/types/player";
@@ -20,6 +21,8 @@ import IconLucideEllipsis from "~icons/lucide/ellipsis";
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
+const searchQuery = usePageSearch();
 const libraryStore = useLibraryStore();
 const playlistStore = usePlaylistStore();
 const { tracks, initialized, folderTree, folderCount } = storeToRefs(libraryStore);
@@ -50,6 +53,12 @@ const handleMore = (key: string): void => {
 // 默认展开/选中只在首次拿到非空树时执行一次，之后用户的折叠/选择不再被覆盖
 let defaultsApplied = false;
 
+/**
+ * Find a folder by its stable filesystem path.
+ * @param nodes - Folder nodes to traverse.
+ * @param path - Requested folder path.
+ * @returns The matching folder, if present.
+ */
 const findFolder = (nodes: FolderNode[], path: string): FolderNode | null => {
   for (const node of nodes) {
     if (node.path === path) return node;
@@ -59,13 +68,36 @@ const findFolder = (nodes: FolderNode[], path: string): FolderNode | null => {
   return null;
 };
 
+watch(selectedFolder, (folder) => {
+  if (route.name === "folders" && folder && route.query.path !== folder.path) {
+    void router.replace({ query: { ...route.query, path: folder.path } });
+  }
+});
+
 watch(
-  [folderTree, initialized],
-  ([current, init]) => {
+  [folderTree, initialized, () => route.query.path],
+  ([current, init, requestedPath]) => {
     if (current.length === 0) {
       selectedFolder.value = null;
       defaultsApplied = false;
       return;
+    }
+    if (typeof requestedPath === "string") {
+      const requested = findFolder(current, requestedPath);
+      if (requested) {
+        selectedFolder.value = requested;
+        expanded.value = [
+          ...new Set([
+            ...expanded.value,
+            ...current.map((root) => root.path),
+            ...requestedPath
+              .split("/")
+              .map((_, index, parts) => parts.slice(0, index + 1).join("/") || "/"),
+          ]),
+        ];
+        defaultsApplied = true;
+        return;
+      }
     }
     if (!defaultsApplied && init) {
       expanded.value = current.map((root) => root.path);
@@ -167,6 +199,7 @@ onMounted(async () => {
           v-if="selectedFolder && selectedTracks.length > 0"
           ref="songListRef"
           :items="selectedTracks"
+          :search-query="searchQuery"
           enable-sort
         >
           <template #topInfo>

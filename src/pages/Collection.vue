@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 import type { PlaybackContext, TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
@@ -151,7 +152,7 @@ const handlePlayAll = () => {
   player.playFrom(collection.value.tracks, { context: playbackContext.value });
 };
 
-const searchQuery = ref("");
+const searchQuery = usePageSearch();
 
 /** 歌曲列表引用 */
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
@@ -392,18 +393,6 @@ onBeforeUnmount(() => {
                 </template>
               </SDropdownMenu>
             </div>
-            <SInput
-              v-model="searchQuery"
-              :placeholder="t('common.search')"
-              clearable
-              round
-              class="w-40 focus-within:w-56"
-              data-search-input
-            >
-              <template #prefix>
-                <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
-              </template>
-            </SInput>
           </div>
         </div>
       </div>

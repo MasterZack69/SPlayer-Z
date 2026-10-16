@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
+import { matchesSearch } from "@/utils/search/match";
 import type { PlaybackContext, TrackSource } from "@shared/types/player";
 import type { ArtistProfile, CoverItem } from "@/types/artist";
 import { useSettingsStore } from "@/stores/settings";
@@ -180,7 +182,7 @@ const handleToggleSubscribe = async (): Promise<void> => {
   }
 };
 
-const searchQuery = ref("");
+const searchQuery = usePageSearch();
 
 /** 歌曲列表引用 */
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
@@ -224,10 +226,12 @@ const tabs = computed(() => {
 
 const albumItems = computed<CoverItem[]>(() => {
   if (!artist.value?.albums.length) return [];
-  return artist.value.albums.map((item) => ({
-    ...item,
-    subtitle: t("common.totalSongs", { count: item.trackCount }),
-  }));
+  return artist.value.albums
+    .filter((item) => matchesSearch(searchQuery.value, item.title))
+    .map((item) => ({
+      ...item,
+      subtitle: t("common.totalSongs", { count: item.trackCount }),
+    }));
 });
 </script>
 
@@ -324,19 +328,6 @@ const albumItems = computed<CoverItem[]>(() => {
                 </template>
               </SDropdownMenu>
             </div>
-            <SInput
-              v-model="searchQuery"
-              :placeholder="t('common.search')"
-              :disabled="activeTab !== 'songs'"
-              clearable
-              round
-              class="w-40 focus-within:w-56"
-              data-search-input
-            >
-              <template #prefix>
-                <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
-              </template>
-            </SInput>
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "LocalList" });
 
+import { matchesSearch } from "@/utils/search/match";
 import type { CoverItem } from "@/types/artist";
 import type { PlaybackContext, Track } from "@shared/types/player";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
@@ -28,6 +30,8 @@ const { artistAvatars } = storeToRefs(libraryStore);
 const mode: Mode =
   route.name === "album-list" ? "album" : route.name === "genre-list" ? "genre" : "artist";
 
+const searchQuery = usePageSearch();
+
 const sortMode = ref<SortMode>("default");
 
 const sortOptions = computed<SSelectOption[]>(() => [
@@ -38,7 +42,7 @@ const sortOptions = computed<SSelectOption[]>(() => [
 
 const source = shallowRef<ArtistSummary[] | AlbumSummary[] | GenreSummary[]>([]);
 
-/** 组装最终列表 */
+/** Build the sorted cards matching this page's filter. */
 const items = computed<CoverItem[]>(() => {
   const list: CoverItem[] =
     mode === "artist"
@@ -69,7 +73,9 @@ const items = computed<CoverItem[]>(() => {
   } else if (sortMode.value === "trackCount") {
     list.sort((a, b) => b.trackCount - a.trackCount || a.title.localeCompare(b.title));
   }
-  return list;
+  return list.filter((item) =>
+    matchesSearch(searchQuery.value, item.title, mode === "album" ? item.subtitle : undefined),
+  );
 });
 
 const config = computed(() => {
@@ -171,7 +177,7 @@ onMounted(async () => {
           </span>
         </div>
         <div
-          v-if="items.length > 0"
+          v-if="source.length > 0"
           class="flex items-center gap-2 text-sm text-on-surface-variant/70"
         >
           <IconLucideArrowUpDown class="size-3.5 shrink-0" />
@@ -197,9 +203,18 @@ onMounted(async () => {
       <div v-else class="h-full flex items-center justify-center">
         <div class="text-center text-on-surface-variant/50">
           <component :is="config.emptyIcon" class="size-12 mx-auto mb-3 opacity-30" />
-          <div class="text-sm mb-1">{{ t("library.noLocalData") }}</div>
-          <div class="text-xs mb-4 opacity-70">{{ t("library.noLocalDataHint") }}</div>
-          <SButton type="primary" variant="secondary" @click="router.push('/library')">
+          <div class="text-sm mb-1">
+            {{ t(searchQuery ? "search.noResults" : "library.noLocalData") }}
+          </div>
+          <div v-if="!searchQuery" class="text-xs mb-4 opacity-70">
+            {{ t("library.noLocalDataHint") }}
+          </div>
+          <SButton
+            v-if="!searchQuery"
+            type="primary"
+            variant="secondary"
+            @click="router.push('/library')"
+          >
             <template #icon><IconLucideMusic /></template>
             {{ t("library.goLibrary") }}
           </SButton>

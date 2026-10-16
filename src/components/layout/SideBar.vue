@@ -186,6 +186,7 @@ const onContextMenuSelect = (key: string): void => {
 };
 
 const activeKey = computed(() => {
+  if (route.name === "search") return "";
   // 媒体源
   if (route.path.startsWith("/streaming")) return "/streaming";
   if (route.path.startsWith("/collection/streaming/")) return "/streaming";

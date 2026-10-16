@@ -1,16 +1,19 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "StreamingAlbums" });
 
+import { matchesSearch } from "@/utils/search/match";
 import type { CoverItem } from "@/types/artist";
 import { useStreamingStore } from "@/stores/streaming";
 import { albumsToCoverItems } from "@/utils/format/coverItem";
 
 const { t } = useI18n();
+const searchQuery = usePageSearch();
 const router = useRouter();
 const streaming = useStreamingStore();
 const { albums, loading, isConnected } = storeToRefs(streaming);
 
-const refreshKey = inject<{ value: number }>("streamingRefreshKey", { value: 0 });
+const refreshKey = inject("streamingRefreshKey", ref(0));
 
 const refresh = (force = false): void => {
   if (!isConnected.value) return;
@@ -23,7 +26,11 @@ onMounted(() => {
   if (isConnected.value && albums.value.length === 0) refresh();
 });
 
-const items = computed<CoverItem[]>(() => albumsToCoverItems(albums.value));
+const items = computed<CoverItem[]>(() =>
+  albumsToCoverItems(albums.value).filter((item) =>
+    matchesSearch(searchQuery.value, item.title, item.subtitle),
+  ),
+);
 
 /**
  * 打开当前服务器的专辑
@@ -40,7 +47,7 @@ const handleClick = (item: CoverItem): void => {
 <template>
   <div class="h-full">
     <CoverList
-      v-if="albums.length > 0"
+      v-if="items.length > 0"
       :items="items"
       :padding-x="20"
       :padding-top="8"

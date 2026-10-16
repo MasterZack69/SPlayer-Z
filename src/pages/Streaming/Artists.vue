@@ -1,16 +1,19 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "StreamingArtists" });
 
+import { matchesSearch } from "@/utils/search/match";
 import type { CoverItem } from "@/types/artist";
 import { useStreamingStore } from "@/stores/streaming";
 import { artistToCoverItem } from "@/utils/format/coverItem";
 
 const { t } = useI18n();
+const searchQuery = usePageSearch();
 const router = useRouter();
 const streaming = useStreamingStore();
 const { artists, loading, isConnected } = storeToRefs(streaming);
 
-const refreshKey = inject<{ value: number }>("streamingRefreshKey", { value: 0 });
+const refreshKey = inject("streamingRefreshKey", ref(0));
 
 const refresh = (force = false): void => {
   if (!isConnected.value) return;
@@ -24,10 +27,12 @@ onMounted(() => {
 });
 
 const items = computed<CoverItem[]>(() =>
-  artists.value.map((a) => ({
-    ...artistToCoverItem(a),
-    subtitle: a.albumCount ? t("common.totalAlbums", { count: a.albumCount }) : "",
-  })),
+  artists.value
+    .filter((item) => matchesSearch(searchQuery.value, item.name))
+    .map((a) => ({
+      ...artistToCoverItem(a),
+      subtitle: a.albumCount ? t("common.totalAlbums", { count: a.albumCount }) : "",
+    })),
 );
 
 /**
@@ -45,7 +50,7 @@ const handleClick = (item: CoverItem): void => {
 <template>
   <div class="h-full">
     <CoverList
-      v-if="artists.length > 0"
+      v-if="items.length > 0"
       :items="items"
       type="artist"
       :min-size="120"

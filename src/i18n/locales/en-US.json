@@ -207,7 +207,7 @@
     "reload": "Reload",
     "devtools": "Developer Tools",
     "globalSettings": "Global Settings",
-    "searchPlaceholder": "Search songs, artists or albums",
+    "searchPlaceholder": "Search all music…",
     "searchEmpty": "Start typing to search",
     "searchGoto": "Search for \"{keyword}\"",
     "searchSection": {
@@ -402,7 +402,25 @@
       "songs": "Songs",
       "albums": "Albums",
       "artists": "Artists",
-      "playlists": "Playlists"
+      "playlists": "Playlists",
+      "all": "All",
+      "genres": "Genres",
+      "folders": "Folders"
+    },
+    "globalHint": "Search your local library, playlists, folders, and the active media server’s synchronized library.",
+    "partialError": "Some library data could not be loaded. Available results are still shown.",
+    "showAll": "Show all",
+    "scope": {
+      "library": "Search Library…",
+      "liked": "Search Liked Songs…",
+      "collection": "Search this collection…",
+      "artist": "Search this artist…",
+      "artists": "Search artists…",
+      "albums": "Search albums…",
+      "genres": "Search genres…",
+      "folders": "Search this folder…",
+      "songs": "Search server songs…",
+      "playlists": "Search playlists…"
     }
   },
   "streaming": {

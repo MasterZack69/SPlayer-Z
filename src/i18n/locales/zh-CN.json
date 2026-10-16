@@ -207,7 +207,7 @@
     "reload": "热重载",
     "devtools": "开发者工具",
     "globalSettings": "全局设置",
-    "searchPlaceholder": "搜索歌曲、歌手或专辑",
+    "searchPlaceholder": "搜索所有音乐…",
     "searchEmpty": "输入关键词开始搜索",
     "searchGoto": "搜索「{keyword}」",
     "searchSection": {
@@ -402,7 +402,25 @@
       "songs": "单曲",
       "albums": "专辑",
       "artists": "歌手",
-      "playlists": "歌单"
+      "playlists": "歌单",
+      "all": "全部",
+      "genres": "流派",
+      "folders": "文件夹"
+    },
+    "globalHint": "搜索本地音乐库、歌单、文件夹，以及当前媒体服务器已同步的音乐库。",
+    "partialError": "部分音乐库数据未能加载，仍会显示可用的结果。",
+    "showAll": "查看全部",
+    "scope": {
+      "library": "搜索音乐库…",
+      "liked": "搜索喜欢的歌曲…",
+      "collection": "搜索此集合…",
+      "artist": "搜索此歌手…",
+      "artists": "搜索歌手…",
+      "albums": "搜索专辑…",
+      "genres": "搜索流派…",
+      "folders": "搜索此文件夹…",
+      "songs": "搜索服务器歌曲…",
+      "playlists": "搜索歌单…"
     }
   },
   "streaming": {

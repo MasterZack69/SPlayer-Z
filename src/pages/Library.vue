@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "Library" });
 
 import type { PlaybackContext } from "@shared/types/player";
@@ -22,7 +23,7 @@ const playbackContext = computed<PlaybackContext>(() => ({
 }));
 
 /** 搜索关键词 */
-const searchQuery = ref("");
+const searchQuery = usePageSearch();
 
 /** 多选模式 */
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
@@ -180,18 +181,6 @@ onUnmounted(() => {
             </template>
           </SDropdownMenu>
         </div>
-        <SInput
-          v-model="searchQuery"
-          :placeholder="t('common.search')"
-          clearable
-          round
-          class="w-40 focus-within:w-56"
-          data-search-input
-        >
-          <template #prefix>
-            <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
-          </template>
-        </SInput>
       </div>
     </div>
     <!-- 曲目列表 -->

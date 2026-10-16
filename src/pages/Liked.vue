@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "Liked" });
 
 import type { PlaybackContext, Track } from "@shared/types/player";
@@ -11,7 +12,7 @@ import IconLucideListChecks from "~icons/lucide/list-checks";
 const { t } = useI18n();
 const library = useLibraryStore();
 
-const searchQuery = ref("");
+const searchQuery = usePageSearch();
 
 /** 本地喜欢列表 */
 const localTracks = computed<Track[]>(() => {
@@ -102,20 +103,6 @@ const handleMoreMenu = (key: string): void => {
               </SButton>
             </template>
           </SDropdownMenu>
-        </div>
-        <div class="flex items-center gap-3">
-          <SInput
-            v-model="searchQuery"
-            :placeholder="t('common.search')"
-            clearable
-            round
-            class="w-40 focus-within:w-56"
-            data-search-input
-          >
-            <template #prefix>
-              <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
-            </template>
-          </SInput>
         </div>
       </div>
     </div>

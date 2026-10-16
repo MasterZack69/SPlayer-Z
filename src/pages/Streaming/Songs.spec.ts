@@ -1,5 +1,6 @@
 import { mount } from "@vue/test-utils";
 import { createPinia, defineStore } from "pinia";
+import { createRouter, createMemoryHistory } from "vue-router";
 import { createI18n } from "vue-i18n";
 import { beforeEach, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -33,16 +34,24 @@ it("收藏筛选随服务器状态更新，播放全部使用筛选后的歌曲"
     { ...track, favorite: true },
     { ...track, id: "b", favorite: false },
   ];
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: "/streaming/songs", name: "streaming-songs", component: Songs }],
+  });
+  await router.push("/streaming/songs");
   const wrapper = mount(Songs, {
     global: {
+      config: { warnHandler: () => {} },
       plugins: [
         pinia,
+        router,
         createI18n({
           legacy: false,
           locale: "zh-CN",
           messages: {
             "zh-CN": {
               streaming: { favoritesOnly: "仅看收藏", empty: { noFavorites: "暂无收藏" } },
+              search: { noResults: "没有匹配的结果" },
               common: { playAll: "播放全部", search: "搜索" },
             },
           },
@@ -63,6 +72,11 @@ it("收藏筛选随服务器状态更新，播放全部使用筛选后的歌曲"
     },
   });
   expect(wrapper.get("[data-list]").text()).toBe("a,b");
+  await router.replace({ query: { filter: "missing" } });
+  await nextTick();
+  expect(wrapper.find("[data-list]").exists()).toBe(false);
+  await router.replace({ query: {} });
+  await nextTick();
   await wrapper.get('[aria-pressed="false"]').trigger("click");
   expect(wrapper.get("[data-list]").text()).toBe("a");
   await wrapper.findAll("button")[0].trigger("click");

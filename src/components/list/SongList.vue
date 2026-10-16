@@ -10,6 +10,7 @@ import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useFavorite } from "@/composables/useFavorite";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
+import { matchesSearch } from "@/utils/search/match";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
 import { isLosslessQuality, getQualityLabel } from "@/utils/quality";
@@ -189,24 +190,18 @@ const sortTitleText = computed(() => {
   return `${t("songList.title")}（ ${t(sortFieldLabelKeyMap[sortField.value])} ${arrow} ）`;
 });
 
-/** 根据搜索关键词过滤后的列表 */
+/** Filter only the supplied collection using the shared metadata search rules. */
 const filteredItems = computed(() => {
-  const query = props.searchQuery.trim().toLowerCase();
-  if (!query) return props.items;
-  return props.items.filter((track) => {
-    const title = (track.title ?? "").toLowerCase();
-    const artists = (track.artists ?? [])
-      .map((artist) => (artist.name ?? "").toLowerCase())
-      .join(" ");
-    const album = track.album?.name?.toLowerCase() ?? "";
-    const genres = (track.genres ?? []).join(" ").toLowerCase();
-    return (
-      title.includes(query) ||
-      artists.includes(query) ||
-      album.includes(query) ||
-      genres.includes(query)
-    );
-  });
+  if (!props.searchQuery.trim()) return props.items;
+  return props.items.filter((track) =>
+    matchesSearch(
+      props.searchQuery,
+      track.title,
+      track.album?.name,
+      ...track.artists.map((artist) => artist.name),
+      ...(track.genres ?? []),
+    ),
+  );
 });
 
 /** 排序后列表 */

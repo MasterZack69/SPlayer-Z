@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { matchesSearch } from "@/utils/search/match";
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "StreamingSongs" });
 
 import { useStreamingStore } from "@/stores/streaming";
@@ -9,11 +11,21 @@ const { t } = useI18n();
 const streaming = useStreamingStore();
 const { songs, loading, isConnected } = storeToRefs(streaming);
 
-const refreshKey = inject<{ value: number }>("streamingRefreshKey", { value: 0 });
-const searchQuery = ref("");
+const refreshKey = inject("streamingRefreshKey", ref(0));
+const searchQuery = usePageSearch();
 const favoritesOnly = ref(false);
 const visibleSongs = computed(() =>
-  favoritesOnly.value ? songs.value.filter(streaming.isFavorite) : songs.value,
+  songs.value.filter(
+    (track) =>
+      (!favoritesOnly.value || streaming.isFavorite(track)) &&
+      matchesSearch(
+        searchQuery.value,
+        track.title,
+        track.album?.name,
+        ...track.artists.map((artist) => artist.name),
+        ...(track.genres ?? []),
+      ),
+  ),
 );
 
 /**
@@ -68,18 +80,6 @@ const handlePlayAll = (): void => {
           <template #icon><IconLucideHeart /></template>
           {{ t("streaming.favoritesOnly") }}
         </SButton>
-        <SInput
-          v-model="searchQuery"
-          :placeholder="t('common.search')"
-          clearable
-          round
-          class="w-40 focus-within:w-56"
-          data-search-input
-        >
-          <template #prefix>
-            <IconLucideSearch class="size-4 text-on-surface-variant/40 shrink-0" />
-          </template>
-        </SInput>
       </div>
     </div>
     <div v-if="visibleSongs.length > 0" class="flex-1 min-h-0">
@@ -92,7 +92,13 @@ const handlePlayAll = (): void => {
           {{
             loading
               ? t("common.loading")
-              : t(favoritesOnly ? "streaming.empty.noFavorites" : "streaming.empty.noResults")
+              : t(
+                  searchQuery
+                    ? "search.noResults"
+                    : favoritesOnly
+                      ? "streaming.empty.noFavorites"
+                      : "streaming.empty.noResults",
+                )
           }}
         </div>
       </div>

@@ -1,16 +1,19 @@
 <script setup lang="ts">
+import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "StreamingPlaylists" });
 
+import { matchesSearch } from "@/utils/search/match";
 import type { CoverItem } from "@/types/artist";
 import { useStreamingStore } from "@/stores/streaming";
 import { navigateToPlaylist } from "@/utils/navigate";
 import { playlistToCoverItem } from "@/utils/format/coverItem";
 
 const { t } = useI18n();
+const searchQuery = usePageSearch();
 const streaming = useStreamingStore();
 const { playlists, loading, isConnected } = storeToRefs(streaming);
 
-const refreshKey = inject<{ value: number }>("streamingRefreshKey", { value: 0 });
+const refreshKey = inject("streamingRefreshKey", ref(0));
 
 const refresh = (force = false): void => {
   if (!isConnected.value) return;
@@ -24,10 +27,12 @@ onMounted(() => {
 });
 
 const items = computed<CoverItem[]>(() =>
-  playlists.value.map((p) => ({
-    ...playlistToCoverItem(p),
-    subtitle: p.trackCount ? t("common.totalSongs", { count: p.trackCount }) : "",
-  })),
+  playlists.value
+    .filter((item) => matchesSearch(searchQuery.value, item.name, item.description))
+    .map((p) => ({
+      ...playlistToCoverItem(p),
+      subtitle: p.trackCount ? t("common.totalSongs", { count: p.trackCount }) : "",
+    })),
 );
 
 /**
@@ -46,7 +51,7 @@ const handleClick = (item: CoverItem): void => {
 <template>
   <div class="h-full">
     <CoverList
-      v-if="playlists.length > 0"
+      v-if="items.length > 0"
       :items="items"
       :padding-x="20"
       :padding-top="8"
