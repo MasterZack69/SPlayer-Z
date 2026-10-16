@@ -19,6 +19,7 @@ skills-lock.json
 
 # Rust build artifacts
 **/target
+/result
 native/*/*.node
 native/*/*.tmp
 native/*/*.swp

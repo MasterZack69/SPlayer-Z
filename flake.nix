@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    systems.url = "github:nix-systems/default";
+    systems.url = "github:nix-systems/default-linux";
   };
 
   outputs =
@@ -18,14 +18,17 @@
 
           electron = pkgs.electron_43;
 
-          splayer-next = pkgs.clangStdenv.mkDerivation (finalAttrs: {
+          packageJson = builtins.fromJSON (builtins.readFile ./package.json);
+
+          splayer-next = pkgs.stdenv.mkDerivation (finalAttrs: {
+            inherit (packageJson) version;
+
             pname = "splayer-next";
-            version = "1.0.0";
             src = ./.;
 
             pnpmDeps = pkgs.fetchPnpmDeps {
               inherit (finalAttrs) pname version src;
-              hash = "sha256-ShW23NClwcML/ngpdPf3EQaTmnhLVDAdSOJ4GQGSfIg=";
+              hash = "sha256-rErF9/pl/8FvYooSSf4/ODiZiR6wm24VdkUne6R3cQk=";
               fetcherVersion = 4;
             };
 
@@ -35,25 +38,25 @@
 
             nativeBuildInputs = [
               pkgs.pnpmConfigHook
-              pkgs.rustPlatform.cargoSetupHook
-              pkgs.nodejs
               pkgs.pnpm
-              pkgs.rustc
+              pkgs.nodejs
+              pkgs.rustPlatform.cargoSetupHook
+              pkgs.rustPlatform.bindgenHook
               pkgs.cargo
+              pkgs.rustc
               pkgs.python3
-              pkgs.gnumake
-              pkgs.pkg-config
               pkgs.makeWrapper
               pkgs.copyDesktopItems
-              pkgs.removeReferencesTo
-              pkgs.autoPatchelfHook
+              pkgs.pkg-config
             ];
 
             buildInputs = [
-              electron
-              pkgs.alsa-lib
+              pkgs.pipewire
+              pkgs.libpulseaudio
+              pkgs.openssl
               pkgs.ffmpeg-headless
-              pkgs.libclang
+              pkgs.alsa-lib
+              pkgs.dbus
             ];
 
             strictDeps = true;
@@ -61,39 +64,46 @@
 
             env = {
               ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
-
-              LIBCLANG_PATH = lib.makeLibraryPath [
-                pkgs.libclang.lib
-              ];
+              FFMPEG_MODE = "system";
             };
 
             postPatch = ''
               # Workaround for https://github.com/electron/electron/issues/31121
               substituteInPlace electron/main/utils/nativeLoader.ts \
                 --replace-fail 'process.resourcesPath' "'$out/share/splayer-next/resources'"
+
+              substituteInPlace electron/main/services/recognition/fingerprint.ts \
+                --replace-fail 'process.resourcesPath' "'$out/share/splayer-next/resources'"
+
+              sed -i '/^[[:space:]]*\.atleast_version/d' \
+                "$cargoDepsCopy"/{.,*}/ffmpeg_audio_sys-*/build.rs
             '';
 
             buildPhase = ''
               runHook preBuild
 
+              # After the pnpm configure, we need to build the binaries of all instances
+              # of better-sqlite3. It has a native part that it wants to build using a
+              # script which is disallowed.
+              # What's more, we need to use headers from electron to avoid ABI mismatches.
               for f in $(find . -path '*/node_modules/better-sqlite3' -type d); do
                 (cd "$f" && (
-                npm run build-release --offline -- --nodedir="${electron.headers}"
-                rm -rf build/Release/{.deps,obj,obj.target,test_extension.node}
-                find build -type f -exec \
-                  ${lib.getExe pkgs.removeReferencesTo} \
-                  -t "${electron.headers}" {} \;
+                  npm run build-release --offline -- --nodedir="${electron.headers}"
+                  rm -rf prebuilds
+                  rm -rf build/Release/{.deps,obj,obj.target,test_extension.node}
+                  find build -type f -exec \
+                    ${lib.getExe pkgs.removeReferencesTo} \
+                    -t "${electron.headers}" {} \;
                 ))
               done
 
               pnpm build
 
-              pnpm exec electron-builder \
+              npm exec electron-builder -- \
                 --dir \
+                --config electron-builder.config.ts \
                 -c.electronDist=${electron.dist} \
-                -c.electronVersion=${electron.version} \
-                -c.extraMetadata.version=v${finalAttrs.version} \
-                --config electron-builder.config.ts
+                -c.electronVersion=${electron.version}
 
               runHook postBuild
             '';
@@ -114,6 +124,10 @@
                 --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true --wayland-text-input-version=3}}" \
                 --set-default ELECTRON_FORCE_IS_PACKAGED 1 \
                 --set-default ELECTRON_IS_DEV 0 \
+                --prefix LD_PRELOAD : "${pkgs.ffmpeg-headless.lib}/lib/libavformat.so" \
+                --prefix LD_PRELOAD : "${pkgs.ffmpeg-headless.lib}/lib/libavcodec.so" \
+                --prefix LD_PRELOAD : "${pkgs.ffmpeg-headless.lib}/lib/libavutil.so" \
+                --prefix LD_PRELOAD : "${pkgs.ffmpeg-headless.lib}/lib/libswresample.so" \
                 --inherit-argv0
 
               runHook postInstall
@@ -121,14 +135,14 @@
 
             desktopItems = [
               (pkgs.makeDesktopItem {
-                name = "splayer-next";
+                name = "top.imsyy.splayer_next";
                 desktopName = "SPlayer-Next";
                 exec = "splayer-next %U";
                 terminal = false;
                 type = "Application";
                 icon = "splayer-next";
-                startupWMClass = "SPlayer-Next";
-                comment = "Cross-platform desktop music player with rich lyric support";
+                startupWMClass = "top.imsyy.splayer_next";
+                comment = "Cross-platform desktop music player with rich lyric support and wide audio format compatibility";
                 categories = [
                   "AudioVideo"
                   "Audio"
@@ -143,8 +157,8 @@
               description = "Cross-platform desktop music player with rich lyric support";
               homepage = "https://splayer-next.imsyy.top";
               license = lib.licenses.agpl3Only;
-              platforms = lib.platforms.linux;
               mainProgram = "splayer-next";
+              platforms = lib.platforms.linux;
             };
           });
         in
