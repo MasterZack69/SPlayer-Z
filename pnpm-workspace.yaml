@@ -4,6 +4,8 @@ allowBuilds:
   "@parcel/watcher": false
   better-sqlite3: true
   electron: true
+  # Transitive Windows packager: never run its install script on Linux.
+  electron-winstaller: false
   esbuild: true
   vue-demi: true
 minimumReleaseAgeExclude:
