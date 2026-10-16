@@ -1,5 +1,5 @@
 {
-  inputs = {
+r inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default-linux";
   };
@@ -82,10 +82,6 @@
             buildPhase = ''
               runHook preBuild
 
-              # After the pnpm configure, we need to build the binaries of all instances
-              # of better-sqlite3. It has a native part that it wants to build using a
-              # script which is disallowed.
-              # What's more, we need to use headers from electron to avoid ABI mismatches.
               for f in $(find . -path '*/node_modules/better-sqlite3' -type d); do
                 (cd "$f" && (
                   npm run build-release --offline -- --nodedir="${electron.headers}"
@@ -165,6 +161,119 @@
         {
           default = splayer-next;
           inherit splayer-next;
+        }
+      );
+
+      # Run via: `nix flake check` or `nix build .#checks.<system>.cargo-test`
+      checks = eachSystem (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+
+          commonArgs = {
+            pname = "splayer-next-rust";
+            version = "0.0.0";
+            src = ./.;
+
+            cargoDeps = pkgs.rustPlatform.importCargoLock {
+              lockFile = ./Cargo.lock;
+            };
+
+            nativeBuildInputs = [
+              pkgs.rustPlatform.cargoSetupHook
+              pkgs.rustPlatform.bindgenHook
+              pkgs.cargo
+              pkgs.rustc
+              pkgs.pkg-config
+            ];
+
+            buildInputs = [
+              pkgs.pipewire
+              pkgs.libpulseaudio
+              pkgs.openssl
+              pkgs.ffmpeg-headless
+              pkgs.alsa-lib
+              pkgs.dbus
+            ];
+
+            env = {
+              FFMPEG_MODE = "system";
+            };
+
+            postPatch = ''
+              sed -i '/^[[:space:]]*\.atleast_version/d' \
+                "$cargoDepsCopy"/{.,*}/ffmpeg_audio_sys-*/build.rs 2>/dev/null || true
+            '';
+          };
+        in
+        {
+          cargo-check = pkgs.stdenv.mkDerivation (
+            commonArgs
+            // {
+              pname = "splayer-next-cargo-check";
+              buildPhase = ''
+                runHook preBuild
+                cargo check --all-targets --locked
+                runHook postBuild
+              '';
+              installPhase = "touch $out";
+            }
+          );
+
+          cargo-test = pkgs.stdenv.mkDerivation (
+            commonArgs
+            // {
+              pname = "splayer-next-cargo-test";
+              buildPhase = ''
+                runHook preBuild
+                cargo test --locked
+                runHook postBuild
+              '';
+              installPhase = "touch $out";
+            }
+          );
+        }
+      );
+
+      # Run via: `nix develop`
+      devShells = eachSystem (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          default = pkgs.mkShell {
+            nativeBuildInputs = [
+              pkgs.cargo
+              pkgs.rustc
+              pkgs.clippy
+              pkgs.rustfmt
+              pkgs.rustPlatform.bindgenHook
+              pkgs.pkg-config
+              pkgs.nodejs
+              pkgs.pnpm
+            ];
+
+            buildInputs = [
+              pkgs.pipewire
+              pkgs.libpulseaudio
+              pkgs.openssl
+              pkgs.ffmpeg-headless
+              pkgs.alsa-lib
+              pkgs.dbus
+            ];
+
+            env = {
+              FFMPEG_MODE = "system";
+              # Expose dynamic libraries for tests running inside dev shell
+              LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+                pkgs.ffmpeg-headless
+                pkgs.alsa-lib
+                pkgs.libpulseaudio
+                pkgs.pipewire
+              ];
+            };
+          };
         }
       );
     };
