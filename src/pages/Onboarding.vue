@@ -2,6 +2,7 @@
 import { useSettingsStore } from "@/stores/settings";
 import { CURRENT_AGREEMENT_VERSION } from "@shared/constants/agreement";
 import WindowControls from "@/components/layout/WindowControls.vue";
+import StepLanguage from "@/components/onboarding/StepLanguage.vue";
 import StepWelcome from "@/components/onboarding/StepWelcome.vue";
 import StepPreferences from "@/components/onboarding/StepPreferences.vue";
 import StepAgreement from "@/components/onboarding/StepAgreement.vue";
@@ -14,6 +15,7 @@ const router = useRouter();
 const settings = useSettingsStore();
 
 const STEPS = [
+  { key: "language", component: StepLanguage },
   { key: "welcome", component: StepWelcome },
   { key: "agreement", component: StepAgreement },
   { key: "preferences", component: StepPreferences },

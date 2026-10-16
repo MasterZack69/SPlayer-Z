@@ -139,6 +139,9 @@ export const renderLyricMarkdown = (root: HTMLElement, styles: LyricTextStyle[])
       element.dataset.lyricEmphasis = "";
       element.style.fontWeight = style.bold ? "900" : "inherit";
       element.style.fontStyle = style.italic ? "italic" : "normal";
+      element.style.textTransform = style.bold ? "uppercase" : "none";
+      // Add clearance only at the range end, never between animated letters.
+      if (style.italic && start + to === style.end) element.style.marginInlineEnd = "0.18em";
       element.textContent = text.slice(from, to);
       fragment.append(element);
       cursor = to;

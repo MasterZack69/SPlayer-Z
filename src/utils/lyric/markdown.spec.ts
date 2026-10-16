@@ -108,3 +108,34 @@ describe("safe lyric emphasis", () => {
     expect(root.querySelector("strong")).toBeNull();
   });
 });
+
+describe("lyric emphasis presentation", () => {
+  it("adds italic clearance only at the end of a range spanning animated text nodes", () => {
+    const source = parseLyricMarkdown("*italic*I'm in **bold**");
+    const root = document.createElement("div");
+    root.innerHTML = "<span>ita</span><span>lic</span><span>I'm in </span><span>bold</span>";
+    const animated = [...root.children];
+    renderLyricMarkdown(root, source.styles);
+    const italic = [...root.querySelectorAll("em")];
+    expect(italic.map((node) => node.style.marginInlineEnd)).toEqual(["", "0.18em"]);
+    expect(root.querySelector("strong")?.style.textTransform).toBe("uppercase");
+    expect(root.querySelector("strong")?.style.fontWeight).toBe("900");
+    expect(root.textContent).toBe(source.text);
+    expect([...root.children]).toEqual(animated);
+    const html = root.innerHTML;
+    renderLyricMarkdown(root, source.styles);
+    expect(root.innerHTML).toBe(html);
+  });
+
+  it("uppercases bold visually without changing text offsets or lyric timings", () => {
+    const original = { ...line, words: [{ word: "**Straße**", startTime: 1000, endTime: 4000 }] };
+    const display = prepareLyricMarkdown(original, true);
+    const root = document.createElement("div");
+    root.textContent = display.words[0].word;
+    renderLyricMarkdown(root, display.inlineStyles.main);
+    expect(root.querySelector("strong")?.style.textTransform).toBe("uppercase");
+    expect(root.textContent).toBe("Straße");
+    expect(display.words[0]).toMatchObject({ startTime: 1000, endTime: 4000 });
+    expect(original.words[0].word).toBe("**Straße**");
+  });
+});

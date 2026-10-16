@@ -11,7 +11,7 @@ const { t } = useI18n();
 const { isFloatingBar } = useFloatingPlayerBar();
 
 /** 头部 */
-const { greetingTitle, greetingSub, headerStats, load: loadHeader } = useHomeHeader();
+const { greetingTitle, headerStats, load: loadHeader } = useHomeHeader();
 /** 重点推荐 */
 const {
   hero,
@@ -43,7 +43,6 @@ const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
       <header class="flex items-start justify-between gap-6">
         <div class="min-w-0">
           <h1 class="text-3xl font-bold text-on-surface text-balance">{{ greetingTitle }}</h1>
-          <p class="mt-2 text-sm text-on-surface-variant/70">{{ greetingSub }}</p>
         </div>
         <div class="shrink-0 flex items-center gap-6">
           <div v-for="stat in headerStats" :key="stat.label" class="text-right">

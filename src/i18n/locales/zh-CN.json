@@ -63,8 +63,8 @@
       }
     },
     "preferences": {
-      "title": "语言与主题",
-      "subtitle": "选择界面语言与主题，进入应用后还可在「设置」中进一步调整",
+      "title": "主题",
+      "subtitle": "选择主题和强调色。您可以稍后在设置中进行详细调整。",
       "languageLabel": "界面语言",
       "modeLabel": "主题模式",
       "colorLabel": "主色调"
@@ -86,6 +86,10 @@
           "desc": "「设置 → 快捷键」中可以查看完整列表并修改绑定"
         }
       }
+    },
+    "language": {
+      "title": "选择语言",
+      "subtitle": "选择设置向导和应用的显示语言。您可以稍后在设置中更改。"
     }
   },
   "agreementUpdate": {

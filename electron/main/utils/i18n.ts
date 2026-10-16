@@ -61,7 +61,7 @@ const messages: Record<LocaleCode, MainMessages> = {
   },
 };
 
-let currentLocale: LocaleCode = "zh-CN";
+let currentLocale: LocaleCode = "en-US";
 
 /** 获取翻译文本 */
 export const t = (key: keyof MainMessages): string => messages[currentLocale][key];

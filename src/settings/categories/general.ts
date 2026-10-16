@@ -15,7 +15,7 @@ const generalCategory: SettingCategory = {
           type: "select",
           binding: { store: "settings", path: "locale" },
           options: LOCALES.map(({ value, label }) => ({ value, label })),
-          defaultValue: "zh-CN",
+          defaultValue: "en-US",
         },
       ],
     },

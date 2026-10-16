@@ -63,8 +63,8 @@
       }
     },
     "preferences": {
-      "title": "Language & Theme",
-      "subtitle": "Pick your interface language and theme. You can fine-tune everything later in Settings.",
+      "title": "Theme",
+      "subtitle": "Choose your theme and accent color. You can fine-tune everything later in Settings.",
       "languageLabel": "Interface Language",
       "modeLabel": "Theme Mode",
       "colorLabel": "Accent Color"
@@ -86,6 +86,10 @@
           "desc": "See and rebind every shortcut in Settings → Shortcuts"
         }
       }
+    },
+    "language": {
+      "title": "Choose your language",
+      "subtitle": "Choose the language for setup and the app. You can change it later in Settings."
     }
   },
   "agreementUpdate": {
