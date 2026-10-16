@@ -1,17 +1,31 @@
 import type { Artist, Album } from "@shared/types/player";
 
-/** 常见的歌手分隔符：/ & ; , × | 、 ， feat. ft. */
+/** Common separators between separate artist credits. */
 const ARTIST_SEPARATOR = /\s*(?:feat\.?|ft\.?)\s+|[/&;,×|、，]\s*/i;
 
+/** Names whose internal separators belong to one artist, not a collaboration. */
+const ARTIST_NAME_EXCEPTIONS = [/Royal\s*&\s*the\s+Serpent/];
+
+const ARTIST_EXCEPTION_PATTERN = new RegExp(
+  `(^|${ARTIST_SEPARATOR.source})\\s*(${ARTIST_NAME_EXCEPTIONS.map((pattern) => pattern.source).join("|")})\\s*(?=$|${ARTIST_SEPARATOR.source})`,
+  "gi",
+);
+
 /**
- * 将歌手字符串按常见分隔符拆分为 Artist 数组
- * @param raw - 原始歌手字符串（可能含多个歌手，如 "周杰伦/林俊杰"）
- * @returns Artist 数组，空字符串返回空数组
+ * Split artist credits while preserving known names containing separator characters.
+ * @param raw - Original artist tag, possibly containing multiple credited artists.
+ * @returns Artist records retaining the tag's spelling and order.
  */
 export const parseArtists = (raw: string): Artist[] => {
   if (!raw) return [];
-  return raw
-    .split(ARTIST_SEPARATOR)
+  const names: string[] = [];
+  let position = 0;
+  for (const match of raw.matchAll(ARTIST_EXCEPTION_PATTERN)) {
+    names.push(...raw.slice(position, match.index).split(ARTIST_SEPARATOR), match[2]);
+    position = match.index + match[0].length;
+  }
+  names.push(...raw.slice(position).split(ARTIST_SEPARATOR));
+  return names
     .map((name) => name.trim())
     .filter(Boolean)
     .map((name) => ({ name }));
