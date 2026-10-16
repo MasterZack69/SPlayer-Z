@@ -1,43 +1,46 @@
 <!--
-感谢贡献！提交前请确认：
-1. 单个 PR 尽量只聚焦一个主要功能或修复，便于审查与回滚；多个不相关的改动请拆成多个 PR。
-2. 请向 dev 分支提交。
-3. 若改动中包含 AI 生成的代码，请务必自行完整测试与审阅，对其正确性负责，不要未经验证直接提交。
+Thank you for contributing! Before submitting:
+1. Keep each PR focused on one main feature or fix. Split unrelated changes into separate PRs.
+2. Target the dev branch.
+3. Review and fully test all code yourself, including AI-generated code. Do not submit unverified changes.
+4. Use English for the PR title, description, discussion, commit messages, and documentation.
 -->
 
-## 改动类型
+## Change type
 
-- [ ] 新功能（feat）
-- [ ] 缺陷修复（fix）
-- [ ] 重构 / 优化（不改变对外行为）
-- [ ] 文档（docs）
-- [ ] 其他（请在「改动说明」中注明）
+- [ ] New feature (feat)
+- [ ] Bug fix (fix)
+- [ ] Refactoring / optimization (no change to external behavior)
+- [ ] Documentation (docs)
+- [ ] Other (explain below)
 
-## 是否包含破坏性变更
+## Breaking changes
 
-- [ ] 是（请在「改动说明」中详细描述）
-- [ ] 否
+- [ ] Yes (describe the impact and migration steps below)
+- [ ] No
 
-## 改动说明
+## Description
 
-<!-- 这个 PR 做了什么、为什么这么做（动机 + 主要变更），尽量描述清楚 -->
+<!-- Explain what this PR changes and why: motivation and main changes. Write in English. -->
 
-## 关联 Issue
+## Related issues
 
-<!-- 如有关联，填 #编号；写 "Closes #编号" 可在合并时自动关闭对应 Issue -->
+<!-- Reference #number, or use "Closes #number" to close an issue when merged. -->
 
-## 测试情况
+## Testing
 
-<!-- 如何验证这些改动？手动复现步骤、覆盖到的平台（Windows / macOS / Linux）等 -->
+<!-- Explain how you validated the changes: commands, manual steps, and platforms tested. -->
 
-## 截图 / 录屏
+## Screenshots / recordings
 
-<!-- 涉及 UI 改动请附上；无则可删除本节 -->
+<!-- Include these for UI changes. Remove this section if not applicable. -->
 
-## 自查清单
+## Checklist
 
-- [ ] 本 PR 只包含**一个主要功能 / 修复**，没有夹带无关改动
-- [ ] 已在本地**完整测试**通过；**AI 生成的代码同样自行测试并审阅过**，未做未经验证的提交
-- [ ] 已运行 `pnpm format`，并确认 `pnpm typecheck`、`pnpm lint` 通过
-- [ ] 改动涉及原生模块时已 `pnpm build:native` 验证；未手写 `native/*/index.d.ts`
-- [ ] 已向 `dev` 分支提交
+- [ ] This PR focuses on one main feature or fix without unrelated changes
+- [ ] I have tested and reviewed the changes myself, including any AI-generated code
+- [ ] I have formatted changed files and run `pnpm typecheck` and `pnpm lint` for code changes
+- [ ] I have run relevant tests and documented the results above
+- [ ] For native changes, I have run `pnpm build:native` and have not hand-edited `native/*/index.d.ts`
+- [ ] The PR targets `dev`
+- [ ] Commit messages, the PR title and description, and new or updated documentation are in English

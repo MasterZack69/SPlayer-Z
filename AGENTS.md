@@ -152,21 +152,28 @@ Renderer uses `vue-i18n` with `src/i18n/locales/{zh-CN,en-US}.json`. Main proces
 
 ## Conventions
 
-### Comments — Chinese, with JSDoc
+### Project Language
 
-All comments in Chinese. Every newly added or modified method must have a concise, meaningful
+English is required for all future commit messages (subjects and any bodies), pull request
+titles and descriptions, review discussions, documentation, contributor instructions, and
+new or updated code comments. Existing non-English content may be translated incrementally;
+do not rewrite old commit history solely for translation. Application localization strings
+may remain in their target languages. See `docs/contributing.md` for the contribution guide.
+
+### Comments — English, with JSDoc
+
+Write all new or updated comments in English. Every newly added or modified method must have a concise, meaningful
 JSDoc description of its purpose and parameters, using `@param name - description` and
 `@returns` when meaningful. This applies to internal helpers, class methods, adapter methods,
 and exported APIs. Anonymous callbacks do not need redundant explanations of obvious logic
 
-Avoid trailing periods in Chinese comments, JSDoc descriptions, and UI copy whenever possible.
-Keep the wording concise and natural
+Keep English comments and JSDoc concise and natural. Preserve the target language of localized UI copy.
 
 ```ts
 /**
- * <Chinese method description>
- * @param trackId - <Chinese parameter description>
- * @returns <Chinese return description>
+ * <English method description>
+ * @param trackId - <English parameter description>
+ * @returns <English return description>
  */
 ```
 
@@ -223,6 +230,6 @@ Put cross-process types (`LocaleCode / SystemConfig / StreamingServerType`, etc.
 
 ### Commit Messages
 
-Use Conventional Commits with a Chinese summary: `<type>: <summary>`. Keep the title on one line;
+Use Conventional Commits with an English summary: `<type>: <summary>`. Keep the title on one line;
 do not add a body or bullets unless explicitly requested. Use the type that matches the change,
 such as `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, `style`, or `chore`.

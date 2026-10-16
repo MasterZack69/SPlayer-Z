@@ -32,3 +32,7 @@ pnpm test
 ```
 
 `SKIP_NATIVE_BUILD=true` skips native builds when prebuilt native modules are available. `pnpm exec electron-vite build` validates the JavaScript bundles without compiling Rust or packaging the desktop app.
+
+## Contributing
+
+See the [contribution guide](docs/en/contributing.md) for setup and contribution requirements. All future commit messages, pull request titles and descriptions, reviews, and new or updated documentation must be in English. Application localization strings may remain in their target languages.

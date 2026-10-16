@@ -1,65 +1,65 @@
-# SPlayer-Next Copilot 指引
+# SPlayer-Z Copilot Instructions
 
-本仓库所有 Copilot 会话、Code Review、建议，**一律使用中文作答**（代码、标识符、注释保持原项目语言）。
+Use **English** for all Copilot conversations, code reviews, suggestions, new or updated code comments, commit messages, PR titles and descriptions, and project documentation. Application localization strings may remain in their target languages. See `docs/contributing.md` and `AGENTS.md` for repository guidance.
 
-## 项目概述
+## Project overview
 
-SPlayer-Next 是基于 **Electron + Vue 3 + TypeScript** 的桌面音乐播放器，后继 SPlayer，搭配 **Rust NAPI-RS** 原生模块做音频解码、系统媒体集成、任务栏集成。
+SPlayer-Z is a cut-down fork of SPlayer-Next, a desktop music player based on **Electron + Vue 3 + TypeScript**, with **Rust NAPI-RS** native modules for audio decoding, system media integration, and taskbar integration. This fork focuses on local music and user-owned media servers.
 
-### 进程架构
+### Process architecture
 
-- **主进程** `electron/main/`：窗口管理、IPC、原生模块调度
-- **Preload** `electron/preload/`：通过 contextBridge 暴露 `window.api`
-- **渲染进程** `src/`：Vue 3 SPA；另有三个独立窗口 `windows/desktop-lyric`、`windows/dynamic-island`、`windows/taskbar-lyric`
+- **Main process** `electron/main/`: window management, IPC, and native module coordination
+- **Preload** `electron/preload/`: exposes `window.api` through contextBridge
+- **Renderer** `src/`: Vue 3 SPA; auxiliary window code and shared lyric utilities live under `windows/`. Desktop Lyric and Dynamic Island entrypoints are disabled in this fork.
 
-### 原生模块（`native/`）
+### Native modules (`native/`)
 
-- `audio-engine`：`ffmpeg_audio` 解码（静态编 FFmpeg，零环境依赖）+ rodio 播放 + FFT + 封面提取；URL 通过 `ffmpeg_audio::HttpAudioSource`（配对 `HttpCancelHandle` 用于打断与 Seek 重置，`reqwest` + `rustls`）包成 Read+Seek 流喂给 `ffmpeg_audio`
-- `media-ctrl`：跨平台系统媒体控件（Windows SMTC / Linux MPRIS / macOS MPNowPlaying）+ Discord RPC
-- `taskbar-lyric`：Windows 专属，把窗口嵌入任务栏 + RegistryWatcher / UiaWatcher / TrayWatcher 四路监听
+- `audio-engine`: `ffmpeg_audio` decoding (statically built FFmpeg without system FFmpeg dependencies), rodio playback, FFT, and cover extraction. URLs use `ffmpeg_audio::HttpAudioSource` with `HttpCancelHandle` for interruption and seek resets (`reqwest` + `rustls`), providing a Read+Seek stream to `ffmpeg_audio`.
+- `media-ctrl`: cross-platform system media controls (Windows SMTC / Linux MPRIS / macOS MPNowPlaying) and Discord RPC
+- `taskbar-lyric`: Windows-only taskbar window embedding with RegistryWatcher, UiaWatcher, and TrayWatcher monitoring
 
-所有原生模块通过 `loadNativeModule()`（`electron/main/utils/nativeLoader.ts`）懒加载。
+Native modules are loaded lazily through `loadNativeModule()` in `electron/main/utils/nativeLoader.ts`.
 
-### 路径别名
+### Path aliases
 
-| 别名                     | 指向                   | 使用范围                                   |
-| ------------------------ | ---------------------- | ------------------------------------------ |
-| `@/*`                    | `src/*`                | 渲染进程                                   |
-| `@shared/*`              | `shared/*`             | 主进程 + 渲染进程 + 原生类型               |
-| `@main/*`                | `electron/main/*`      | 主进程                                     |
-| `@windows/*`             | `windows/*`            | 三个独立歌词窗口（复用 `windows/shared/`） |
-| `@splayer/audio-engine`  | `native/audio-engine`  | 主进程，类型从自动生成的 `index.d.ts` 导入 |
-| `@splayer/media-ctrl`    | `native/media-ctrl`    | 同上                                       |
-| `@splayer/taskbar-lyric` | `native/taskbar-lyric` | 同上                                       |
+| Alias                    | Target                 | Usage                                                   |
+| ------------------------ | ---------------------- | ------------------------------------------------------- |
+| `@/*`                    | `src/*`                | Renderer                                                |
+| `@shared/*`              | `shared/*`             | Main process, renderer, and native types                |
+| `@main/*`                | `electron/main/*`      | Main process                                            |
+| `@windows/*`             | `windows/*`            | Auxiliary lyric windows and `windows/shared/` utilities |
+| `@splayer/audio-engine`  | `native/audio-engine`  | Main process; import types from generated `index.d.ts`  |
+| `@splayer/media-ctrl`    | `native/media-ctrl`    | Same as above                                           |
+| `@splayer/taskbar-lyric` | `native/taskbar-lyric` | Same as above                                           |
 
-## 代码约定
+## Code conventions
 
-- **语言**：注释、Git commit、PR 描述一律中文
-- **时间单位**：渲染端所有时间值是**毫秒**；Rust 引擎内部用秒，转换在 `electron/main/ipc/player.ts` 里做（`toMs()`）
-- **Prettier**：双引号、分号、100 字符宽、末尾逗号
-- **Auto-imports**（无需手写 `import`）：`vue`、`pinia`、`vue-router`、`@vueuse/core`、`vue-i18n`；UI 组件自动从 `src/components/` 注入
-- **原生模块类型**：**禁止手写**，必须从 `@splayer/<module>` 的自动生成 `index.d.ts` 导入
-- **状态管理双层**：`src/stores/status.ts` 走 Pinia 响应式（5Hz 更新）；`src/services/playback.ts` 存非响应式时间源，供 60fps 渲染（歌词 / 频谱）用 RAF 采样
-- **Reactivity**：`Track[]` 等大集合用 `shallowRef`，避免深层代理；响应式代理对象存 IndexedDB 会 `DataCloneError`
-- **Store 持久化**：只把轻量数据写 sessionStorage；`TrackDetail`（含歌词大字符串）**禁止**持久化
-- **IPC 监听器**：主进程 push 事件统一走 preload 的 `subscribe` 助手（`ipcRenderer.on` + 返回单 handler 的 `unsubscribe`），**不要**对单个 channel 加 `removeAllListeners`，那会偏离统一模式；有限生命周期消费方（composable / 组件）保存 `unsubscribe` 并在 `onBeforeUnmount` / `onScopeDispose` 调用；应用级单例（只绑一次的 Pinia setup store）绑定后随进程存活、不解绑，属有意为之，不是泄漏
-- **自动生成文件**（不要编辑）：`auto-imports.d.ts`、`components.d.ts`、`native/*/index.d.ts`
-- **Logger**：主进程统一用 `@main/utils/logger` 的 scoped logger（`coreLog` / `playerLog` / `mediaLog` / `trayLog` / `taskbarLog` / `nativeLog` 等），**不要**直接 `import log from "electron-log"`
+- **Language:** English for comments, Git commits, PRs, reviews, and documentation. Use Conventional Commits: `<type>: <English summary>`.
+- **Time units:** renderer time values are in **milliseconds**. The Rust engine uses seconds; conversion happens through `toMs()` in `electron/main/ipc/player.ts`.
+- **Prettier:** double quotes, semicolons, 100-character width, and trailing commas
+- **Auto-imports:** `vue`, `pinia`, `vue-router`, `@vueuse/core`, and `vue-i18n` need no manual imports; UI components are injected from `src/components/`.
+- **Native module types:** never hand-write them; import generated `index.d.ts` types from `@splayer/<module>`.
+- **Two-layer playback state:** `src/stores/status.ts` provides reactive Pinia state (5 Hz); `src/services/playback.ts` holds the non-reactive time source sampled by RAF for 60 fps lyrics and spectrum rendering.
+- **Reactivity:** use `shallowRef` for large collections such as `Track[]`. Persisting reactive proxies to IndexedDB causes `DataCloneError`.
+- **Store persistence:** write only lightweight data to sessionStorage. Never persist `TrackDetail`, which contains large lyric strings.
+- **IPC listeners:** main-process push events use the preload `subscribe` helper (`ipcRenderer.on` plus a returned per-handler `unsubscribe`). Do not add `removeAllListeners` to individual channels. Finite-lifetime consumers must save and call `unsubscribe` in `onBeforeUnmount` / `onScopeDispose`. Application-level singletons registered once, such as Pinia setup stores, intentionally retain their subscriptions for the process lifetime.
+- **Generated files:** do not edit `auto-imports.d.ts`, `components.d.ts`, or `native/*/index.d.ts` manually.
+- **Logging:** use scoped loggers from `@main/utils/logger` (`coreLog`, `playerLog`, `mediaLog`, `trayLog`, `taskbarLog`, `nativeLog`, etc.) in the main process. Do not import `electron-log` directly.
 
-## 窗口侧（`windows/`）
+## Auxiliary windows (`windows/`)
 
-三个歌词窗口都复用：
+Existing lyric window code shares:
 
-- `@windows/shared/composables/useNowPlayingSync` 提供播放同步、歌词索引、锚点插值
-- `getNowPlayingCurrentMs()` 非响应式读当前时间，供逐字高亮 RAF 循环用
-- 歌词行选择算法按窗口语义选：桌面歌词用 `pickPrimaryIndex`（考虑 overlap）、灵动岛用 `pickLatestStartedIndex`（立即切换）
+- `@windows/shared/composables/useNowPlayingSync` for playback sync, lyric indices, and anchor interpolation
+- `getNowPlayingCurrentMs()` for non-reactive time reads in word-highlighting RAF loops
+- Window-specific lyric selection: `pickPrimaryIndex` accounts for overlap; `pickLatestStartedIndex` switches immediately to the latest started line.
 
-不要在窗口内重新实现上述逻辑，直接调用共享 composable。
+Reuse these shared utilities rather than implementing duplicate synchronization logic. Do not re-enable removed lyric windows as part of unrelated changes.
 
-## 设置 schema
+## Settings schema
 
-- 结构定义在 `src/settings/schema.ts`
-- 类型在 `src/types/settings-schema.ts`：`SettingCategory` → `SettingSection` → `SettingItem`
-- `SettingSection.tag` / `SettingItem.tag` 支持 `SettingTag = { text: string; type?: "primary" | "warning" | ... }`，用于标题旁的徽标（Beta / 实验等）
-- i18n key 约定：`settings.section.{id}` / `settings.{itemKey}.label` / `settings.{itemKey}.description`
-- UI 原子组件：`STag` / `SButton` / `SSelect` / `SSlider` / `SSwitch` / `SColor` / `SDialog` 等，统一 7 色 theme token（default / primary / cover / info / success / warning / error）
+- Structure: `src/settings/schema.ts`
+- Types: `src/types/settings-schema.ts`, with `SettingCategory` → `SettingSection` → `SettingItem`
+- `SettingSection.tag` / `SettingItem.tag` support `SettingTag = { text: string; type?: "primary" | "warning" | ... }` for title badges such as Beta or Experimental.
+- i18n keys: `settings.section.{id}`, `settings.{itemKey}.label`, and `settings.{itemKey}.description`
+- UI primitives: `STag`, `SButton`, `SSelect`, `SSlider`, `SSwitch`, `SColor`, `SDialog`, etc., using seven theme tokens: default, primary, cover, info, success, warning, and error.

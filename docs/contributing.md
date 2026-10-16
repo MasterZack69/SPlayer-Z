@@ -1,117 +1,128 @@
-# 贡献指南
+# Contributing
 
-欢迎为 SPlayer-Next 贡献代码！本页介绍本地开发环境与基本约定。
+Thank you for contributing to SPlayer-Z. This guide covers local development and the conventions for this fork.
 
-## 环境要求
+## Project language
+
+English is the required language for all contributions going forward:
+
+- **Commits:** write commit subjects and any bodies in English, using Conventional Commits.
+- **Pull requests:** write PR titles, descriptions, testing notes, and review discussions in English.
+- **Documentation:** write all new or updated project documentation and contributor instructions in English.
+- **Code comments:** write new or updated comments and JSDoc in English.
+
+Existing non-English content can be translated incrementally; there is no requirement to rewrite old commit history. Application localization strings may remain in their target languages.
+
+## Requirements
 
 - **Node.js** >= 22.19.0
 - **pnpm** >= 10
-- **Rust 工具链**（构建原生模块所需，见 [原生模块](/native)）
+- **Rust toolchain** for [native modules](/native)
 
-## 快速开始
+## Getting started
 
 ```bash
-# 克隆仓库
-git clone https://github.com/SPlayer-Dev/SPlayer-Next.git
-cd SPlayer-Next
+# Clone the fork and check out the development branch
+git clone --branch dev https://github.com/MasterZack69/SPlayer-Z.git
+cd SPlayer-Z
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 启动开发（先以 debug 构建原生模块，再启动 Electron）
+# Build native modules in debug mode and start Electron
 pnpm dev
 
-# 启动开发时向程序传递参数
-pnpm dev -- [参数]...
+# Pass arguments to the application
+pnpm dev -- [arguments]...
 ```
 
-只做界面开发、想跳过 Rust 编译时，可设置 `SKIP_NATIVE_BUILD=true`。
+Set `SKIP_NATIVE_BUILD=true` to skip Rust compilation during renderer-only development when compatible prebuilt native modules are available.
 
-## 构建
-
-基础命令
+## Building
 
 ```bash
-pnpm build         # 完整构建：清理 → 原生模块 → 类型检查 → electron-vite
-pnpm build:win     # 打包 Windows
-pnpm build:mac     # 打包 macOS
-pnpm build:linux   # 打包 Linux
-```
+pnpm build         # Clean, build native modules, type-check, and run electron-vite
+pnpm build:win     # Package for Windows
+pnpm build:mac     # Package for macOS
+pnpm build:linux   # Package for Linux
 
-高级命令
+# Build selected electron-builder targets instead of all configured targets
+pnpm build:win nsis
+pnpm build:mac dmg
+pnpm build:linux tar.gz
 
-```bash
-# 上面的构建命令默认会构建当前平台和架构的全部 target。可以通过下面的方法指定只打包某些 target
-pnpm build:win nsis       # 打包 Windows 的 nsis 格式
-pnpm build:mac dmg        # 打包 macOS 的 dmg 格式
-pnpm build:linux tar.gz   # 打包 Linux 的 tar.gz 格式
-# 全部 target 的列表详见 https://www.electron.build/docs/targets
-
-# 仅构建未打包的程序目录，常用于本地测试（在 dist/xxx-unpacked 目录）
+# Build unpacked output for local testing in dist/*-unpacked
 pnpm build:unpack
 ```
 
-## 常用脚本
+See [electron-builder targets](https://www.electron.build/docs/targets) for all package targets.
+
+## Common scripts
 
 ```bash
-pnpm typecheck        # tsc + vue-tsc（node + web 双目标）
-pnpm lint             # ESLint
-pnpm format           # Prettier
-pnpm build:native     # 仅构建 Rust 原生模块（加 `--dev` 为 debug 构建）
+pnpm typecheck           # TypeScript and Vue checks for main and renderer targets
+pnpm lint                # ESLint
+pnpm format              # Prettier
+pnpm test                # Node and renderer tests
+pnpm build:native        # Build Rust native modules only
+pnpm build:native --dev  # Build Rust native modules in debug mode
 ```
 
-## 项目结构
+## Project structure
 
+```text
+electron/main/      Main process: windows, IPC, native modules, and services
+electron/preload/   contextBridge APIs exposed as window.api
+src/                Vue 3 renderer application
+windows/            Auxiliary window code and shared lyric utilities
+native/             Rust native modules built with NAPI-RS
+shared/             Cross-process types and defaults
 ```
-electron/main/      主进程：窗口、IPC、原生模块、服务
-electron/preload/   预加载：通过 contextBridge 暴露 window.api
-src/                渲染层：Vue 3 单页应用
-windows/            桌面歌词 / 灵动岛 / 任务栏歌词等独立窗口
-native/             Rust 原生模块（NAPI-RS）
-shared/             跨进程共享的类型与默认配置
+
+## Code conventions
+
+- **Comments:** use English and concise JSDoc for methods, including `@param name - description` and `@returns` when meaningful. Explain non-obvious reasons rather than restating code.
+- **Formatting:** follow Prettier (double quotes, semicolons, 100 columns, and trailing commas). Format every changed file before committing; avoid unrelated formatting changes.
+- **Validation:** run `pnpm typecheck`, `pnpm lint`, and relevant tests before submitting code changes. Build native modules when changing native code.
+- **Native types:** import types from `@splayer/*`; do not hand-edit generated `native/*/index.d.ts` files.
+- **Commit messages:** use `<type>: <English summary>`, for example `docs: clarify contribution requirements`. Keep the subject on one line. Do not add a body or bullets unless explicitly requested; if included, they must be in English. Choose the appropriate type: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, `style`, or `chore`.
+
+See [AGENTS.md](https://github.com/MasterZack69/SPlayer-Z/blob/dev/AGENTS.md) for detailed repository conventions.
+
+## Application localization
+
+The application uses [vue-i18n](https://vue-i18n.intlify.dev/). Locale files are stored in `src/i18n/locales/`. The English contribution policy does not prevent translations of application UI strings.
+
+### Visual Studio Code
+
+Install [i18n Ally](https://marketplace.visualstudio.com/items?itemName=Lokalise.i18n-ally). Open or create `.vscode/settings.json` (enable hidden files if needed) and configure:
+
+```json
+{
+  "i18n-ally.localesPaths": "./src/i18n/locales/"
+}
 ```
 
-## 代码约定
+### JetBrains IDEs
 
-- **注释**：一律中文，方法使用 JSDoc（`@param 名 - 说明` / `@returns`）；只在「为什么」不显然处写注释。
-- **格式**：遵循 Prettier 配置（双引号、分号、100 列、尾随逗号）；提交前请运行 `pnpm format`。
-- **类型检查**：提交前确保 `pnpm typecheck` 与 `pnpm lint` 通过。
-- **原生类型**：从 `@splayer/*` 导入，切勿手写 `native/*/index.d.ts`。
-- **提交信息**：使用 Conventional Commits，格式为 `<类型>: <中文摘要>`；标题保持单行，
-  无特殊说明不附正文。类型按改动选择，如
-  `feat`、`fix`、`refactor`、`perf`、`docs`、`test`、`build`、`ci`、`style`、`chore`。
+1. Install [Easy i18n](https://plugins.jetbrains.com/plugin/16316-easy-i18n).
+2. Open **Settings → Tools → Easy i18n**.
+3. Under **Modules Configuration → Add new module**, enter `SPlayer-Z` (or another name) and use the plus button to create the module.
+4. Select the `VUE_I18N` preset and set **Resource Configuration → Path template** to:
 
-## 国际化
-
-本项目使用 [vue-i18n](https://vue-i18n.intlify.dev/) 进行国际化
-
-### Visual Studio Code 系列
-
-推荐使用 [i18n Ally](https://marketplace.visualstudio.com/items?itemName=Lokalise.i18n-ally) 插件
-
-1. 安装插件
-2. 打开本项目，打开 `.vscode` 文件夹（若找不到，需要打开显示隐藏文件）
-3. 编辑或新建 `settings.json` 文件，编辑或新增 `i18n-ally.localesPaths`，值为 `./src/i18n/locales/`，就像这样
-   ```json
-   {
-     "i18n-ally.localesPaths": "./src/i18n/locales/"
-   }
+   ```text
+   $PROJECT_DIR$/src/i18n/locales/{locale}.json
    ```
 
-### JetBrains 系列
+5. Optionally set **Common Configuration → Preview locale** to the locale you are working on, such as `en-US`.
 
-推荐使用 [Easy i18n](https://plugins.jetbrains.com/plugin/16316-easy-i18n) 插件
+## Pull requests
 
-1. 安装插件
-2. 打开本项目，在 **设置 → 工具 → Easy i18n** 中配置此插件
-3. 在 **Modules Configuration → Add new module**，输入 SPlayer-Next（或任意名称），点击右侧的加号，新建模块
-4. 在下方的配置中，找到 **Preset** 选择 **VUE_I18N**。在 **Resource Configuration** 的 **Path template** 中填写 `$PROJECT_DIR$/src/i18n/locales/{locale}.json`
-5. (可选) 在上方的 **Common Configuration** 的 **Preview locale** 中填写 `zh-CN`
+1. Create a feature branch from `dev`.
+2. Keep each PR focused on one main feature or fix; split unrelated work into separate PRs.
+3. Format changed files and run the checks relevant to the change.
+4. Review and test all code yourself, including AI-generated code. Do not submit unverified changes.
+5. Open the PR against `dev`, using an English title and description. Explain the motivation, changes, breaking changes (if any), and testing performed. Include screenshots or recordings for UI changes.
+6. Write all PR discussion and review responses in English, and keep related documentation in English.
 
-## 提交 Pull Request
-
-1. 从 `dev` 分支切出特性分支进行开发；
-2. 确保 `pnpm typecheck`、`pnpm lint` 通过，并已 `pnpm format`；
-3. 向 `dev` 分支提交 PR，清晰描述改动动机与内容。
-
-感谢你的贡献 💖
+Thank you for contributing!

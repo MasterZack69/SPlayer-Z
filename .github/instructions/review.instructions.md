@@ -2,35 +2,35 @@
 applyTo: "**"
 ---
 
-# 审查指引
+# Code Review Instructions
 
-所有审查评论、建议、总结一律**用中文**输出。
+Write all review comments, suggestions, and summaries in **English**. Commit messages, PR titles and descriptions, and new or updated documentation must also be in English. Application localization strings may remain in their target languages.
 
-## 审查关注点
+## Review priorities
 
-**真实问题优先，风格偏好最后**。优先揪出：
+**Real problems first; style preferences last.** Prioritize:
 
-- 运行时 bug、竞态、内存 / 资源泄漏（**有限生命周期消费方**未清理的 IPC 监听器、RAF、ResizeObserver、Windows 事件钩子）
-- 类型与实现不一致（如 preload API 类型声明与实际 resolve 值不匹配）
-- 主进程资源生命周期：窗口 `closed` 事件之外的重复清理会引发双 `stop()` / 双 broadcast
-- 硬编码值掩盖用户设置：检查配置项是否真的生效到底层模块
-- 原生模块 COM 生命周期（`CoInitializeEx` 的返回值必须判断，`CoUninitialize` 只在真正初始化成功时调用；参考 `native/taskbar-lyric/src/uia.rs` 的 `should_uninitialize` 模式）
-- 锁的持有时长：回调执行前应先 clone `Arc` 放开 `Mutex`，避免阻塞其它访问与重入死锁
-- 渲染端持久化：`TrackDetail` / 大歌词字符串不应进 sessionStorage
-- 不同进程对 `@shared/*` 类型的使用是否一致
+- Runtime bugs, races, and memory/resource leaks: IPC listeners not cleaned up by finite-lifetime consumers, RAF loops, ResizeObserver instances, and Windows event hooks
+- Mismatches between types and implementations, such as preload API declarations that differ from resolved values
+- Main-process resource lifetimes: duplicate cleanup outside a window's `closed` event can cause double `stop()` calls or broadcasts
+- Hard-coded values that override user settings: verify configuration reaches the underlying module
+- Native COM lifetimes: check the return value of `CoInitializeEx`; call `CoUninitialize` only when initialization succeeded. See the `should_uninitialize` pattern in `native/taskbar-lyric/src/uia.rs`.
+- Lock duration: clone an `Arc` and release the `Mutex` before invoking callbacks to avoid blocking other access or causing reentrant deadlocks
+- Renderer persistence: do not put `TrackDetail` or large lyric strings in sessionStorage
+- Consistent use of `@shared/*` types across processes
 
-## 避免的建议
+## Suggestions to avoid
 
-- 不要建议改 Prettier 风格（双引号 / 分号 / 100 列 / 末尾逗号已锁定）
-- 不要建议手写原生模块类型，必须从 `@splayer/<module>` 导入
-- 不要建议在渲染端直接 `import log from "electron-log"` 或在主进程绕过 `@main/utils/logger`
-- 不要建议为"防御性编程"添加内部代码的运行时校验（只在系统边界校验）
-- 不要建议拆分三行的类似代码为抽象，除非有三个以上真实用例
-- 不要建议给单个 IPC channel 加 `removeAllListeners`：push 事件统一走 preload 的 `subscribe`（`on` + 返回 `unsubscribe`），额外的 `removeAllListeners` 反而破坏统一模式
-- 不要把"应用级单例只绑一次的 push 监听未解绑"当泄漏：随进程存活的单例订阅（如 Pinia setup store 只绑一次的进度推送）不解绑是有意为之，只有有限生命周期消费方才需在卸载时 unsubscribe
+- Do not suggest changes to established Prettier settings (double quotes, semicolons, 100 columns, and trailing commas).
+- Do not suggest hand-written native module types; import them from `@splayer/<module>`.
+- Do not suggest importing `electron-log` directly in the renderer or bypassing `@main/utils/logger` in the main process.
+- Do not add defensive runtime validation for internal code; validate at system boundaries.
+- Do not extract a small block into an abstraction without at least three real use cases.
+- Do not add `removeAllListeners` to individual IPC channels. Push events use the preload `subscribe` helper (`on` plus a returned `unsubscribe`); additional bulk removal breaks that pattern.
+- Do not flag application-level singleton subscriptions registered once as leaks. Such subscriptions intentionally live for the process lifetime; only finite-lifetime consumers must unsubscribe on unmount.
 
-## 评论风格
+## Comment style
 
-- 直接指出问题所在文件 / 行号 / 变量名，配可执行的修法
-- 区分「必修」「建议」「风格」，便于作者决定优先级
-- 若和项目现有模式有冲突，**先查 `CLAUDE.md` 和 `.github/copilot-instructions.md`** 确认约定再提
+- Identify the file, line, and variable involved, and propose an actionable fix.
+- Distinguish required fixes, suggestions, and style preferences so authors can prioritize.
+- Before proposing changes that conflict with existing patterns, check `AGENTS.md` and `.github/copilot-instructions.md` for repository conventions.
