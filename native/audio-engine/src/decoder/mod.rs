@@ -102,10 +102,11 @@ fn run_decode_safely(shared: &Shared, decode: impl FnOnce()) {
     finish_decode_thread(shared, result.is_err());
 }
 
-/// 启动解码线程，返回音频元数据和线程句柄
+/// Open an audio source and prepare its metadata before starting playback.
 ///
-/// 线程结束时返回 `DecoderData`，调用方可通过 `handle.join()` 回收并复用于后续 seek，
-/// 避免重建 ffmpeg_audio 上下文
+/// @param source - Local audio path or HTTP(S) streaming URL.
+/// @param cover_cache_dir - Optional destination for the cover thumbnail.
+/// @param cancel_handle - Handle used to cancel network reads.
 pub fn prepare_decode(
     source: &str,
     cover_cache_dir: Option<&str>,
@@ -124,7 +125,7 @@ pub fn prepare_decode(
     let tags = metadata::extract_tags(&raw_metadata);
     let cover =
         cover_cache_dir.and_then(|dir| metadata::extract_cover_thumbnail(&reader, source, dir));
-    let cover_raw = metadata::read_attached_pic(&reader);
+    let cover_raw = metadata::read_attached_pic(&reader, source);
     let embedded_lyric = metadata::extract_embedded_lyric(&raw_metadata);
     let external_lyrics = metadata::find_all_external_lyrics(source);
     let replay_gain_db = metadata::extract_replay_gain(&raw_metadata);
