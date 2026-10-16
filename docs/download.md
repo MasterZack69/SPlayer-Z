@@ -20,19 +20,19 @@ pnpm install
 pnpm build:linux
 ```
 
-Build on the matching Linux architecture with `pnpm build:linux --x64` or `pnpm build:linux --arm64`. Native dependencies are required; see [Native modules](/native) and [Contributing](/contributing). The package currently retains upstream identifiers such as `splayer-next` and `SPlayer-Next`; this documentation update does not rename binaries or data directories.
+Build on the matching Linux architecture with `pnpm build:linux --x64` or `pnpm build:linux --arm64`. Native dependencies are required; see [Native modules](/native) and [Contributing](/contributing). Packages use the `splayer-z` executable and the `SPlayer-Z` application data directory.
 
 ## NixOS and Nix
 
 ```bash
 nix build .
-./result/bin/splayer-next
+./result/bin/splayer-z
 ```
 
 For development, use `nix develop`. See [Nix and PipeWire diagnostics](/troubleshooting/nix) for development dependencies and audio tests.
 
 ## Updates
 
-Check the release origin before accepting an in-app update. The current updater and packaging defaults still reference **SPlayer-Dev/SPlayer-Next**, not this fork. Disable automatic update checks if you do not want upstream release checks, and use this fork's Releases page or rebuild `dev` to stay on SPlayer-Z. Updating the documentation links does not change the application's update feed.
+The in-app updater and packaged update metadata use [SPlayer-Z Releases](https://github.com/MasterZack69/SPlayer-Z/releases). AppImage and supported distribution packages can update in-app; development and unpacked builds open the release page. A channel without a published SPlayer-Z release has no update available; it never falls back to another project.
 
 See [Linux Wayland](/troubleshooting/wayland), [Ubuntu startup](/troubleshooting/ubuntu-sandbox) for platform-specific issues.

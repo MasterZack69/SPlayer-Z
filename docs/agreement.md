@@ -71,7 +71,7 @@ The documentation download page can offer third-party acceleration routes that p
 
 ## 11. Updates
 
-The application can check for and download releases. Current updater defaults still reference the upstream repository; check the release origin before accepting an update. Use this fork's release page or source build to remain on SPlayer-Z. No release is guaranteed continued maintenance, and development or distribution may change or stop.
+The application can check for and download releases from the SPlayer-Z repository at <https://github.com/MasterZack69/SPlayer-Z>. Check the release origin before accepting an update. No release is guaranteed continued maintenance, and development or distribution may change or stop.
 
 ## 12. Third-party open-source components
 

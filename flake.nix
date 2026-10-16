@@ -20,10 +20,10 @@
 
           packageJson = builtins.fromJSON (builtins.readFile ./package.json);
 
-          splayer-next = pkgs.stdenv.mkDerivation (finalAttrs: {
+          splayer-z = pkgs.stdenv.mkDerivation (finalAttrs: {
             inherit (packageJson) version;
 
-            pname = "splayer-next";
+            pname = "splayer-z";
             src = ./.;
 
             pnpmDeps = pkgs.fetchPnpmDeps {
@@ -70,7 +70,7 @@
             postPatch = ''
               # Workaround for https://github.com/electron/electron/issues/31121
               substituteInPlace electron/main/utils/nativeLoader.ts \
-                --replace-fail 'process.resourcesPath' "'$out/share/splayer-next/resources'"
+                --replace-fail 'process.resourcesPath' "'$out/share/splayer-z/resources'"
 
               sed -i '/^[[:space:]]*\.atleast_version/d' \
                 "$cargoDepsCopy"/{.,*}/ffmpeg_audio_sys-*/build.rs
@@ -104,16 +104,16 @@
             installPhase = ''
               runHook preInstall
 
-              mkdir -p "$out/share/splayer-next"
-              cp -Pr --no-preserve=ownership dist/*-unpacked/{locales,resources{,.pak}} $out/share/splayer-next
+              mkdir -p "$out/share/splayer-z"
+              cp -Pr --no-preserve=ownership dist/*-unpacked/{locales,resources{,.pak}} $out/share/splayer-z
 
               _icon_sizes=(16x16 32x32 96x96 192x192 256x256 512x512)
               for _icons in "''${_icon_sizes[@]}";do
-                install -D public/icons/favicon-$_icons.png $out/share/icons/hicolor/$_icons/apps/splayer-next.png
+                install -D public/icons/favicon-$_icons.png $out/share/icons/hicolor/$_icons/apps/splayer-z.png
               done
 
-              makeWrapper '${lib.getExe electron}' "$out/bin/splayer-next" \
-                --add-flags $out/share/splayer-next/resources/app.asar \
+              makeWrapper '${lib.getExe electron}' "$out/bin/splayer-z" \
+                --add-flags $out/share/splayer-z/resources/app.asar \
                 --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true --wayland-text-input-version=3}}" \
                 --set-default ELECTRON_FORCE_IS_PACKAGED 1 \
                 --set-default ELECTRON_IS_DEV 0 \
@@ -128,13 +128,13 @@
 
             desktopItems = [
               (pkgs.makeDesktopItem {
-                name = "top.imsyy.splayer_next";
-                desktopName = "SPlayer-Next";
-                exec = "splayer-next %U";
+                name = "io.github.MasterZack69.SPlayerZ";
+                desktopName = "SPlayer-Z";
+                exec = "splayer-z %U";
                 terminal = false;
                 type = "Application";
-                icon = "splayer-next";
-                startupWMClass = "top.imsyy.splayer_next";
+                icon = "splayer-z";
+                startupWMClass = "io.github.MasterZack69.SPlayerZ";
                 comment = "Linux desktop music player with rich lyric support and wide audio format compatibility";
                 categories = [
                   "AudioVideo"
@@ -148,16 +148,16 @@
 
             meta = {
               description = "Linux desktop music player with rich lyric support";
-              homepage = "https://splayer-next.imsyy.top";
+              homepage = "https://github.com/MasterZack69/SPlayer-Z";
               license = lib.licenses.agpl3Only;
-              mainProgram = "splayer-next";
+              mainProgram = "splayer-z";
               platforms = [ "x86_64-linux" "aarch64-linux" ];
             };
           });
         in
         {
-          default = splayer-next;
-          inherit splayer-next;
+          default = splayer-z;
+          inherit splayer-z;
         }
       );
 
@@ -168,7 +168,7 @@
           pkgs = import nixpkgs { inherit system; };
 
           commonArgs = {
-            pname = "splayer-next-rust";
+            pname = "splayer-z-rust";
             version = "0.0.0";
             src = ./.;
 
@@ -207,7 +207,7 @@
           cargo-check = pkgs.stdenv.mkDerivation (
             commonArgs
             // {
-              pname = "splayer-next-cargo-check";
+              pname = "splayer-z-cargo-check";
               buildPhase = ''
                 runHook preBuild
                 cargo check --all-targets --locked
@@ -220,7 +220,7 @@
           cargo-test = pkgs.stdenv.mkDerivation (
             commonArgs
             // {
-              pname = "splayer-next-cargo-test";
+              pname = "splayer-z-cargo-test";
               buildPhase = ''
                 runHook preBuild
                 cargo test --locked

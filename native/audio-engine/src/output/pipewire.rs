@@ -1,9 +1,9 @@
 pub(super) fn format_pipewire_props(sample_rate: u32) -> String {
     // 以时间比例建议周期，避免同样的帧数在高采样率下变成过短的截止时间。
     let mut props = serde_json::json!({
-        "application.id": "top.imsyy.splayer_next",
-        "application.name": "SPlayer-Next",
-        "application.icon-name": "top.imsyy.splayer_next",
+        "application.id": "io.github.MasterZack69.SPlayerZ",
+        "application.name": "SPlayer-Z",
+        "application.icon-name": "splayer-z",
         "media.name": "Playback",
         "node.latency": "1024/48000",
     });

@@ -2,7 +2,7 @@
 
 ## Project and scope
 
-SPlayer-Z is an offline-first fork of SPlayer-Next built with Electron, Vue 3, TypeScript, and Rust NAPI-RS modules. Work on **dev** unless explicitly directed otherwise. Preserve the root **README.md** unless the user explicitly authorizes changing it. Do not write chat handoffs or task-specific commentary into public documentation.
+SPlayer-Z is an offline-first Linux music player built with Electron, Vue 3, TypeScript, and Rust NAPI-RS modules. Work on **dev** unless explicitly directed otherwise. Preserve the root **README.md** unless the user explicitly authorizes changing it. Do not write chat handoffs or task-specific commentary into public documentation.
 
 Use local files and authorized self-hosted media servers as the product boundary. Public KG/QM playback and logins, cloud navigation, recommendation features, plugins, external HTTP/WebSocket/MCP services, AI integration, music recognition, public lyric lookup, and the separate local TTML library are not supported features. TTML file support, local liked songs/playlists, and authorized media-server caching/downloads remain. Legacy files and types are not proof that a removed feature should be enabled.
 
@@ -28,7 +28,7 @@ cargo test --locked
 
 Format each changed file with Prettier before committing; do not run a whole-repository formatter that changes unrelated files. `SKIP_NATIVE_BUILD=true` skips compilation but does not create missing native outputs.
 
-On Nix, `nix build .` produces `./result/bin/splayer-next`; `nix develop` provides the development toolchain. The flake sets `FFMPEG_MODE=system` and declares FFmpeg, PipeWire, PulseAudio, ALSA, OpenSSL, D-Bus and pkg-config. Host-installed tools do not satisfy sandboxed derivation inputs. Do not claim zero system dependencies or describe the audio engine as rodio-based.
+On Nix, `nix build .` produces `./result/bin/splayer-z`; `nix develop` provides the development toolchain. The flake sets `FFMPEG_MODE=system` and declares FFmpeg, PipeWire, PulseAudio, ALSA, OpenSSL, D-Bus and pkg-config. Host-installed tools do not satisfy sandboxed derivation inputs. Do not claim zero system dependencies or describe the audio engine as rodio-based.
 
 ## Architecture and ownership
 
@@ -79,7 +79,7 @@ Credentials prefer Electron safeStorage; streaming and Last.fm have a logged Bas
 
 ### Storage and localization
 
-`electron/main/utils/paths.ts` defines `{userData}/app-data/`, containing `config/`, `database/library.db`, `cache/`, and `logs/`. Main configuration uses atomic writes and migrations. Renderer localforage stores include `splayer/library` and `splayer/queue`; local playlists use SQLite, with the old renderer playlist store used only for migration.
+`electron/main/utils/paths.ts` defines `{userData}/app-data/`, containing `config/`, `database/library.db`, `cache/`, and `logs/`. Main configuration uses atomic writes and migrations. Renderer localforage stores include `splayer-z/library` and `splayer-z/queue`; local playlists use SQLite, with the old renderer playlist store used only for migration.
 
 Use 300px cover thumbnails for lists, sampling and blurred backgrounds. Full-resolution artwork belongs only on visibly large covers or exports. Respect custom cache paths and Electron's Linux user-data paths.
 

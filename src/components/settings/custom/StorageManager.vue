@@ -131,7 +131,9 @@ const handleResetAll = async (): Promise<void> => {
   if (!confirmed) return;
   const stores = ["playlists", "queue", "library"];
   await Promise.all(
-    stores.map((name) => localforage.createInstance({ name: "splayer", storeName: name }).clear()),
+    stores.map((name) =>
+      localforage.createInstance({ name: "splayer-z", storeName: name }).clear(),
+    ),
   );
   const settingsStore = useSettingsStore();
   settingsStore.$reset();

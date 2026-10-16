@@ -112,26 +112,39 @@ const config = computed(() => {
   };
 });
 
+/** Navigate to a card's collection.
+ * @param item - Card selected for navigation.
+ */
 const handleClick = (item: CoverItem): void => {
   if (mode === "artist") navigateToArtist(item.title);
   else if (mode === "genre") navigateToGenre(item.title);
   else navigateToAlbum(item.title);
 };
 
-/** 正在加载曲目的卡片，避免重复点击 */
+/** Track the card being loaded to avoid duplicate playback requests. */
 const playingItem = ref("");
 
-/** 取卡片对应的曲目列表 */
+/**
+ * Load tracks for the card's collection type.
+ * @param item - Artist, album, or genre card selected for playback.
+ * @returns Tracks belonging to that card.
+ */
 const loadItemTracks = async (item: CoverItem): Promise<Track[]> => {
   if (mode === "artist") {
     const profile = await libraryStore.getArtistProfile(item.title);
     return profile?.tracks ?? [];
   }
-  const collection = await libraryStore.getAlbumCollection(item.title);
+  const collection =
+    mode === "genre"
+      ? await libraryStore.getGenreCollection(item.title)
+      : await libraryStore.getAlbumCollection(item.title);
   return collection?.tracks ?? [];
 };
 
-/** 点击封面播放按钮：直接播放该歌手/专辑下的全部曲目 */
+/**
+ * Start the selected collection without navigating away from its card.
+ * @param item - Card whose tracks should replace the queue.
+ */
 const handlePlay = async (item: CoverItem): Promise<void> => {
   if (playingItem.value === item.id) return;
   playingItem.value = item.id;

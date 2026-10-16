@@ -1,7 +1,7 @@
 import localforage from "localforage";
 import type { Track } from "@shared/types/player";
 
-const db = localforage.createInstance({ name: "splayer", storeName: "history" });
+const db = localforage.createInstance({ name: "splayer-z", storeName: "history" });
 const HISTORY_KEY = "entries";
 
 /** 历史条数上限，超出按时间倒序裁掉尾部 */

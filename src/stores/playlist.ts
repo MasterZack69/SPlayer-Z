@@ -3,7 +3,7 @@ import type { Track } from "@shared/types/player";
 import type { LegacyPlaylistRecord, PlaylistSummary } from "@shared/types/playlist";
 import type { Collection } from "@/types/collection";
 
-const legacyDb = localforage.createInstance({ name: "splayer", storeName: "playlists" });
+const legacyDb = localforage.createInstance({ name: "splayer-z", storeName: "playlists" });
 
 export const usePlaylistStore = defineStore("playlist", () => {
   /** 本地歌单列表 */

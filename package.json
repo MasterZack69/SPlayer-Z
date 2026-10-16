@@ -1,8 +1,8 @@
 {
   "$schema": "https://www.schemastore.org/package.json",
-  "name": "splayer-next",
-  "productName": "SPlayer-Next",
-  "desktopName": "top.imsyy.splayer_next",
+  "name": "splayer-z",
+  "productName": "SPlayer-Z",
+  "desktopName": "io.github.MasterZack69.SPlayerZ",
   "version": "1.2.0-beta.1",
   "description": "Linux desktop music player with local lyrics and self-hosted media libraries",
   "type": "module",
@@ -13,13 +13,13 @@
     "email": "imsyy1024@gmail.com",
     "url": "https://imsyy.top"
   },
-  "homepage": "https://splayer-next.imsyy.top",
+  "homepage": "https://github.com/MasterZack69/SPlayer-Z",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SPlayer-Dev/SPlayer-Next"
+    "url": "https://github.com/MasterZack69/SPlayer-Z"
   },
   "bugs": {
-    "url": "https://github.com/SPlayer-Dev/SPlayer-Next/issues"
+    "url": "https://github.com/MasterZack69/SPlayer-Z/issues"
   },
   "license": "AGPL-3.0",
   "license-file": "LICENSE",

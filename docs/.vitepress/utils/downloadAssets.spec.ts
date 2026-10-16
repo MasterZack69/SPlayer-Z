@@ -5,11 +5,11 @@ const parse = (name: string) => parseDownloadAsset(name, `https://example.com/${
 
 describe("parseDownloadAsset", () => {
   it.each([
-    ["splayer-next-1.0.0-x64.AppImage", "x64", "AppImage"],
-    ["splayer-next-1.0.0-amd64.deb", "x64", "deb"],
-    ["splayer-next-1.0.0-aarch64.rpm", "ARM64", "rpm"],
-    ["splayer-next-1.0.0-arm64.pacman", "ARM64", "pacman"],
-    ["splayer-next-1.0.0-x86_64.tar.gz", "x64", "tar.gz"],
+    ["splayer-z-1.0.0-x64.AppImage", "x64", "AppImage"],
+    ["splayer-z-1.0.0-amd64.deb", "x64", "deb"],
+    ["splayer-z-1.0.0-aarch64.rpm", "ARM64", "rpm"],
+    ["splayer-z-1.0.0-arm64.pacman", "ARM64", "pacman"],
+    ["splayer-z-1.0.0-x86_64.tar.gz", "x64", "tar.gz"],
   ])("recognizes Linux asset %s", (name, arch, format) => {
     expect(parse(name)).toMatchObject({ platform: "Linux", arch, format });
   });
@@ -30,16 +30,16 @@ describe("parseDownloadAsset", () => {
 
 describe("selectRecommendedAssets", () => {
   it("never recommends an incompatible CPU architecture", () => {
-    const assets = [parse("splayer-next-1.0.0-x64.AppImage")].filter((asset) => asset !== null);
+    const assets = [parse("splayer-z-1.0.0-x64.AppImage")].filter((asset) => asset !== null);
     expect(selectRecommendedAssets(assets, "Linux", "ARM64")).toEqual([]);
   });
 
   it("recommends the matching architecture AppImage on Linux", () => {
     const assets = [
-      parse("splayer-next-1.0.0-x64.deb"),
-      parse("splayer-next-1.0.0-x64.pacman"),
-      parse("splayer-next-1.0.0-x64.AppImage"),
-      parse("splayer-next-1.0.0-arm64.AppImage"),
+      parse("splayer-z-1.0.0-x64.deb"),
+      parse("splayer-z-1.0.0-x64.pacman"),
+      parse("splayer-z-1.0.0-x64.AppImage"),
+      parse("splayer-z-1.0.0-arm64.AppImage"),
     ].filter((asset) => asset !== null);
 
     expect(selectRecommendedAssets(assets, "Linux", "x64").map((asset) => asset.format)).toEqual([
@@ -48,7 +48,7 @@ describe("selectRecommendedAssets", () => {
   });
 
   it("falls back to an available Linux package without an AppImage", () => {
-    const assets = [parse("splayer-next-1.0.0-x64.pacman")].filter((asset) => asset !== null);
+    const assets = [parse("splayer-z-1.0.0-x64.pacman")].filter((asset) => asset !== null);
 
     expect(selectRecommendedAssets(assets, "Linux", "x64").map((asset) => asset.format)).toEqual([
       "pacman",
@@ -59,9 +59,9 @@ describe("selectRecommendedAssets", () => {
 describe("sortDownloadAssets", () => {
   it("prefers AppImage over distribution packages and archives", () => {
     const assets = [
-      parse("splayer-next-1.0.0-x64.tar.gz"),
-      parse("splayer-next-1.0.0-x64.deb"),
-      parse("splayer-next-1.0.0-x64.AppImage"),
+      parse("splayer-z-1.0.0-x64.tar.gz"),
+      parse("splayer-z-1.0.0-x64.deb"),
+      parse("splayer-z-1.0.0-x64.AppImage"),
     ].filter((asset) => asset !== null);
 
     expect(sortDownloadAssets(assets).map((asset) => asset.format)).toEqual([

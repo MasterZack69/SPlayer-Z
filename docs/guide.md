@@ -1,6 +1,6 @@
 # User guide
 
-SPlayer-Z is an offline-first fork of SPlayer-Next. Play files on your device, or connect a media server you own or are authorized to use. Local playback does not require a public music-service account.
+SPlayer-Z is an offline-first Linux music player. Play files on your device, or connect a media server you own or are authorized to use. Local playback does not require a public music-service account.
 
 ## First launch
 

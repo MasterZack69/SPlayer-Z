@@ -202,7 +202,7 @@ async fn process_metadata(
         .as_millis()
         .to_string();
 
-    let track_path = format!("/com/splayer/track/{track_id}");
+    let track_path = format!("/io/github/MasterZack69/SPlayerZ/track/{track_id}");
     if let Ok(op) = ObjectPath::try_from(track_path.as_str()) {
         mb = mb.trackid(op);
     }
@@ -287,7 +287,7 @@ async fn run_mpris_loop(
     let mut cover_guard: Option<NamedTempFile> = None;
 
     let pid = process::id();
-    let identity = format!("splayer_next.instance{pid}");
+    let identity = format!("splayer_z.instance{pid}");
 
     let player = Player::builder(&identity)
         .can_play(true)
@@ -299,8 +299,8 @@ async fn run_mpris_loop(
         .minimum_rate(0.5)
         .maximum_rate(2.0)
         .playback_status(MprisPlaybackStatus::Stopped)
-        .identity("SPlayer-Next")
-        .desktop_entry("top.imsyy.splayer_next")
+        .identity("SPlayer-Z")
+        .desktop_entry("io.github.MasterZack69.SPlayerZ")
         .build()
         .await
         .map_err(|e| anyhow::anyhow!("MPRIS 初始化失败: {e}"))?;

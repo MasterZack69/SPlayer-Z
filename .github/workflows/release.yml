@@ -115,7 +115,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: SPlayer-Next-${{ matrix.name }}
+          name: SPlayer-Z-${{ matrix.name }}
           path: dist/*.*
   release:
     name: Create GitHub Release

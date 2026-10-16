@@ -51,7 +51,7 @@ cache/              covers, artists, backgrounds, songs
 logs/               application and native diagnostics
 ```
 
-Renderer IndexedDB stores include `splayer/library` and `splayer/queue`. Store raw lightweight data, not Vue proxies. Portable builds can put user data in a `UserData` directory beside the executable.
+Renderer IndexedDB stores include `splayer-z/library` and `splayer-z/queue`. Store raw lightweight data, not Vue proxies. The Linux profile is `${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Z`; no other player's profile is imported.
 
 ## Localization and integration
 

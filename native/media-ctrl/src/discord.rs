@@ -230,9 +230,9 @@ impl Worker {
             .large_image(&data.cover_url)
             .large_text(&data.meta.album)
             .small_image(ICON_KEY)
-            .small_text("SPlayer");
+            .small_text("SPlayer-Z");
 
-        let buttons = vec![Button::new("SPlayer", "https://github.com/imsyy/SPlayer")];
+        let buttons = vec![Button::new("SPlayer-Z", "https://github.com/MasterZack69/SPlayer-Z")];
 
         let status_type = match display_mode {
             DiscordDisplayMode::Name => StatusDisplayType::Name,

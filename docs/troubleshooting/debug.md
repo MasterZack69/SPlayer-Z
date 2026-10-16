@@ -4,9 +4,9 @@
 
 Include the SPlayer-Z commit or version, OS and architecture, installation format, reproduction steps, expected behavior, and complete relevant error output. For server issues, add the server type/version and whether synchronization completed. Redact credentials, tokens, personal paths, and private server addresses as needed.
 
-Use the app's **Open log directory** control in Settings → About rather than guessing a path. Application logs live under `{userData}/app-data/logs/`; native logs are under its `native/` subdirectory. Current builds can retain the upstream `SPlayer-Next` data-directory name.
+Use the app's **Open log directory** control in Settings → About rather than guessing a path. Application logs live under `{userData}/app-data/logs/`; native logs are under its `native/` subdirectory.
 
-The Linux user-data root is usually `${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Next`. Check the actual build and path before moving files.
+The Linux user-data root is usually `${XDG_CONFIG_HOME:-$HOME/.config}/SPlayer-Z`. SPlayer-Z uses its own profile and does not read or migrate another player's data.
 
 ## Developer tools
 

@@ -2,7 +2,7 @@ import localforage from "localforage";
 import type { PlaybackContext, PlaybackQueueItem, Track } from "@shared/types/player";
 
 /** 持久化存储实例 */
-const db = localforage.createInstance({ name: "splayer", storeName: "queue" });
+const db = localforage.createInstance({ name: "splayer-z", storeName: "queue" });
 
 /** Fisher-Yates 洗牌 */
 const shuffleArray = <T>(arr: T[]): T[] => {

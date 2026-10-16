@@ -10,7 +10,7 @@ import type { Collection } from "@/types/collection";
 import type { ArtistProfile, CoverItem } from "@/types/artist";
 import { buildFolderTree, countFolders } from "@/utils/folderTree";
 
-const trackDb = localforage.createInstance({ name: "splayer", storeName: "library" });
+const trackDb = localforage.createInstance({ name: "splayer-z", storeName: "library" });
 
 /** 本地喜欢 id 在 trackDb 内的持久化 key */
 const LIKED_IDS_KEY = "liked-ids";

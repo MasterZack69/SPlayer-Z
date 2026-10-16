@@ -6,7 +6,7 @@ From the repository root:
 
 ```bash
 nix build .
-./result/bin/splayer-next
+./result/bin/splayer-z
 nix develop
 ```
 
@@ -50,7 +50,7 @@ PIPEWIRE_TEST_CONFIG_SOURCE=/path/to/share/pipewire bash scripts/test-pipewire.s
 
 ## Persistent logs
 
-Read the exact **PipeWire test logs:** path printed by the run. Logs are preserved under `${XDG_STATE_HOME:-$HOME/.local/state}/splayer/pipewire-tests/run.*` by default. Override the parent with `SPLAYER_PIPEWIRE_LOG_DIR`. Temporary runtime sockets are removed on exit, not the diagnostic logs.
+Read the exact **PipeWire test logs:** path printed by the run. Logs are preserved under `${XDG_STATE_HOME:-$HOME/.local/state}/splayer-z/pipewire-tests/run.*` by default. Override the parent with `SPLAYER_PIPEWIRE_LOG_DIR`. Temporary runtime sockets are removed on exit, not the diagnostic logs.
 
 ```bash
 log_dir=/path/printed/by/the/test

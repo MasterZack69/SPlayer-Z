@@ -8,7 +8,7 @@ const MAX_SEARCH_HISTORY = 20;
 /** 每日推荐归档保留天数 */
 const MAX_DAILY_ARCHIVE = 14;
 
-const cacheDb = localforage.createInstance({ name: "splayer", storeName: "data-cache" });
+const cacheDb = localforage.createInstance({ name: "splayer-z", storeName: "data-cache" });
 
 /** 每日推荐逻辑日切换时刻：每日 6:00 更新，0-6 点仍算前一天 */
 const DAILY_REFRESH_HOUR = 6;

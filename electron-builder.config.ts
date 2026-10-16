@@ -36,8 +36,8 @@ if (updateChannel !== inferredUpdateChannel) {
 assertSupportedPlatform();
 
 const config: Configuration = {
-  appId: "top.imsyy.splayer-next",
-  productName: "SPlayer-Next",
+  appId: "io.github.MasterZack69.SPlayerZ",
+  productName: "SPlayer-Z",
   copyright: "Copyright © imsyy 2025",
   directories: { buildResources: "public" },
   fileAssociations,
@@ -93,7 +93,7 @@ const config: Configuration = {
     },
   ],
   linux: {
-    executableName: "SPlayer-Next",
+    executableName: "splayer-z",
     icon: "public/icons/favicon-512x512.png",
     artifactName: "${name}-${version}-${arch}.${ext}",
     maintainer: "imsyy.top",
@@ -124,8 +124,8 @@ const config: Configuration = {
   },
   publish: {
     provider: "github",
-    owner: "SPlayer-Dev",
-    repo: "SPlayer-Next",
+    owner: "MasterZack69",
+    repo: "SPlayer-Z",
     channel: updateChannel,
   },
 };

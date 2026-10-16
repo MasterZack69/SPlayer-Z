@@ -105,7 +105,7 @@ let cachedMid: string | null = null;
  */
 export const getDeviceMid = (): string => {
   if (!cachedMid) {
-    cachedMid = calculateMid("splayer-next-kugou-device-mid");
+    cachedMid = calculateMid("splayer-z-kugou-device-mid");
   }
   return cachedMid;
 };

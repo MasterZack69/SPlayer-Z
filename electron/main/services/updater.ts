@@ -10,7 +10,7 @@ import type { UpdateEvent, UpdateMeta, UpdateMode, UpdateState } from "@shared/t
 import { UPDATE_CHANNELS, type UpdateChannel } from "@shared/types/settings";
 
 const { autoUpdater } = electronUpdater;
-const RELEASES_URL = "https://github.com/SPlayer-Dev/SPlayer-Next/releases";
+const RELEASES_URL = "https://github.com/MasterZack69/SPlayer-Z/releases";
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 /** AppImage and package-manager builds may update in-app; development and unpacked builds open releases externally. */
@@ -85,7 +85,7 @@ const applyChannel = (): void => {
   autoUpdater.setFeedURL(
     state.channel === "nightly"
       ? { provider: "generic", url: `${RELEASES_URL}/download/nightly` }
-      : { provider: "github", owner: "SPlayer-Dev", repo: "SPlayer-Next" },
+      : { provider: "github", owner: "MasterZack69", repo: "SPlayer-Z" },
   );
 };
 

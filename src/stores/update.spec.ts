@@ -20,7 +20,7 @@ const meta = {
   releaseNotes: "",
   releaseDate: "",
   size: 0,
-  releaseUrl: "https://github.com/SPlayer-Dev/SPlayer-Next/releases/tag/v2.0.0",
+  releaseUrl: "https://github.com/MasterZack69/SPlayer-Z/releases/tag/v2.0.0",
 };
 let event!: (event: UpdateEvent) => void;
 let api: {

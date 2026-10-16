@@ -83,7 +83,7 @@ describe("English documentation", () => {
     }
     const downloads = readFileSync(join(docs, ".vitepress/components/DownloadPage.vue"), "utf8");
     expect(downloads).toContain('const GITHUB_REPO = "MasterZack69/SPlayer-Z"');
-    expect(downloads).not.toContain("SPlayer-Dev/SPlayer-Next");
+    expect(downloads).not.toContain("SPlayer-Dev");
   });
 
   it("preserves the accepted agreement marker and legal protections", () => {

@@ -12,7 +12,7 @@ For comparison, try an installed build under Xwayland:
 /path/to/player --ozone-platform=x11
 ```
 
-Use the actual executable path, for example `./result/bin/splayer-next` after a Nix build. Change a per-user desktop entry rather than overwriting a system package's launcher. Xwayland requires an available Xwayland service and can change shortcut behavior.
+Use the actual executable path, for example `./result/bin/splayer-z` after a Nix build. Change a per-user desktop entry rather than overwriting a system package's launcher. Xwayland requires an available Xwayland service and can change shortcut behavior.
 
 ## Global shortcuts
 

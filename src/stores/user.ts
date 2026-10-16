@@ -71,7 +71,7 @@ interface CloudCache {
   cachedAt: number;
 }
 
-const cacheDb = localforage.createInstance({ name: "splayer", storeName: "user-cache" });
+const cacheDb = localforage.createInstance({ name: "splayer-z", storeName: "user-cache" });
 
 const EMPTY_SUBCOUNT: UserSubcount = {
   createdPlaylistCount: 0,

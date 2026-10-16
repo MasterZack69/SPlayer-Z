@@ -26,7 +26,7 @@ if [[ ! -f "$config_source/pipewire.conf" || ! -f "$config_source/client.conf" ]
   exit 1
 fi
 
-log_root="${SPLAYER_PIPEWIRE_LOG_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/splayer/pipewire-tests}"
+log_root="${SPLAYER_PIPEWIRE_LOG_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/splayer-z/pipewire-tests}"
 mkdir -p "$log_root"
 test_dir=$(mktemp -d "$log_root/run.XXXXXX")
 # Unix socket paths must remain short even when persistent logs have a long path.
