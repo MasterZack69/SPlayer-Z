@@ -6,9 +6,9 @@ import DEFAULT_COVER from "@/assets/images/song.jpg";
 import BackgroundRender from "./BackgroundRender.vue";
 
 const props = defineProps<{
-  /** 保持背景到面板退出动画结束 */
+  /** Keep the background mounted through the closing transition. */
   visible: boolean;
-  /** 允许初始化流体渲染器 */
+  /** Initialize the fluid renderer as soon as the opening transition starts. */
   active: boolean;
 }>();
 
@@ -19,23 +19,9 @@ const status = useStatusStore();
 const bgType = computed(() => settings.player.playerBgType as string);
 
 const fluidReady = ref(false);
-const showBlurPreview = ref(true);
-
 watch([() => props.active, bgType, () => settings.player.playerBgRenderer], () => {
   fluidReady.value = false;
-  showBlurPreview.value = true;
 });
-
-/** 淡入结束后隐藏预览，避免长期叠加两套背景合成层 */
-const onFluidTransitionEnd = (event: TransitionEvent): void => {
-  if (
-    event.target === event.currentTarget &&
-    event.propertyName === "opacity" &&
-    fluidReady.value
-  ) {
-    showBlurPreview.value = false;
-  }
-};
 
 // 流体背景播放态
 const bgPlaying = computed(() => {
@@ -54,14 +40,14 @@ let currentLayerIndex = 0;
 let preloadImg: HTMLImageElement | null = null;
 let switchToken = 0;
 
-watch([() => media.track?.cover, () => status.isPlayerExpanded], ([newCover, expanded]) => {
-  if (!expanded) return;
+watch([() => media.track?.cover, () => status.isPlayerExpanded, bgType], ([newCover, expanded]) => {
   const token = ++switchToken;
 
   if (preloadImg) {
     preloadImg.src = "";
     preloadImg = null;
   }
+  if (!expanded || bgType.value !== "blur") return;
   const targetCover = newCover || DEFAULT_COVER;
   // 相同不切换
   if (blurLayers[currentLayerIndex].src === targetCover) return;
@@ -105,10 +91,9 @@ onBeforeUnmount(() => {
   <div class="absolute inset-0 overflow-hidden -z-1 bg-solid-wrap">
     <div class="color bg-cover-base" />
   </div>
-  <!-- 流体背景就绪前用缩略图铺底 -->
+  <!-- Only blur mode renders the blurred cover; fluid mode keeps the solid base while loading. -->
   <div
-    v-if="(bgType === 'blur' || bgType === 'animation') && props.visible"
-    v-show="showBlurPreview"
+    v-if="bgType === 'blur' && props.visible"
     class="absolute inset-0 overflow-hidden -z-1 bg-blur-wrap"
   >
     <img
@@ -125,7 +110,6 @@ onBeforeUnmount(() => {
     v-if="bgType === 'animation' && props.active"
     class="absolute inset-0 overflow-hidden -z-1 bg-fluid-wrap"
     :class="{ ready: fluidReady }"
-    @transitionend="onFluidTransitionEnd"
   >
     <BackgroundRender
       :album="media.track?.cover || DEFAULT_COVER"

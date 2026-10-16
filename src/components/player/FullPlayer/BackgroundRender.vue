@@ -56,25 +56,46 @@ const wrapperRef = ref<HTMLDivElement | null>(null);
 // 外部渲染器实例引用
 const bgRenderRef = shallowRef<AbstractBaseRenderer>();
 
+let albumRequest = 0;
+let readyFrame = 0;
+
+/** Cancel a pending first-frame notification when the cover or renderer changes. */
+const cancelAlbumReady = (): void => {
+  albumRequest++;
+  cancelAnimationFrame(readyFrame);
+  readyFrame = 0;
+};
+
 /**
- * 统一同步更新属性状态到底层渲染器
+ * Load the current cover and notify readiness only after its first painted frame.
+ * @param album - Cover thumbnail URL for the active track.
  */
+const loadAlbum = async (album: string): Promise<void> => {
+  cancelAlbumReady();
+  const renderer = bgRenderRef.value;
+  if (!renderer) return;
+  const request = albumRequest;
+  try {
+    await renderer.setAlbum(album, false);
+    if (request !== albumRequest || bgRenderRef.value !== renderer) return;
+    readyFrame = requestAnimationFrame(() => {
+      readyFrame = requestAnimationFrame(() => {
+        readyFrame = 0;
+        if (request === albumRequest && bgRenderRef.value === renderer) emit("ready");
+      });
+    });
+  } catch (error) {
+    if (request === albumRequest && bgRenderRef.value === renderer)
+      console.warn("[background] Failed to load cover", error);
+  }
+};
+
+/** Apply the current settings and cover to the underlying renderer. */
 const updateRendererState = () => {
   const renderer = bgRenderRef.value;
   if (!renderer) return;
 
-  if (props.album) {
-    renderer.setAlbum(props.album, false).then(
-      async () => {
-        // 缓存纹理也要留出首帧，保证淡入起始状态已经绘制
-        await new Promise<void>((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-        );
-        if (bgRenderRef.value === renderer) emit("ready");
-      },
-      (error) => console.warn("[background] 背景封面加载失败", error),
-    );
-  }
+  if (props.album) void loadAlbum(props.album);
   renderer.setFPS(props.fps);
   renderer.setRenderScale(props.renderScale);
   renderer.setHasLyric(props.hasLyric);
@@ -190,10 +211,9 @@ const initRenderer = () => {
   syncFftCapture();
 };
 
-/**
- * 释放渲染器资源并清空容器
- */
+/** Dispose the renderer, pending readiness frames, and FFT subscriptions. */
 const destroyRenderer = () => {
+  cancelAlbumReady();
   stopFftCapture();
 
   const renderer = bgRenderRef.value;
@@ -228,7 +248,7 @@ watch(
   () => props.album,
   (val) => {
     if (val && bgRenderRef.value) {
-      bgRenderRef.value.setAlbum(val, false);
+      void loadAlbum(val);
     }
   },
 );

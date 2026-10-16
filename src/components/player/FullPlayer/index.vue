@@ -185,8 +185,8 @@ const toggleLyric = (): void => {
         @mouseenter="onPlayerMouseEnter"
         @mouseleave="onPlayerMouseLeave"
       >
-        <!-- 背景 -->
-        <PlayerBackground :visible="playerVisible" :active="visualizerMounted" />
+        <!-- Prepare the background during entry; only the spectrum waits for after-enter. -->
+        <PlayerBackground :visible="playerVisible" :active="playerVisible" />
         <!-- 全屏封面 -->
         <div v-if="fullscreenCover" class="absolute inset-y-0 left-0 w-[60%]">
           <PlayerCover fullscreen />
