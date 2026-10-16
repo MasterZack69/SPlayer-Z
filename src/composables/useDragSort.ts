@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from "vue";
+import { useDragRowMotion } from "./useDragRowMotion";
 import type { SVirtualListExposed } from "@/components/ui/SVirtualList.vue";
 
 export interface DragSortOptions {
@@ -17,8 +18,8 @@ export interface DragSortOptions {
 }
 
 /**
- * 列表拖拽排序 composable，配合 SVirtualList 使用
- * 支持手柄触发和长按触发两种模式，拖拽时自动滚动
+ * Reorder a virtual list with lifted rows, edge scrolling and cancellable input.
+ * @param options - List geometry, activation mode and reorder callback.
  */
 export const useDragSort = (options: DragSortOptions) => {
   const {
@@ -30,6 +31,7 @@ export const useDragSort = (options: DragSortOptions) => {
     longPressDelay = 300,
   } = options;
 
+  const rowMotion = useDragRowMotion(virtualListRef);
   const isDragging = ref(false);
   const draggedIndex = ref(-1);
   const targetIndex = ref(-1);
@@ -39,6 +41,7 @@ export const useDragSort = (options: DragSortOptions) => {
   const suppressClick = ref(false);
   let clickResetTimer: ReturnType<typeof setTimeout> | null = null;
   let listRect: DOMRect | null = null;
+  let scrollElement: HTMLElement | null = null;
   let autoScrollRafId: number | null = null;
   let autoScrollAmount = 0;
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -60,7 +63,7 @@ export const useDragSort = (options: DragSortOptions) => {
    * Capture the selected row and attach drag listeners while the pointer is held.
    * @param event - Mouse or touch input from the handle.
    * @param index - Source queue position.
-   * @param labelText - Track title displayed beside the pointer.
+   * @param labelText - Title associated with the dragged track.
    */
   const activateDrag = (event: MouseEvent | TouchEvent, index: number, labelText: string) => {
     if (event.cancelable) event.preventDefault();
@@ -72,6 +75,7 @@ export const useDragSort = (options: DragSortOptions) => {
     const wrapper = virtualListRef.value?.wrapperRef;
     if (wrapper) listRect = wrapper.getBoundingClientRect();
     updateDragLabelPosition(event);
+    rowMotion.start(index, dragLabelPosition.left, dragLabelPosition.top);
     window.addEventListener("mousemove", handleDragMove);
     window.addEventListener("touchmove", handleDragMove, { passive: false });
     window.addEventListener("mouseup", handleDragEnd);
@@ -79,6 +83,9 @@ export const useDragSort = (options: DragSortOptions) => {
     window.addEventListener("touchcancel", cleanupDragState);
     window.addEventListener("blur", cleanupDragState);
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleViewportResize);
+    scrollElement = virtualListRef.value?.scrollRef ?? null;
+    scrollElement?.addEventListener("scroll", handleListScroll);
   };
 
   /** 处理拖拽移动，更新标签位置并计算目标索引 */
@@ -98,6 +105,7 @@ export const useDragSort = (options: DragSortOptions) => {
   const handleDragEnd = () => {
     const from = draggedIndex.value;
     const to = targetIndex.value;
+    rowMotion.finish(to);
     cleanupDragState();
     if (from !== to && to !== -1) onReorder(from, to);
   };
@@ -120,6 +128,7 @@ export const useDragSort = (options: DragSortOptions) => {
 
   /** Remove drag listeners, timers, and scrolling while suppressing the release click. */
   const cleanupDragState = () => {
+    rowMotion.cancel();
     stopAutoScroll();
     cancelLongPress();
     if (clickResetTimer !== null) clearTimeout(clickResetTimer);
@@ -142,13 +151,19 @@ export const useDragSort = (options: DragSortOptions) => {
     window.removeEventListener("touchcancel", cleanupDragState);
     window.removeEventListener("blur", cleanupDragState);
     window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("resize", handleViewportResize);
+    scrollElement?.removeEventListener("scroll", handleListScroll);
+    scrollElement = null;
     window.removeEventListener("mousemove", handleLongPressMove);
     window.removeEventListener("touchmove", handleLongPressMove);
     window.removeEventListener("mouseup", handleLongPressCancel);
     window.removeEventListener("touchend", handleLongPressCancel);
   };
 
-  /** 根据指针 Y 坐标计算放置目标索引和指示线位置 */
+  /** Resolve the insertion slot and refresh lifted-row motion.
+   * @param clientY - Viewport pointer Y.
+   * @param overrideScrollTop - Scroll position read during an auto-scroll frame.
+   */
   const calculateTargetIndex = (clientY: number, overrideScrollTop?: number) => {
     if (!listRect || !virtualListRef.value) return;
     const currentScrollTop = overrideScrollTop ?? virtualListRef.value.getScrollTop();
@@ -172,6 +187,18 @@ export const useDragSort = (options: DragSortOptions) => {
       insertIndex = gapIndex;
     }
     targetIndex.value = Math.max(0, Math.min(insertIndex, maxGap - 1));
+    rowMotion.move(dragLabelPosition.left, clientY, targetIndex.value);
+  };
+
+  /** Keep the insertion gap in sync with wheel scrolling while holding a row. */
+  const handleListScroll = (): void => {
+    if (isDragging.value) calculateTargetIndex(dragLabelPosition.top);
+  };
+
+  /** Cancel stale grab geometry after a window layout change. */
+  const handleViewportResize = (): void => {
+    cleanupDragState();
+    rowMotion.dispose();
   };
 
   /** 更新拖拽标签跟随指针位置 */
@@ -260,7 +287,7 @@ export const useDragSort = (options: DragSortOptions) => {
    * Begin dragging from a primary mouse button or a single touch.
    * @param event - Input event from the drag handle.
    * @param index - Queue position being moved.
-   * @param labelText - Track title shown beside the pointer.
+   * @param labelText - Title associated with the dragged track.
    */
   const handlePointerDown = (event: MouseEvent | TouchEvent, index: number, labelText: string) => {
     if (itemCount.value < 2 || index < 0 || index >= itemCount.value || isDragging.value) return;
@@ -291,8 +318,18 @@ export const useDragSort = (options: DragSortOptions) => {
     window.addEventListener("touchend", handleLongPressCancel);
   };
 
-  onUnmounted(() => {
+  /** Cancel and release visual state when the queue leaves the visible document. */
+  const handleVisibilityChange = (): void => {
+    if (!document.hidden) return;
     cleanupDragState();
+    rowMotion.dispose();
+  };
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  onUnmounted(() => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    cleanupDragState();
+    rowMotion.dispose();
     if (clickResetTimer !== null) clearTimeout(clickResetTimer);
   });
 

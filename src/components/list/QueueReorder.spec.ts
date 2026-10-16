@@ -2,7 +2,7 @@
 import { defineComponent, h, nextTick, reactive, ref, type PropType } from "vue";
 import { mount } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import SImg from "../ui/SImg.vue";
 import QueuePopover from "./QueuePopover.vue";
 import QueuePanel from "../player/FullPlayer/QueuePanel.vue";
@@ -25,6 +25,14 @@ vi.mock("@/stores/media", () => ({ useMediaStore: () => ({ clear: vi.fn() }) }))
 vi.mock("@/stores/theme", () => ({ useThemeStore: () => ({ coverColor: null }) }));
 const status = reactive({ playIndex: 1 });
 
+beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, "animate", {
+    configurable: true,
+    value: () => ({ finished: Promise.resolve(), cancel: vi.fn() }),
+  });
+});
+afterAll(() => Reflect.deleteProperty(HTMLElement.prototype, "animate"));
+
 const VirtualList = defineComponent({
   props: {
     items: { type: Array as PropType<Track[]>, required: true },
@@ -40,6 +48,7 @@ const VirtualList = defineComponent({
     expose({
       wrapperRef,
       getScrollTop: () => 0,
+      getItemTop: (index: number) => index * props.itemHeight + props.paddingTop,
       scrollToIndex: vi.fn(),
       getDropInfoByOffset: (offset: number) => {
         const y = Math.max(0, offset - (props.paddingTop || 0));

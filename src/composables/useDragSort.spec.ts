@@ -117,6 +117,29 @@ describe("queue drag sorting", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("cancels on resize without committing stale row geometry", () => {
+    const { wrapper, onReorder, drag } = setupDrag();
+    window.dispatchEvent(new MouseEvent("mousemove", { clientY: 395 }));
+    window.dispatchEvent(new Event("resize"));
+    window.dispatchEvent(new MouseEvent("mouseup"));
+    expect(drag.isDragging.value).toBe(false);
+    expect(onReorder).not.toHaveBeenCalled();
+    wrapper.unmount();
+    expect(frames.size).toBe(0);
+  });
+
+  it("releases drag work when the document becomes hidden", () => {
+    const { wrapper, onReorder, drag } = setupDrag();
+    window.dispatchEvent(new MouseEvent("mousemove", { clientY: 395 }));
+    vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new MouseEvent("mouseup"));
+    expect(drag.isDragging.value).toBe(false);
+    expect(onReorder).not.toHaveBeenCalled();
+    wrapper.unmount();
+    expect(frames.size).toBe(0);
+  });
+
   it("ignores non-primary mouse buttons", () => {
     const { drag, wrapper, onReorder } = setupDrag();
     drag.cleanupDragState();

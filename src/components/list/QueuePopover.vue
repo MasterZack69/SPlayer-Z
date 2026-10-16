@@ -20,10 +20,6 @@ const {
   moveByKeyboard,
   getQueueItemKey,
   isDragging,
-  draggedIndex,
-  dropIndicator,
-  dragLabelData,
-  dragLabelPosition,
   handlePointerDown,
   guardDragClick,
 } = useQueuePanel({ listRef });
@@ -95,19 +91,13 @@ const onClear = (): void => {
         <template #default="{ item, index }: { item: Track; index: number }">
           <div class="relative px-2 py-0.5">
             <div
-              v-if="isDragging && dropIndicator.index === index"
-              :class="[
-                'absolute left-3 right-3 h-0.5 rounded-full z-10 pointer-events-none bg-primary',
-                dropIndicator.position === 'top' ? 'top-0' : 'bottom-0',
-              ]"
-            />
-            <div
+              data-queue-row
+              :data-queue-index="index"
               class="group flex items-center gap-2.5 px-2 h-13 rounded-md cursor-pointer transition-[background-color,opacity] duration-150"
               :class="[
                 index === statusStore.playIndex
                   ? 'bg-primary/15 text-primary'
                   : 'hover:bg-on-surface/8 active:bg-on-surface/14',
-                isDragging && draggedIndex === index ? 'opacity-30' : 'opacity-100',
               ]"
               @click="onPlay(index)"
             >
@@ -176,26 +166,5 @@ const onClear = (): void => {
         </SButton>
       </template>
     </SDialog>
-
-    <!-- 拖拽标签 -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition-opacity duration-150"
-        enter-from-class="opacity-0"
-        leave-active-class="transition-opacity duration-200"
-        leave-to-class="opacity-0"
-      >
-        <div
-          v-if="isDragging && dragLabelData"
-          class="fixed z-9999 pointer-events-none max-w-60 truncate px-4 py-2 rounded-full text-sm font-medium shadow-lg bg-surface-bright text-on-surface"
-          :style="{
-            top: `${dragLabelPosition.top + 12}px`,
-            left: `${dragLabelPosition.left + 12}px`,
-          }"
-        >
-          {{ dragLabelData.name }}
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>

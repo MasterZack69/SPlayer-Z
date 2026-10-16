@@ -8,7 +8,7 @@
 - **Touch:** Drag the same handle with your finger.
 - **Keyboard:** Focus a row's drag handle and press **Up** or **Down** to move it one position.
 
-An insertion line marks the drop position. Drag near the top or bottom of the list to scroll. Press **Escape** to cancel; losing window focus or cancelling a touch gesture also cancels the drag.
+The full row lifts under your pointer, including its cover and artist. Nearby rows slide aside to open the destination slot, and the lifted row settles into place when released. Reduced-motion preferences disable the decorative lift and settling animation. Drag near the top or bottom of the list to scroll. Press **Escape** to cancel; losing window focus or cancelling a touch gesture also cancels the drag.
 
 Dropping or using the arrow keys changes the order without playing the dragged song, restarting the current song, or resetting its playback position. The playing entry remains the same even when moved. Duplicate songs are separate queue entries and can be moved independently.
 

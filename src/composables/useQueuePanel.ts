@@ -1,3 +1,4 @@
+import "@/styles/queue-drag.css";
 import type { Ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PlaybackQueueItem, Track } from "@shared/types/player";

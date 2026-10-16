@@ -20,10 +20,6 @@ const {
   moveByKeyboard,
   getQueueItemKey,
   isDragging,
-  draggedIndex,
-  dropIndicator,
-  dragLabelData,
-  dragLabelPosition,
   handlePointerDown,
   guardDragClick,
 } = useQueuePanel({ listRef });
@@ -92,19 +88,14 @@ const {
         <template #default="{ item, index }: { item: Track; index: number }">
           <div class="relative pl-1 pr-20 py-1">
             <div
-              v-if="isDragging && dropIndicator.index === index"
-              :class="[
-                'absolute left-3 right-20 h-0.5 rounded-full z-10 pointer-events-none bg-cover/100',
-                dropIndicator.position === 'top' ? 'top-0' : 'bottom-0',
-              ]"
-            />
-            <div
+              data-queue-row
+              :data-queue-index="index"
+              data-queue-theme="cover"
               class="group relative flex items-center gap-3 px-2.5 h-16 rounded-xl cursor-pointer transition-[background-color,opacity] duration-150"
               :class="[
                 index === statusStore.playIndex
                   ? 'bg-cover/14 text-cover'
                   : 'hover:bg-cover/8 active:bg-cover/12',
-                isDragging && draggedIndex === index ? 'opacity-30' : 'opacity-100',
               ]"
               @click="playAt(index)"
             >
@@ -177,17 +168,5 @@ const {
         </SButton>
       </template>
     </SDialog>
-    <Teleport to="body">
-      <div
-        v-if="isDragging && dragLabelData"
-        class="fixed z-9999 pointer-events-none max-w-60 truncate px-4 py-2 rounded-full text-sm font-medium shadow-lg bg-surface-bright text-on-surface"
-        :style="{
-          top: `${dragLabelPosition.top + 12}px`,
-          left: `${dragLabelPosition.left + 12}px`,
-        }"
-      >
-        {{ dragLabelData.name }}
-      </div>
-    </Teleport>
   </div>
 </template>
