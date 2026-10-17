@@ -11,6 +11,10 @@ A cut-down fork of SPlayer-Next focused on local music and user-owned media serv
 ## Supported lyric formats
 Same as upstream: LRC, eLRC, KRC, QRC, TTML
 
+## Images
+<img width="1920" height="1080" alt="Screenshot From 2026-10-17 17-08-58" src="https://github.com/user-attachments/assets/af9a264b-3ec5-477b-887b-5d0bf44d76e7" />
+<img width="1920" height="1080" alt="Screenshot From 2026-10-17 17-09-31" src="https://github.com/user-attachments/assets/6f81b209-e8bd-4cc3-b430-e75a2fc6dc27" />
+
 ## Removed app features
 
 - Public online music playback and discovery (NetEase, QQ Music, and Kugou)
