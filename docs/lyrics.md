@@ -14,6 +14,26 @@ TTML support remains available. The separate metadata-matched **local TTML libra
 
 Supported format identifiers and their default priority are defined in `shared/types/lyrics.ts`: TTML, LYS, QRC, KRC, YRC, LRC, ASS, and SRT. Actual display depends on valid timing and the supplied file contents.
 
+## Apple TTML audio offsets
+
+Playback honors signed `lyricOffset` values in the Apple `iTunesMetadata` container:
+
+```xml
+<iTunesMetadata xmlns="http://music.apple.com/lyric-ttml-internal">
+  <audio lyricOffset="0.369" role="ext-always" />
+  <audio lyricOffset="-0.366" role="spatial" />
+</iTunesMetadata>
+```
+
+Values are in **seconds**, converted to milliseconds. `0.369` moves lyric timestamps **369 ms later**; `-0.369` moves them **369 ms earlier**. Times before the start of the track are clamped to zero. Line, word, backing-vocal and ruby timings move together, so highlighting, seeking and current-line tracking stay aligned.
+
+- Mono, stereo and sources with unknown channel counts use `ext-always`, or an audio entry without a role if no `ext-always` entry exists.
+- Multichannel sources (more than two decoded audio channels, including supported Dolby sources) prefer `role="spatial"`. If it is absent, they use the common offset instead.
+- These entries are **alternative audio versions**, not cumulative adjustments: a spatial offset replaces the common offset, rather than being added to it. A zero offset is valid.
+- Selection uses the **source audio's channel count**, not the speaker/output-device configuration. Invalid offset values and unrelated roles are ignored.
+
+The source TTML is preserved. Your manual per-track lyric adjustment remains independent and can still fine-tune playback after the file's automatic offset is applied.
+
 ## Compact LRC without physical newlines
 
 A compact line-timed LRC string can contain successive line timestamps without newline characters:

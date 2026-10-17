@@ -163,6 +163,7 @@ export const useMediaStore = defineStore("media", () => {
           preferredLang: settings.locale,
           cleanKangxi: true,
           extractMetadata: true,
+          audioChannels: detail.value?.quality.channels ?? track.value?.quality?.channels,
         });
         nextLines = applyLyricExclude(result.lines, track.value);
         normalizeLyricLines(nextLines);

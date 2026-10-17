@@ -1,5 +1,10 @@
-import { detectFormat, parseLyric } from "lyric-kit";
-import type { LyricFormat, LyricInput } from "@shared/types/lyrics";
+import { detectFormat, parseLyric, type ParseOptions } from "lyric-kit";
+import type { LyricFormat, LyricInput, LyricSpan } from "@shared/types/lyrics";
+
+interface PlaybackLyricOptions extends ParseOptions {
+  /** Source audio channel count, not the output device's speaker count. */
+  audioChannels?: number;
+}
 
 const timestamp = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
 
@@ -51,16 +56,16 @@ export const normalizeInlineLrc = (text: string): string =>
     .join("\n");
 
 /**
- * Parse playback lyrics after recovering collapsed plain-LRC lines.
+ * Parse playback lyrics, including compact LRC and Apple TTML audio offsets.
  * @param input - Original lyrics and optional translation/romanization tracks.
- * @param format - Main lyric format; non-LRC formats pass through unchanged.
- * @param options - The lyric-kit parser options used by playback.
+ * @param format - Main lyric format.
+ * @param options - Parser preferences and the source audio channel count.
  * @returns Parsed lyrics with word timing and metadata preserved.
  */
 export const parsePlaybackLyric = (
   input: LyricInput,
   format: LyricFormat,
-  options: Parameters<typeof parseLyric>[1] = {},
+  options: PlaybackLyricOptions = {},
 ): ReturnType<typeof parseLyric> => {
   /**
    * Normalize only LRC tracks, leaving other lyric formats intact.
@@ -70,14 +75,86 @@ export const parsePlaybackLyric = (
    */
   const normalize = (text: string | undefined, trackFormat: LyricFormat | undefined) =>
     text && (trackFormat ?? detectFormat(text)) === "lrc" ? normalizeInlineLrc(text) : text;
-  return parseLyric(
+  const { audioChannels, ...parserOptions } = options;
+  const mainFormat = options.format ?? format;
+  let ttmlOffsetMs: number | undefined;
+  if (mainFormat === "ttml") {
+    const parser =
+      typeof options.domParser === "function"
+        ? new options.domParser()
+        : (options.domParser ?? new DOMParser());
+    let mainDocumentRead = false;
+    // Inspect the parser's existing document rather than retaining or parsing another XML tree.
+    parserOptions.domParser = {
+      parseFromString: (text, type) => {
+        const doc = parser.parseFromString(text, type);
+        if (mainDocumentRead) return doc;
+        mainDocumentRead = true;
+        const head = Array.from(doc.documentElement?.children ?? []).find(
+          (node) => node.localName === "head" && node.namespaceURI === "http://www.w3.org/ns/ttml",
+        );
+        const itunesNamespace = "http://music.apple.com/lyric-ttml-internal";
+        let common: number | undefined;
+        let unscoped: number | undefined;
+        let spatial: number | undefined;
+        for (const metadata of Array.from(head?.getElementsByTagName("*") ?? [])) {
+          if (metadata.localName !== "iTunesMetadata" || metadata.namespaceURI !== itunesNamespace)
+            continue;
+          for (const audio of Array.from(metadata.children)) {
+            if (audio.localName !== "audio" || audio.namespaceURI !== itunesNamespace) continue;
+            const value = audio.getAttribute("lyricOffset")?.trim();
+            if (!value || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)) continue;
+            const seconds = Number(value);
+            const milliseconds = Math.sign(seconds) * Math.round(Math.abs(seconds) * 1000);
+            if (!Number.isSafeInteger(milliseconds)) continue;
+            const role = audio.getAttribute("role")?.trim() ?? "";
+            if (role === "spatial") spatial ??= milliseconds;
+            else if (role === "ext-always") common ??= milliseconds;
+            else if (!role) unscoped ??= milliseconds;
+          }
+        }
+        ttmlOffsetMs =
+          audioChannels != null && audioChannels > 2
+            ? (spatial ?? common ?? unscoped)
+            : (common ?? unscoped);
+        return doc;
+      },
+    };
+  }
+  const result = parseLyric(
     {
       ...input,
-      format,
-      content: normalize(input.content, format)!,
+      format: mainFormat,
+      content: normalize(input.content, mainFormat)!,
       translation: normalize(input.translation, input.translationFormat),
       romaji: normalize(input.romaji, input.romajiFormat),
     },
-    options,
+    parserOptions,
   );
+  if (ttmlOffsetMs != null) {
+    const offset = ttmlOffsetMs;
+    if (options.extractMetadata) result.metadata.offset = offset;
+    /**
+     * Shift a timed interval without allowing negative playback positions.
+     * @param span - Line, word, or ruby interval in milliseconds.
+     */
+    const shift = (span: Pick<LyricSpan, "startTime" | "endTime">): void => {
+      span.startTime = Math.max(0, span.startTime + offset);
+      span.endTime = Math.max(0, span.endTime + offset);
+    };
+    for (const line of result.lines) {
+      const firstWord = line.words[0];
+      // Resolve line-only timing before an offset makes the 0/0 sentinel look timed.
+      if (line.words.length === 1 && firstWord.startTime === 0 && firstWord.endTime === 0) {
+        firstWord.startTime = line.startTime;
+        firstWord.endTime = line.endTime;
+      }
+      shift(line);
+      for (const word of line.words) {
+        shift(word);
+        for (const ruby of word.ruby ?? []) shift(ruby);
+      }
+    }
+  }
+  return result;
 };
