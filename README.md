@@ -16,7 +16,7 @@ Same as upstream: LRC, eLRC, KRC, QRC, TTML
 - Public online music playback and discovery (NetEase, QQ Music, and Kugou)
 - Public-platform accounts, My Cloud, online playlists, daily picks, heart mode, and Personal FM
 - Playback History and Favorites sidebar shortcuts (local history/statistics and local liked songs remain)
-- Home discovery sections, On Repeat, and quick actions
+- Home discovery sections
 - Desktop/Dynamic Island lyric controls
 - Discord RPC and NCM Scrobble
 - Online lyric matching and AMLL TTML network fetching
