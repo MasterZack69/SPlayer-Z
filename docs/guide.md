@@ -28,18 +28,18 @@ These are local library and playback statistics, not online recommendations. Emp
 - **Liked Songs** holds locally liked tracks; personal playlists remain available.
 - **Media Sources** manages your own servers.
 
-Song tables share the same layout, including Genre where applicable. See [Library and metadata](/library), [Search](/search), and [Media servers](/streaming).
+Song tables share the same layout, including Genre where applicable. See [Library and metadata](library.md), [Search](search.md), and [Media servers](streaming.md).
 
 ## Playback and lyrics
 
-Open **Now Playing** for the full player. Lyrics use AMLL; there is no engine selector. Local sidecar files, embedded lyrics, and lyrics supplied by your configured server are supported. See [Lyrics](/lyrics).
+Open **Now Playing** for the full player. Lyrics use AMLL; there is no engine selector. Local sidecar files, embedded lyrics, and lyrics supplied by your configured server are supported. See [Lyrics](lyrics.md).
 
 The **Fluid** background starts initializing during player entry rather than first showing a blurred-cover background. Initial rendering still depends on cover decoding and GPU availability.
 
-Open **Queue** from the player controls to inspect or rearrange upcoming tracks. The compact popover and full Now Playing queue share the same order. See [Queue](/queue).
+Open **Queue** from the player controls to inspect or rearrange upcoming tracks. The compact popover and full Now Playing queue share the same order. See [Queue](queue.md).
 
 ## Settings
 
 Use Settings for appearance, playback, lyrics, shortcuts, services, media sources, local caches, and application information. Optional Last.fm and Discord integration remain under **Services**. Media-server credentials are separate from those integrations.
 
-For installation and build problems, start with [Downloads and installation](/download) or [Debugging](/troubleshooting/debug).
+For installation and build problems, start with [Downloads and installation](download.md) or [Debugging](troubleshooting/debug.md).

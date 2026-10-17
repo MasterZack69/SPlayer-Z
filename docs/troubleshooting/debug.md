@@ -14,7 +14,7 @@ Use the Developer Tools command when available. In development, the shortcut is 
 
 ## Common checks
 
-- **Silence or wrong speed:** Check the selected output device, audio backend, negotiated rate, and [PipeWire diagnostics](/troubleshooting/nix).
+- **Silence or wrong speed:** Check the selected output device, audio backend, negotiated rate, and [PipeWire diagnostics](nix.md).
 - **Missing cover:** Check embedded artwork or server access; a placeholder is not proof of a network error.
 - **Missing lyrics:** Check sidecar filenames, embedded text, and server-provided lyrics. There is no public lyric-fetch fallback.
 - **Missing search item:** Finish scanning/synchronization and verify the active server and page scope.

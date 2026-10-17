@@ -21,7 +21,6 @@ pnpm build:native --dev  # Debug native modules
 pnpm typecheck
 pnpm lint
 pnpm test
-pnpm docs:build
 cargo check --all-targets --locked
 cargo test --locked
 ```
@@ -91,7 +90,7 @@ Run relevant tests, type checks, lint and builds. Real audio tests and `.node` i
 
 For UI changes, validate pointer, keyboard, narrow/wide layouts, cancellation, and persistence. Browser previews do not replace real Electron or main-process memory checks. Document actual validation gaps in the handoff, not in README.
 
-Canonical documentation is English under `docs/`; `docs/en/` uses includes to preserve old English URLs; its homepage mirrors root frontmatter. Update canonical pages and navigation, remove obsolete feature instructions, and build the documentation. Keep license notices and attribution. Do not silently change legal liability or jurisdiction provisions during a translation task.
+Documentation is plain English Markdown under `docs/`, with an index in `docs/index.md`. Use relative `.md` links that work directly in the repository. Update guides when behavior changes and remove obsolete feature instructions. Do not add a documentation website, site generator, or Pages deployment. Keep license notices and attribution. Do not silently change legal liability or jurisdiction provisions during a translation task.
 
 See `docs/architecture.md`, `docs/native.md`, `docs/types.md`, and `docs/contributing.md` for detailed references.
 

@@ -61,7 +61,7 @@ Use the software lawfully and only with content you own, are authorized to acces
 
 ## 9. Privacy and local data
 
-The software does not include developer-controlled telemetry or usage analytics and does not upload personally identifiable information to the developers. Configuration, library indexes, queues, history, favorites, covers, caches, and logs are stored locally. Network features communicate directly with the configured third party and are subject to that party's privacy policy. See the [Privacy Policy](/privacy).
+The software does not include developer-controlled telemetry or usage analytics and does not upload personally identifiable information to the developers. Configuration, library indexes, queues, history, favorites, covers, caches, and logs are stored locally. Network features communicate directly with the configured third party and are subject to that party's privacy policy. See the [Privacy Policy](privacy.md).
 
 ## 10. Distribution channels and security
 

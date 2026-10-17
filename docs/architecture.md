@@ -6,7 +6,7 @@
 - `electron/preload/`: the typed `window.api` bridge. Event subscriptions return per-handler cleanup functions.
 - `src/`: Vue 3 renderer, Pinia stores, player coordination, and user interface.
 - `shared/`: cross-process types, defaults, constants, and protocol definitions.
-- `native/`: Rust NAPI-RS modules; see [Native modules](/native).
+- `native/`: Rust NAPI-RS modules; see [Native modules](native.md).
 
 `electron/main/ipc/index.ts` is the registration source of truth. Legacy files, types, defaults, or preload names can remain after a feature is disabled; they are not a supported public API. There is no supported external HTTP, WebSocket, or MCP control service in this fork.
 
@@ -16,7 +16,7 @@ User actions pass through `src/core/player`, then the preload bridge and main pl
 
 `src/stores/status.ts` provides low-frequency reactive playback state. `src/services/playback.ts` interpolates the time source for animation without pushing every frame through Vue. `src/stores/media.ts` holds the current lightweight track and on-demand detail; large lyric strings must not be persisted as `TrackDetail` in session storage.
 
-Queue entry identity is separate from track identity. `useQueuePanel` shares queue actions, `useDragSort` handles interaction, and core player operations preserve the currently playing entry during reorder. See [Queue](/queue).
+Queue entry identity is separate from track identity. `useQueuePanel` shares queue actions, `useDragSort` handles interaction, and core player operations preserve the currently playing entry during reorder. See [Queue](queue.md).
 
 ## Library and search
 
@@ -30,7 +30,7 @@ Home contains library statistics and listening insights below the random-track s
 
 `electron/main/services/streaming/` contains server configuration, connection handling, adapters, cover proxying, synchronization, and playback sessions. Complete staging snapshots publish atomically. Server identity and media revisions isolate playback, cached files, and downloads across configuration changes.
 
-Server responses are authoritative for artist fields and favorites. Reports follow native playback events, not preloads or downloads. See [Media servers](/streaming).
+Server responses are authoritative for artist fields and favorites. Reports follow native playback events, not preloads or downloads. See [Media servers](streaming.md).
 
 ## Lyrics and player surfaces
 

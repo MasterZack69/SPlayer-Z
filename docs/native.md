@@ -26,7 +26,7 @@ JavaScript-facing times are milliseconds. Rust works in seconds internally; conv
 
 Use the Node and pnpm versions required by `package.json`, a Rust toolchain with Cargo, the platform C/C++ toolchain, and Python for native Node dependencies. Linux builds also require development packages for the selected audio backends and system libraries.
 
-Do not assume there are zero system dependencies. The Nix flake uses `FFMPEG_MODE=system`, with FFmpeg, PipeWire, PulseAudio, ALSA, OpenSSL, D-Bus, and `pkg-config` declared in the derivation. Other FFmpeg build modes depend on `ffmpeg_audio` configuration. See [Nix diagnostics](/troubleshooting/nix).
+Do not assume there are zero system dependencies. The Nix flake uses `FFMPEG_MODE=system`, with FFmpeg, PipeWire, PulseAudio, ALSA, OpenSSL, D-Bus, and `pkg-config` declared in the derivation. Other FFmpeg build modes depend on `ffmpeg_audio` configuration. See [Nix diagnostics](troubleshooting/nix.md).
 
 ```bash
 pnpm build:native --dev

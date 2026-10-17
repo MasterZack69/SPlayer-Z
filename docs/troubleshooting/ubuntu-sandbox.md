@@ -14,7 +14,7 @@ Other errors concern user namespaces or distribution AppArmor policy. Check your
 
 A missing shared-library error identifies the dependency to install. Electron needs GTK, NSS, audio, graphics, and desktop libraries. Package names differ by distribution version, including Ubuntu's time64 transitions; use your package manager's matching package rather than copying an old install list blindly.
 
-A development build also needs native headers and tools; see [Native modules](/native). A graphical WSL session requires working display and audio integration, not just a successful Rust build.
+A development build also needs native headers and tools; see [Native modules](../native.md). A graphical WSL session requires working display and audio integration, not just a successful Rust build.
 
 ## Filing an issue
 

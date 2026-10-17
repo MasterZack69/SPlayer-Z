@@ -10,7 +10,7 @@ Use Conventional Commits with a single-line subject, for example `fix: preserve 
 
 ## Development setup
 
-Follow the versions declared in `package.json` and its `packageManager` field. Install Node, pnpm, Rust/Cargo, Python, and the platform native build prerequisites. Linux/Nix users can start with `nix develop`; see [Native modules](/native).
+Follow the versions declared in `package.json` and its `packageManager` field. Install Node, pnpm, Rust/Cargo, Python, and the platform native build prerequisites. Linux/Nix users can start with `nix develop`; see [Native modules](native.md).
 
 ```bash
 pnpm install
@@ -42,7 +42,7 @@ pnpm test
 pnpm build
 ```
 
-For native changes, rebuild the module and run the appropriate Cargo and integration tests. Linux audio changes should include [PipeWire diagnostics](/troubleshooting/nix). Only x86_64 and ARM64 Linux are supported. Run host-native checks and preserve both Linux CI targets; do not add Windows or macOS fallback code.
+For native changes, rebuild the module and run the appropriate Cargo and integration tests. Linux audio changes should include [PipeWire diagnostics](troubleshooting/nix.md). Only x86_64 and ARM64 Linux are supported. Run host-native checks and preserve both Linux CI targets; do not add Windows or macOS fallback code.
 
 For UI work, test narrow and wide windows, keyboard and pointer interaction, and state persistence. For rendering, caching, or IPC changes, compare real main-process memory samples from `app.getAppMetrics()` before and after; browser-only previews do not replace Electron memory measurements. If a check cannot run, say why rather than claiming it passed.
 
@@ -50,15 +50,9 @@ Format every file included in a commit. Inspect the final diff for unintended fi
 
 ## Documentation changes
 
-The root `docs/` pages are the canonical English content. `docs/en/` pages preserve existing English URLs by including their canonical counterpart, except that the homepage mirrors the root frontmatter. Update the canonical page rather than creating a second independent translation. Add new pages to `docs/.vitepress/config.ts` when they should appear in navigation.
+Documentation lives as plain English Markdown under `docs/`; start with [the documentation index](index.md). Use relative `.md` links so readers can navigate directly on GitHub or in a local checkout. There is no website build or deployment step.
 
-```bash
-pnpm docs:dev
-pnpm docs:build
-pnpm docs:preview
-```
-
-A successful production build checks internal links and renders the site. Update user guides and developer references when behavior changes; remove documentation for retired interfaces rather than leaving executable examples for nonexistent endpoints.
+Update user guides and developer references when behavior changes. Add relevant pages to the index, verify local link targets, and remove documentation for retired interfaces rather than leaving executable examples for nonexistent endpoints. Documentation regression checks run with `pnpm test:web`.
 
 ## Pull requests and issues
 

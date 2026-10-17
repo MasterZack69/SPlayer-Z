@@ -23,7 +23,7 @@ Server tracks retain `serverId`, the original server resource identity, and medi
 
 ## Lyrics
 
-`LyricLine`, `LyricWord`, and `LyricSpan` come from `lyric-kit`. Preserve timing and source-text offsets when normalizing compact LRC or adding emphasis. The `external` lyric source is used for local sidecar files and lyrics returned by the configured media server; it does not mean public online lyric lookup. See [Lyrics](/lyrics).
+`LyricLine`, `LyricWord`, and `LyricSpan` come from `lyric-kit`. Preserve timing and source-text offsets when normalizing compact LRC or adding emphasis. The `external` lyric source is used for local sidecar files and lyrics returned by the configured media server; it does not mean public online lyric lookup. See [Lyrics](lyrics.md).
 
 ## Native interfaces and IPC
 

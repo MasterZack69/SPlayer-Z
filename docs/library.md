@@ -10,7 +10,7 @@ These pages describe the same indexed music; they are not separate online catalo
 
 Song-list pages use the shared `SongList` component rather than maintaining independent row layouts. The available columns include track number, title and artist, album, genre, actions, duration, and file size. Context can omit a redundant column, such as Album when viewing a single album. Header and row widths stay aligned, with responsive spacing for narrow views.
 
-The top search field filters the current page. Library does not have a second, competing search field. Search on Home is global instead; see [Search](/search).
+The top search field filters the current page. Library does not have a second, competing search field. Search on Home is global instead; see [Search](search.md).
 
 ## Artist names
 
@@ -26,4 +26,4 @@ A missing cover can still mean there is no embedded picture, the file is damaged
 
 ## Storage and safety
 
-The local index and playlists are in SQLite. Queue data is persisted separately in renderer storage. Clearing an index or application data is not the same as deleting your music, but it can remove playlists, preferences, and recorded statistics. Back up the application data before a reset; see [Debugging](/troubleshooting/debug).
+The local index and playlists are in SQLite. Queue data is persisted separately in renderer storage. Clearing an index or application data is not the same as deleting your music, but it can remove playlists, preferences, and recorded statistics. Back up the application data before a reset; see [Debugging](troubleshooting/debug.md).
