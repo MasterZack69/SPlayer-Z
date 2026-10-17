@@ -108,9 +108,21 @@ export const useLibraryStore = defineStore("library", () => {
     trackDb.setItem("tracks", toRaw(items)).catch(() => {});
   };
 
-  /** 加载曲目和目录列表 */
-  const load = async (): Promise<void> => {
-    // 先从 IndexedDB 读缓存，立即渲染
+  let loadPromise: Promise<void> | null = null;
+
+  /** Share in-flight library loads so setup and startup cannot overwrite each other. */
+  const load = (): Promise<void> => {
+    if (!loadPromise) {
+      loadPromise = loadLibrary().finally(() => {
+        loadPromise = null;
+      });
+    }
+    return loadPromise;
+  };
+
+  /** Load cached likes and tracks, then synchronize the authoritative local index. */
+  const loadLibrary = async (): Promise<void> => {
+    // Display cached tracks while loading the authoritative index.
     const [cached, likedCached] = await Promise.all([
       trackDb.getItem<Track[]>("tracks").catch(() => null),
       trackDb.getItem<string[]>(LIKED_IDS_KEY).catch(() => null),
@@ -120,7 +132,7 @@ export const useLibraryStore = defineStore("library", () => {
       likedOrderedIds.value = likedCached;
       likedIdSet.value = new Set(likedCached);
     }
-    // 拿最新数据并回写缓存
+    // Replace the cache with the current database snapshot.
     const [tracksRes, dirsRes] = await Promise.all([
       window.api.library.getTracks(),
       window.api.library.getScanDirs(),
@@ -131,13 +143,21 @@ export const useLibraryStore = defineStore("library", () => {
     }
     if (dirsRes.success && dirsRes.data) scanDirs.value = dirsRes.data;
     initialized.value = true;
-    // 预取歌手头像
-    loadArtistAvatars();
+    void loadArtistAvatars().catch(console.error);
   };
 
-  /** 开始扫描 */
+  let pendingScan: boolean | null = null;
+
+  /**
+   * Start indexing with a process-lifetime listener; queue folders added during an active scan.
+   * @param incremental - Skip files whose metadata has not changed.
+   */
   const startScan = async (incremental = true): Promise<void> => {
-    if (scanning.value) return;
+    subscribeScanProgress();
+    if (scanning.value) {
+      pendingScan = pendingScan === false ? false : incremental;
+      return;
+    }
     scanning.value = true;
     scanProgress.value = { phase: "scanning", total: 0, scanned: 0 };
     try {
@@ -152,15 +172,17 @@ export const useLibraryStore = defineStore("library", () => {
     }
   };
 
-  /** 取消扫描 */
+  /** Cancel indexing and discard any queued follow-up scan. */
   const cancelScan = async (): Promise<void> => {
+    pendingScan = null;
     await window.api.library.cancelScan();
     scanning.value = false;
     scanProgress.value = null;
   };
 
-  /** 添加扫描目录 */
+  /** Add a music directory and index it immediately, including during onboarding. */
   const addScanDir = async (): Promise<{ success: boolean; error?: string }> => {
+    await initialize();
     const res = await window.api.library.addScanDir();
     if (res.success) {
       const newDir = res.data as string;
@@ -173,18 +195,28 @@ export const useLibraryStore = defineStore("library", () => {
       );
       if (nested) {
         await window.api.library.removeScanDir(newDir);
+        if (scanning.value) {
+          scanning.value = false;
+          pendingScan = null;
+          await startScan();
+        }
         return { success: false, error: "nested" };
       }
       scanDirs.value = [...scanDirs.value, newDir];
+      await startScan();
     }
     return res;
   };
 
-  /** 移除扫描目录 */
+  /**
+   * Remove a directory and refresh the remaining index after backend cancellation.
+   * @param dir - Configured music directory to remove.
+   */
   const removeScanDir = async (dir: string): Promise<void> => {
+    pendingScan = null;
     await window.api.library.removeScanDir(dir);
     scanDirs.value = scanDirs.value.filter((d) => d !== dir);
-    // 移除目录取消正在进行的扫描
+    // The backend cancels the active scan before deleting directory tracks.
     if (scanning.value) {
       scanning.value = false;
       scanProgress.value = null;
@@ -193,36 +225,64 @@ export const useLibraryStore = defineStore("library", () => {
     if (res.success && res.data) {
       tracks.value = res.data;
       cacheTracks(res.data);
-      loadArtistAvatars();
+      void loadArtistAvatars().catch(console.error);
     }
   };
 
   let unsubscribe: (() => void) | null = null;
+  let initializePromise: Promise<void> | null = null;
 
-  /** 监听扫描进度 */
+  /** Install one application-level listener, independent of page mount/unmount. */
   const subscribeScanProgress = (): void => {
-    unsubscribe?.();
+    if (unsubscribe) return;
     unsubscribe = window.api.library.onScanProgress((data) => {
       scanProgress.value = data;
-      if (data.phase === "done") {
-        scanning.value = false;
-        window.api.library.getTracks().then((res) => {
-          if (res.success && res.data) {
-            tracks.value = res.data;
-            cacheTracks(res.data);
-            loadArtistAvatars();
-          }
-        });
-      } else if (data.phase === "error") {
-        scanning.value = false;
-      }
+      if (data.phase === "scanning") scanning.value = true;
+      else void finishScan(data);
     });
   };
 
-  const unsubscribeScanProgress = (): void => {
-    unsubscribe?.();
-    unsubscribe = null;
+  /**
+   * Refresh the index after scanning and start any requested follow-up pass.
+   * @param progress - Terminal scanner event.
+   */
+  const finishScan = async (progress: ScanProgress): Promise<void> => {
+    try {
+      if (progress.phase === "done") {
+        await loadPromise;
+        const res = await window.api.library.getTracks();
+        if (res.success && res.data) {
+          tracks.value = res.data;
+          cacheTracks(res.data);
+          void loadArtistAvatars().catch(console.error);
+        }
+      }
+    } catch (error) {
+      console.error("[library] Failed to refresh scanned tracks", error);
+    } finally {
+      scanning.value = false;
+      const next = pendingScan;
+      pendingScan = null;
+      if (next !== null) void startScan(next);
+    }
   };
+
+  /** Load the index and begin one startup scan without waiting for Library navigation. */
+  const initialize = (): Promise<void> => {
+    if (!initializePromise) {
+      subscribeScanProgress();
+      initializePromise = (async () => {
+        await load();
+        if (scanDirs.value.length > 0) await startScan(tracks.value.length > 0);
+      })().catch((error) => {
+        initializePromise = null;
+        throw error;
+      });
+    }
+    return initializePromise;
+  };
+
+  onScopeDispose(() => unsubscribe?.());
 
   /** 删除曲目文件并刷新列表 */
   const deleteTracks = async (paths: string[]): Promise<{ deleted: number; failed: number }> => {
@@ -386,7 +446,7 @@ export const useLibraryStore = defineStore("library", () => {
     addScanDir,
     removeScanDir,
     subscribeScanProgress,
-    unsubscribeScanProgress,
+    initialize,
     deleteTracks,
     applyTrackUpdates,
     getArtistAvatar,

@@ -248,18 +248,3 @@ export const applyMainWindowZoom = (): void => {
   const factor = Math.max(0.5, Math.min(2, percent / 100));
   win.webContents.setZoomFactor(factor);
 };
-
-/**
- * 更新任务栏播放进度
- * @param progress - 进度 0~1，或 -1 清除
- * @param paused - 是否暂停状态（显示暂停样式）
- */
-export const setTaskbarProgress = (progress: number, paused = false): void => {
-  const win = getMainWindow();
-  if (!win) return;
-  if (progress < 0) {
-    win.setProgressBar(-1);
-  } else {
-    win.setProgressBar(progress, { mode: paused ? "paused" : "normal" });
-  }
-};

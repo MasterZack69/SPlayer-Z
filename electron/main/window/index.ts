@@ -4,7 +4,6 @@ export {
   getMainWindow,
   focusMainWindow,
   showReadyMainWindow,
-  setTaskbarProgress,
   applyMainWindowZoom,
   minimizeMainWindow,
   toggleMaximizeMainWindow,

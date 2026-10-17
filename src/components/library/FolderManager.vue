@@ -7,7 +7,7 @@ import IconLucideTrash2 from "~icons/lucide/trash-2";
 
 const { t } = useI18n();
 const libraryStore = useLibraryStore();
-const { scanDirs } = storeToRefs(libraryStore);
+const { scanDirs, scanning, scanProgress } = storeToRefs(libraryStore);
 
 const emit = defineEmits<{
   (e: "added"): void;
@@ -79,6 +79,20 @@ onMounted(() => {
     <div v-if="scanDirs.length === 0" class="py-6 text-center text-on-surface-variant/50 text-sm">
       {{ t("library.emptyHint") }}
     </div>
+
+    <p
+      v-if="scanning"
+      role="status"
+      class="flex items-center gap-2 text-sm text-on-surface-variant"
+    >
+      <SLoading class="size-4" />
+      {{
+        t("library.scanProgress", {
+          scanned: scanProgress?.scanned ?? 0,
+          total: scanProgress?.total ?? 0,
+        })
+      }}
+    </p>
 
     <SButton class="mt-1" variant="secondary" :loading="adding" block @click="handleAdd">
       <template #icon><IconLucideFolderPlus /></template>

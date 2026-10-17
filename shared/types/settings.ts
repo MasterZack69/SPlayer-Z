@@ -268,9 +268,6 @@ export interface AppUpdateSettings {
   channel: UpdateChannel;
 }
 
-/** 播放日志上报协议 */
-export type NeteaseScrobbleMode = "legacy" | "ncbl";
-
 /** KG 登录版本 */
 export type KugouLoginVersion = "standard" | "concept";
 
@@ -304,8 +301,6 @@ export interface SystemConfig {
     rememberWindowState: boolean;
     /** 开启无边框主窗口 */
     borderlessWindow: boolean;
-    /** 在任务栏显示播放进度 */
-    taskbarProgress: boolean;
     /** 界面缩放百分比（50-200，默认 100） */
     uiZoom: number;
     /** 首启引导是否已完成 */
@@ -318,10 +313,6 @@ export interface SystemConfig {
     kugouLoginVersion: KugouLoginVersion;
     /** 网络代理配置 */
     networkProxy: NetworkProxySettings;
-    /** 听歌打卡开关 */
-    neteaseScrobbleEnabled: boolean;
-    /** 播放日志上报协议 */
-    neteaseScrobbleMode: NeteaseScrobbleMode;
     /** 注册为 Orpheus 协议处理程序，抢占网页端「用客户端打开」 */
     registerOrpheusProtocol: boolean;
   };

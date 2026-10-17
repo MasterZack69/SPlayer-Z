@@ -31,8 +31,7 @@ import {
   setTrayPlayMode,
   setTrayLikeState,
 } from "@main/services/tray";
-import { getMainWindow, setTaskbarProgress } from "@main/window";
-import { store } from "@main/store";
+import { getMainWindow } from "@main/window";
 import { appName, getSongCacheDir } from "@main/utils/config";
 import * as songCache from "@main/services/songCache";
 import {
@@ -125,8 +124,8 @@ const classifyLoadError = (error: unknown, source: string): ErrorCode => {
 };
 
 /**
- * 播放器原生事件回调
- * @param inst 播放器实例
+ * Forward native playback events to Linux media controls and the renderer.
+ * @param inst - Active native audio player.
  */
 const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"]>): void => {
   inst.onEvent((event: JsPlayerEvent) => {
@@ -141,14 +140,8 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
           mediaService.setPlayState({ status: "Playing" });
         } else if (state === "paused") {
           mediaService.setPlayState({ status: "Paused" });
-          if (store.get("system.taskbarProgress")) {
-            const dur = toDisplayDurationMs(toMs(inst.getDuration()));
-            const pos = toDisplayPositionMs(toMs(inst.getPosition()));
-            if (dur > 0) setTaskbarProgress(pos / dur, true);
-          }
         } else if (state === "stopped") {
           mediaService.setPlayState({ status: "Paused" });
-          setTaskbarProgress(-1);
         }
         nowPlaying.onPlayStateChange(state);
         lastfm.onState(state === "playing");
@@ -172,7 +165,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         mediaService.setPlayState({ status: "Paused" });
         lastfm.onEnded();
         void streamingPlayback.stopStreamingPlayback();
-        setTaskbarProgress(-1);
         break;
       }
       case "sourceError": {
@@ -180,7 +172,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         sendToMain("player:event", { type: "sourceError" });
         mediaService.setPlayState({ status: "Paused" });
         void streamingPlayback.stopStreamingPlayback();
-        setTaskbarProgress(-1);
         break;
       }
       case "position": {
@@ -210,7 +201,6 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         nowPlaying.onPosition(posMs, true);
         lastfm.onPosition();
         streamingPlayback.onStreamingPosition(posMs);
-        if (store.get("system.taskbarProgress") && durMs > 0) setTaskbarProgress(posMs / durMs);
         break;
       }
       case "transitionChanged": {

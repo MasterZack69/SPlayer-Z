@@ -188,7 +188,6 @@ declare module 'vue' {
     PopoverRoot: typeof import('reka-ui')['PopoverRoot']
     PopoverTrigger: typeof import('reka-ui')['PopoverTrigger']
     QrLoginPanel: typeof import('./src/components/modals/QrLoginPanel.vue')['default']
-    QualityControl: typeof import('./src/components/player/QualityControl.vue')['default']
     QueuePanel: typeof import('./src/components/player/FullPlayer/QueuePanel.vue')['default']
     QueuePopover: typeof import('./src/components/list/QueuePopover.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

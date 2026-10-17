@@ -163,7 +163,6 @@ export const useSettingsStore = defineStore(
       sidebarKeepEmptyDivider: false,
       sidebarNameWithDivider: false,
       sidebarPlaylistOrder: { myLocal: [], myOnline: [], subscribed: [] },
-      showQualitySwitch: false,
       closeAction: "hide",
       rememberCloseChoice: false,
       fontFamily: "",

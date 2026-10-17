@@ -2,7 +2,11 @@ import { shallowMount, flushPromises } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/core/player", () => ({ playNow: vi.fn() }));
-vi.mock("@/stores/library", () => ({ useLibraryStore: () => ({}) }));
+const index = await vi.hoisted(async () => {
+  const { reactive } = await import("vue");
+  return reactive({ tracks: [] as unknown[] });
+});
+vi.mock("@/stores/library", () => ({ useLibraryStore: () => index }));
 vi.mock("@/utils/navigate", () => ({ navigateToAlbum: vi.fn(), navigateToArtist: vi.fn() }));
 import HomeStats from "./HomeStats.vue";
 import StatsOverview from "./StatsOverview.vue";
@@ -45,6 +49,17 @@ const mountStats = () =>
     },
   });
 describe("Home statistics", () => {
+  it("refreshes the overview and charts when a background scan publishes tracks", async () => {
+    const wrapper = mountStats();
+    await flushPromises();
+    stats.getLibraryStats.mockResolvedValue({ ...library, trackCount: 250 });
+    index.tracks = [{ id: "scanned" }];
+    await flushPromises();
+    expect(stats.getLibraryStats).toHaveBeenCalledTimes(2);
+    expect(stats.getTopArtists).toHaveBeenCalledTimes(2);
+    expect(wrapper.getComponent(StatsOverview).props("stats")?.trackCount).toBe(250);
+    wrapper.unmount();
+  });
   it("loads every dataset previously displayed by the Stats page", async () => {
     const wrapper = mountStats();
     await flushPromises();

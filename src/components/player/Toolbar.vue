@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import { useStatusStore } from "@/stores/status";
-import { useSettingsStore } from "@/stores/settings";
 import * as player from "@/core/player";
 import { VOLUME_STEP, volumeGainToPosition, volumePositionToGain } from "@/utils/volume";
 import IconLucideSliders from "~icons/lucide/sliders-horizontal";
@@ -21,7 +20,6 @@ const props = withDefaults(
 
 const { t } = useI18n();
 const status = useStatusStore();
-const settings = useSettingsStore();
 
 const buttonType = computed<"default" | "cover">(() => (props.cover ? "cover" : "default"));
 const mutedClass = computed(() => (props.cover ? "text-cover/50" : "text-on-surface-variant"));
@@ -70,8 +68,6 @@ const onMoreMenuSelect = (key: string): void => {
 
 <template>
   <div class="flex items-center gap-1">
-    <!-- 在线音质 -->
-    <QualityControl v-if="settings.appearance.showQualitySwitch" :cover="cover" />
     <SPopover trigger="hover" side="top" :cover="cover" content-class="px-3 pb-2 pt-3">
       <template #trigger>
         <SButton

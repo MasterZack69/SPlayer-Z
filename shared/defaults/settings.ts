@@ -93,7 +93,6 @@ export const defaultSystemConfig: SystemConfig = {
   system: {
     rememberWindowState: true,
     borderlessWindow: true,
-    taskbarProgress: true,
     uiZoom: 100,
     onboardingCompleted: false,
     agreedAgreementVersion: 1,
@@ -104,8 +103,6 @@ export const defaultSystemConfig: SystemConfig = {
       host: "127.0.0.1",
       port: 7890,
     },
-    neteaseScrobbleEnabled: false,
-    neteaseScrobbleMode: "legacy",
     registerOrpheusProtocol: false,
   },
   windowStates: {

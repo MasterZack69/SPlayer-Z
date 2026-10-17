@@ -8,6 +8,7 @@ import i18n from "./i18n";
 
 import { useThemeStore } from "./stores/theme";
 import { useSettingsStore } from "./stores/settings";
+import { useLibraryStore } from "./stores/library";
 import { useHotkeyStore } from "./stores/hotkey";
 import { initPlayer, playFiles, restoreLastTrack } from "./core/player";
 import { handleOrpheus } from "./services/orpheus";
@@ -52,9 +53,12 @@ const bootstrapPlayback = async (): Promise<void> => {
   }
 };
 
-/** 挂载首屏并准备播放操作 */
+/** Mount the interface and start library indexing independently of navigation. */
 export const mountApplication = async (): Promise<void> => {
   await router.isReady();
+  void useLibraryStore()
+    .initialize()
+    .catch((error) => console.error("[library] Startup failed", error));
   app.mount("#app");
   await nextTick();
   await initPlayer();

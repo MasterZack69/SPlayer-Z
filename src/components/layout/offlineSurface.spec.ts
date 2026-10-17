@@ -42,6 +42,25 @@ describe("离线应用功能边界", () => {
     expect(core).toContain("initSongCache");
     expect(ipc).toContain("registerStreamingIpc");
   });
+  it("removes NCM scrobbling, public quality switching, and taskbar progress", () => {
+    for (const [file, key] of [
+      ["src/settings/categories/player.ts", "neteaseScrobble"],
+      ["src/settings/categories/appearance.ts", "showQualitySwitch"],
+      ["src/settings/categories/general.ts", "taskbarProgress"],
+    ])
+      expect(source(file)).not.toContain(key);
+    expect(source("shared/defaults/settings.ts")).not.toMatch(/neteaseScrobble|taskbarProgress/);
+    expect(source("electron/main/ipc/player.ts")).not.toContain("setTaskbarProgress");
+    expect(source("electron/main/services/playerControl.ts")).not.toContain("neteaseScrobble");
+    expect(source("src/components/player/Toolbar.vue")).not.toContain("QualityControl");
+    expect(existsSync("electron/main/services/neteaseScrobble.ts")).toBe(false);
+    expect(existsSync("shared/utils/neteaseScrobble.ts")).toBe(false);
+    expect(existsSync("src/components/player/QualityControl.vue")).toBe(false);
+    expect(source("src/settings/categories/services.ts")).toContain("lastfmScrobble");
+    expect(source("electron/main/ipc/player.ts")).toContain(
+      "streamingPlayback.onStreamingPosition",
+    );
+  });
   it("removes local TTML library IPC and settings but preserves TTML files", () => {
     expect(existsSync("electron/main/ipc/lyrics.ts")).toBe(false);
     expect(existsSync("electron/main/services/localLyricRepo.ts")).toBe(false);

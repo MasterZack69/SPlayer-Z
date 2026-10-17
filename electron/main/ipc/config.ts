@@ -15,16 +15,16 @@ import {
   setEqualizerBands,
   setPreampGain,
 } from "@main/services/engine";
-import { setTaskbarProgress, applyMainWindowZoom } from "@main/window";
+import { applyMainWindowZoom } from "@main/window";
 
 import { setOrpheusProtocolRegistered } from "@main/services/orpheus";
 import { getUpdateState, syncUpdateChannel } from "@main/services/updater";
 import { UPDATE_CHANNELS } from "@shared/types/settings";
 
 /**
- * 应用配置写入后的副作用
- * @param keyPath - 配置路径
- * @param value - 新值
+ * Apply integration and playback changes after saving configuration.
+ * @param keyPath - Updated configuration path.
+ * @param value - Saved configuration value.
  */
 const applyConfigChange = (keyPath: string, value: unknown): void => {
   switch (keyPath) {
@@ -56,9 +56,6 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
       break;
     case "player.equalizer.preamp":
       setPreampGain(value as number);
-      break;
-    case "system.taskbarProgress":
-      if (!value) setTaskbarProgress(-1);
       break;
     case "system.registerOrpheusProtocol":
       setOrpheusProtocolRegistered(value as boolean);

@@ -2,7 +2,7 @@
 
 ## Local library
 
-Add music directories during setup or through the library's folder-management controls. Scan the selected directories to populate Library, Artists, Albums, Genres, and Folders. Refresh the index after changing tags or files outside the application.
+Add music directories during setup or through the library's folder-management controls. Indexing starts automatically when a directory is added, including during setup. It continues in the background after setup; Home's random selection and statistics update when the scan finishes, without opening Library. Setup and Home display scan progress while indexing. Existing directories receive an incremental scan at application startup. Use Library's refresh controls after changing tags or files outside the application.
 
 These pages describe the same indexed music; they are not separate online catalogs. Liked Songs and local playlists organize that music without a platform login.
 

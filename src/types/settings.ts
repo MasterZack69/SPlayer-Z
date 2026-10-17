@@ -280,8 +280,6 @@ export interface AppearanceSettings {
   sidebarNameWithDivider: boolean;
   /** 侧边栏歌单显示顺序 */
   sidebarPlaylistOrder: SidebarPlaylistOrder;
-  /** 播放栏显示快捷音质切换 */
-  showQualitySwitch: boolean;
   /** 点击关闭按钮的行为 */
   closeAction: "quit" | "hide";
   /** 记忆关闭选择 */

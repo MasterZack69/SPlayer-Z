@@ -6,7 +6,6 @@
  */
 
 import { getPlayer } from "@main/services/engine";
-import * as neteaseScrobble from "@main/services/neteaseScrobble";
 import * as lastfm from "@main/services/lastfm";
 import { sendToMain } from "@main/utils/broadcast";
 import { toMs } from "@main/utils/time";
@@ -29,8 +28,8 @@ export const playerControl = {
       .play()
       .catch(() => {}),
   pause: (): void => getPlayer().pause(),
+  /** Stop playback and settle any pending Last.fm listening report. */
   stop: (): void => {
-    neteaseScrobble.onStopped();
     lastfm.onStopped();
     getPlayer().stop();
   },

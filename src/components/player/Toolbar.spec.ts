@@ -15,7 +15,6 @@ vi.mock("@/stores/settings", async () => {
   return {
     useSettingsStore: defineStore("settings", {
       state: () => ({
-        appearance: { showQualitySwitch: false },
         isDesktopLyricOpen: false,
       }),
     }),
@@ -42,7 +41,6 @@ const mountToolbar = () => {
         AutoCloseDialog: true,
         AbLoopDialog: true,
         FmModeDialog: true,
-        QualityControl: true,
         QueuePopover: true,
         IconLucideVolumeX: true,
         IconLucideVolume1: true,

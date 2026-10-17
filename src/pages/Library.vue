@@ -14,7 +14,7 @@ import * as player from "@/core/player";
 
 const { t } = useI18n();
 const libraryStore = useLibraryStore();
-const { tracks, scanDirs, scanning, scanProgress, initialized } = storeToRefs(libraryStore);
+const { tracks, scanDirs, scanning, scanProgress } = storeToRefs(libraryStore);
 
 const playbackContext = computed<PlaybackContext>(() => ({
   originId: "library",
@@ -34,14 +34,9 @@ const totalSize = computed(() => {
   return bytes > 0 ? formatFileSize(bytes) : "";
 });
 
-/** 新增目录后立即扫描 */
-const handleFolderAdded = (): void => {
-  libraryStore.startScan(false);
-};
-
+/** Open the folder picker; the library store owns indexing. */
 const handleQuickAddFolder = async (): Promise<void> => {
-  const res = await libraryStore.addScanDir();
-  if (res.success) libraryStore.startScan(false);
+  await libraryStore.addScanDir();
 };
 
 // 播放全部
@@ -87,22 +82,6 @@ const handleMoreMenu = (key: string): void => {
       break;
   }
 };
-
-// 进入页面时初始化
-onMounted(async () => {
-  libraryStore.subscribeScanProgress();
-  if (!initialized.value) {
-    await libraryStore.load();
-  }
-  // 有目录即扫描：尚无曲目时全量，已有曲目时增量
-  if (scanDirs.value.length > 0) {
-    libraryStore.startScan(tracks.value.length > 0);
-  }
-});
-
-onUnmounted(() => {
-  libraryStore.unsubscribeScanProgress();
-});
 </script>
 
 <template>
@@ -212,7 +191,7 @@ onUnmounted(() => {
       :description="t('library.foldersDescription')"
       width="480px"
     >
-      <FolderManager @added="handleFolderAdded" />
+      <FolderManager />
     </SDialog>
   </div>
 </template>

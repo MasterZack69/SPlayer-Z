@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: "Home" });
 import type { Track } from "@shared/types/player";
+import { useLibraryStore } from "@/stores/library";
 import HomeStats from "@/components/stats/HomeStats.vue";
 
 import { useHomeHeader } from "@/composables/home/useHomeHeader";
@@ -21,9 +22,16 @@ const {
   addToQueue: addHeroToQueue,
   load: loadHero,
 } = useDailyRecommend();
+const library = useLibraryStore();
+watch(
+  () => library.tracks,
+  () => {
+    void loadHero();
+  },
+  { immediate: true },
+);
 onMounted(() => {
   void loadHeader();
-  void loadHero();
 });
 
 /** 拼接歌手名 */
@@ -54,6 +62,19 @@ const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
           </div>
         </div>
       </header>
+      <p
+        v-if="library.scanning"
+        role="status"
+        class="flex items-center gap-2 text-sm text-on-surface-variant"
+      >
+        <SLoading class="size-4" />
+        {{
+          t("library.scanProgress", {
+            scanned: library.scanProgress?.scanned ?? 0,
+            total: library.scanProgress?.total ?? 0,
+          })
+        }}
+      </p>
       <!-- Hero -->
       <SCard v-if="heroLoading || hero" radius="xl" flush class="min-h-40">
         <div class="flex items-stretch gap-4 p-4">

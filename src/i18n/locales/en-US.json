@@ -783,7 +783,6 @@
       "playControl": "Playback Control",
       "playbackTransition": "Playback Transition",
       "audioSource": "Audio Source",
-      "scrobble": "Scrobble",
       "lyricContent": "Lyric Content",
       "lyricExclude": "Metadata Stripping",
       "lyricGeneral": "Content & Style",
@@ -1110,7 +1109,6 @@
     "confirm": {
       "highResourceTitle": "Resource-Intensive Feature",
       "enableTitle": "Confirm enabling",
-      "scrobbleRiskContent": "Scrobbling is still experimental. Reported listening records are not guaranteed to count as valid plays, and the associated risks are not yet fully understood.\nEnabling it may trigger account risk controls or other account security issues. Consider the potential risks carefully before enabling this feature.",
       "highResourceContent": "Enabling it may noticeably increase memory and CPU usage, and could cause stuttering on lower-end devices. Enable it anyway?",
       "restartRequiredTitle": "Restart Required",
       "restartRequiredContent": "This setting requires an app restart. Save and relaunch now?",
@@ -1382,10 +1380,6 @@
       "confirmResetDesc": "Groups, names, order and visibility will be reset to defaults!",
       "featureDisabled": "Feature disabled"
     },
-    "showQualitySwitch": {
-      "label": "Show Quick Quality Switch",
-      "description": "Show the online audio quality tag in the player bar for quick switching"
-    },
     "fontConfig": {
       "label": "Font Settings",
       "description": "Configure fonts for the app and lyrics",
@@ -1489,10 +1483,6 @@
       "label": "Performance Monitor",
       "description": "Floating widget showing FPS / frame time / memory. Click to switch"
     },
-    "taskbarProgress": {
-      "label": "Taskbar Progress",
-      "description": "Show playback progress on the taskbar icon"
-    },
     "networkProxyProtocol": {
       "label": "Network Proxy",
       "description": "Configure a manual proxy for online requests",
@@ -1519,16 +1509,6 @@
     "neteaseRealIp": {
       "label": "Use Real IP",
       "description": "May be restricted overseas or in some regions; enable this to try to resolve it"
-    },
-    "neteaseScrobbleEnabled": {
-      "label": "Enable scrobble",
-      "description": "Sync NCM listening records using actual playback time"
-    },
-    "neteaseScrobbleMode": {
-      "label": "NCM scrobble method",
-      "description": "Choose the reporting protocol for syncing listening records",
-      "legacy": "Web log API",
-      "ncbl": "NCBL encrypted API"
     },
     "orpheusProtocol": {
       "label": "Wake this app via the Orpheus protocol",

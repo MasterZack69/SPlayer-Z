@@ -82,11 +82,6 @@ vi.mock("@main/services/lastfm", () => ({
   onStopped: vi.fn(),
   onRepeatOneRestart: mocks.lastfmRestart,
 }));
-vi.mock("@main/services/neteaseScrobble", () => ({
-  onTrackLoaded: vi.fn(),
-  onStopped: vi.fn(),
-  onRepeatOneRestart: mocks.scrobbleRestart,
-}));
 vi.mock("@main/services/streaming/playback", () => ({
   prepareStreamingPlayback: mocks.streamingPrepare,
   startStreamingPlayback: mocks.streamingStart,

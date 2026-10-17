@@ -167,12 +167,6 @@ const appearanceCategory: SettingCategory = {
           type: "custom",
           component: SidebarCustomizeConfig,
         },
-        {
-          key: "showQualitySwitch",
-          type: "switch",
-          binding: { store: "settings", path: "appearance.showQualitySwitch" },
-          defaultValue: false,
-        },
       ],
     },
     {

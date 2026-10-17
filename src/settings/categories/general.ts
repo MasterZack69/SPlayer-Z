@@ -45,12 +45,6 @@ const generalCategory: SettingCategory = {
           },
         },
         {
-          key: "taskbarProgress",
-          type: "switch",
-          binding: { store: "settings", path: "system.system.taskbarProgress" },
-          defaultValue: true,
-        },
-        {
           key: "closeAction",
           type: "select",
           binding: { store: "settings", path: "appearance.closeAction" },

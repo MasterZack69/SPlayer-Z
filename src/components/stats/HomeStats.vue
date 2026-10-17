@@ -9,6 +9,7 @@ import type {
   TopArtist,
   TopTrack,
 } from "@shared/types/stats";
+import { useLibraryStore } from "@/stores/library";
 import StatsOverview from "./StatsOverview.vue";
 import StatsHeatmap from "./StatsHeatmap.vue";
 import StatsTopList from "./StatsTopList.vue";
@@ -24,7 +25,13 @@ const topAlbums = shallowRef<TopAlbum[]>([]);
 const topArtists = shallowRef<TopArtist[]>([]);
 const loading = ref(true);
 
-onMounted(async () => {
+const library = useLibraryStore();
+let loadGeneration = 0;
+
+/** Refresh every Home statistic after an index update, ignoring stale responses. */
+const load = async (): Promise<void> => {
+  const generation = ++loadGeneration;
+  loading.value = true;
   try {
     error.value = false;
     const [library, history, hourlyHistory, songs, albums, artists] = await Promise.all([
@@ -35,6 +42,7 @@ onMounted(async () => {
       window.api.stats.getTopAlbums(10),
       window.api.stats.getTopArtists(10),
     ]);
+    if (generation !== loadGeneration) return;
     libraryStats.value = library;
     daily.value = history;
     hourly.value = hourlyHistory;
@@ -42,12 +50,21 @@ onMounted(async () => {
     topAlbums.value = albums;
     topArtists.value = artists;
   } catch (err) {
+    if (generation !== loadGeneration) return;
     error.value = true;
     console.error("[homeStats] Failed to load listening statistics", err);
   } finally {
-    loading.value = false;
+    if (generation === loadGeneration) loading.value = false;
   }
-});
+};
+
+watch(
+  () => library.tracks,
+  () => {
+    void load();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>

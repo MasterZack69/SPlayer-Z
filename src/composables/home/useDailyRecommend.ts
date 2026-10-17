@@ -84,18 +84,15 @@ export const useDailyRecommend = () => {
     }
   };
 
-  /** 随机来源展示，无内容则顺延下一种 */
+  let loadGeneration = 0;
+
+  /** Refresh the random local selection without allowing older requests to replace it. */
   const load = async (): Promise<void> => {
     loading.value = true;
-    const kinds: HeroKind[] = ["local"];
-    const start = randomIndex(kinds.length);
-    for (let offset = 0; offset < kinds.length; offset++) {
-      const built = await tryBuild(kinds[(start + offset) % kinds.length]);
-      if (built) {
-        slide.value = built;
-        break;
-      }
-    }
+    const generation = ++loadGeneration;
+    const built = await tryBuild("local");
+    if (generation !== loadGeneration) return;
+    slide.value = built;
     loading.value = false;
   };
 
