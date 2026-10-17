@@ -40,6 +40,6 @@ Open **Queue** from the player controls to inspect or rearrange upcoming tracks.
 
 ## Settings
 
-Use Settings for appearance, playback, lyrics, shortcuts, services, media sources, local caches, and application information. Optional Last.fm and Discord integration remain under **Services**. Media-server credentials are separate from those integrations.
+Use Settings for appearance, playback, lyrics, shortcuts, services, media sources, local caches, and application information. Optional Last.fm integration remains under **Services**. Media-server credentials are separate from those integrations.
 
 For installation and build problems, start with [Downloads and installation](download.md) or [Debugging](troubleshooting/debug.md).

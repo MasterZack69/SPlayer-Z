@@ -58,19 +58,6 @@ export interface PlayerSettings {
   lyricOffsets: Record<string, number>;
 }
 
-/** Discord 显示模式 */
-export type DiscordDisplayMode = "name" | "state" | "details";
-
-/** Discord RPC 配置 */
-export interface DiscordSettings {
-  /** 是否启用 */
-  enabled: boolean;
-  /** 暂停时是否显示状态 */
-  showWhenPaused: boolean;
-  /** 显示模式 */
-  displayMode: DiscordDisplayMode;
-}
-
 /** Last.fm 集成配置 */
 export interface LastfmSettings {
   /** 总开关 */
@@ -87,8 +74,6 @@ export interface LastfmSettings {
 export interface MediaSettings {
   /** 是否启用系统媒体控件（Linux MPRIS） */
   systemMediaControls: boolean;
-  /** Discord RPC 配置 */
-  discord: DiscordSettings;
 }
 
 /** 音乐库配置 */

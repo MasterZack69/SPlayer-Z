@@ -63,9 +63,6 @@ impl MediaEvent {
     }
 }
 
-/// 多歌手拼接分隔符（与前端 formatArtists 保持一致）
-const ARTIST_SEPARATOR: &str = " / ";
-
 /// 内部使用的元数据（cover_data 已转为 Vec<u8>）
 #[derive(Clone, PartialEq)]
 pub struct MetadataPayload {
@@ -75,13 +72,6 @@ pub struct MetadataPayload {
     pub cover_data: Option<Vec<u8>>,
     pub cover_url: Option<String>,
     pub duration_ms: Option<f64>,
-}
-
-impl MetadataPayload {
-    /// 拼接后的歌手文本，供只接受单一字符串的平台（SMTC / MPNowPlaying / Discord）使用
-    pub fn artist_text(&self) -> String {
-        self.artists.join(ARTIST_SEPARATOR)
-    }
 }
 
 impl fmt::Debug for MetadataPayload {
@@ -107,12 +97,12 @@ impl fmt::Debug for MetadataPayload {
 #[napi(object)]
 pub struct MetadataParam {
     pub title: String,
-    /// 歌手列表（MPRIS 需要多值，其余平台内部拼接）
+    /// Artist names exposed as separate MPRIS metadata values.
     pub artists: Vec<String>,
     pub album: String,
     /// 封面原始字节（用于系统媒体控件）
     pub cover_data: Option<Buffer>,
-    /// 封面 HTTP URL（用于 Discord RPC，Linux 无 cover_data 时也可用）
+    /// Artwork URL used by MPRIS when embedded artwork bytes are unavailable.
     pub cover_url: Option<String>,
     /// 时长（毫秒）
     pub duration_ms: Option<f64>,
@@ -169,23 +159,4 @@ pub struct TimelineParam {
 pub struct PlayModeParam {
     pub shuffle: bool,
     pub repeat: RepeatMode,
-}
-
-/// Discord 显示模式
-#[napi(string_enum)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DiscordDisplayMode {
-    /// Listening to SPlayer
-    Name,
-    /// Listening to {artist}
-    State,
-    /// Listening to {title}
-    Details,
-}
-
-#[napi(object)]
-#[derive(Debug, Clone)]
-pub struct DiscordConfig {
-    pub show_when_paused: bool,
-    pub display_mode: Option<DiscordDisplayMode>,
 }

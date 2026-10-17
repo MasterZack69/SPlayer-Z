@@ -57,4 +57,4 @@ Renderer IndexedDB stores include `splayer-z/library` and `splayer-z/queue`. Sto
 
 English is the default renderer and main-process locale. A saved language choice takes precedence. The first setup page chooses language before the remaining steps.
 
-System media controls, optional Discord presence, and optional Last.fm remain supported integrations. Only x86_64 and ARM64 Linux are supported. The Windows/macOS backends, taskbar integrations, and retired external lyric windows are removed. Linux uses CPAL output, PipeWire device monitoring, and MPRIS media controls.
+Linux MPRIS system media controls and optional Last.fm remain supported integrations. Only x86_64 and ARM64 Linux are supported. The Windows/macOS backends, taskbar integrations, and retired external lyric windows are removed. Linux uses CPAL output, PipeWire device monitoring, and MPRIS media controls.

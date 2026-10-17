@@ -33,7 +33,7 @@ The software processes this information to play and organize media, restore your
 ## 4. Network services
 
 1. **Self-hosted media servers:** Traffic is sent directly from your client to the configured server. You and the server operator are responsible for its security and privacy.
-2. **Discord and Last.fm:** When enabled, the app communicates with the relevant local IPC endpoint or official API. Their own terms and privacy policies apply.
+2. **Last.fm:** When enabled, the app communicates with the official Last.fm API. Its own terms and privacy policy apply.
 3. **Releases and downloads:** Update checks can contact GitHub and the currently configured update feed, whose defaults still point upstream. The documentation download widget also requests GitHub release metadata. Selecting a download mirror routes that request through the chosen provider.
 4. **Lyrics:** Local files and embedded lyrics stay local; lyrics supplied by your media server are requested from that server, not from a public lyric-search provider.
 5. **Artist artwork:** Local artist-avatar lookup can send artist names to MusicBrainz, then request artwork metadata from TheAudioDB and download the returned image. Images and unsuccessful lookup markers are cached locally. Offline-first playback does not mean the application never makes network requests.

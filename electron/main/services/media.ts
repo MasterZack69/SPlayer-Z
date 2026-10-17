@@ -3,18 +3,10 @@ import { mediaLog, nativeLogsDir } from "@main/utils/logger";
 import { isDev } from "@main/utils/config";
 import { store } from "@main/store";
 import type { MediaEvent, MetadataParam, PlayStateParam, TimelineParam } from "@splayer/media-ctrl";
-import type { DiscordDisplayMode, DiscordSettings } from "@shared/types/settings";
 
 export type { MediaEvent, MetadataParam, PlayStateParam, TimelineParam };
 
 type MediaCtrlModule = typeof import("@splayer/media-ctrl");
-
-/** DiscordDisplayMode 映射到 media-ctrl 的枚举值 */
-const DISCORD_MODE_MAP: Record<DiscordDisplayMode, "Name" | "State" | "Details"> = {
-  name: "Name",
-  state: "State",
-  details: "Details",
-};
 
 let mc: MediaCtrlModule | null = null;
 let eventHandler: ((event: MediaEvent) => void) | null = null;
@@ -28,22 +20,7 @@ const safeCall = (fn: () => void): void => {
   }
 };
 
-/** 应用 Discord RPC 配置 */
-const applyDiscordConfig = (discord?: DiscordSettings): void => {
-  if (!mc) return;
-  discord ??= store.get("media").discord;
-  if (discord.enabled) {
-    mc.enableDiscord();
-  } else {
-    mc.disableDiscord();
-  }
-  mc.setDiscordConfig({
-    showWhenPaused: discord.showWhenPaused,
-    displayMode: DISCORD_MODE_MAP[discord.displayMode],
-  });
-};
-
-/** 初始化原生模块并启用系统媒体控件 */
+/** Initialize the native Linux MPRIS controls and register media-key callbacks. */
 export const init = (): void => {
   mc = loadNativeModule<MediaCtrlModule>("media-ctrl.node", "media-ctrl");
   if (!mc) {
@@ -61,7 +38,6 @@ export const init = (): void => {
     if (mediaConfig.systemMediaControls) {
       mc.enable();
     }
-    applyDiscordConfig(mediaConfig.discord);
     mediaLog.info("系统媒体控件已初始化");
   } catch (error) {
     mediaLog.error("初始化失败:", error);
@@ -73,9 +49,6 @@ export const enable = (): void => safeCall(() => mc?.enable());
 
 /** 禁用系统媒体控件 */
 export const disable = (): void => safeCall(() => mc?.disable());
-
-/** 重新应用 Discord 配置 */
-export const reloadDiscordConfig = (): void => applyDiscordConfig();
 
 /** 关闭并清理资源 */
 export const shutdown = (): void => safeCall(() => mc?.shutdown());

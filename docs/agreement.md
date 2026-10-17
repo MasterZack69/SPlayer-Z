@@ -41,7 +41,7 @@ You must not use the software to violate applicable law, infringe third-party ri
 
 ## 5. Media servers and third-party content
 
-You must be authorized to access each configured server and its content. You are responsible for server availability, legality, and security. Optional services such as Last.fm and Discord are independently operated; their terms and privacy policies apply.
+You must be authorized to access each configured server and its content. You are responsible for server availability, legality, and security. Last.fm is independently operated; its terms and privacy policy apply when the optional integration is enabled.
 
 The developers claim no ownership over media, metadata, lyrics, covers, or other third-party content. Your access, storage, use, and distribution must comply with applicable law, authorization from rights holders, and service terms. Technical capability does not grant rights to third-party content.
 

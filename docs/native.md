@@ -9,7 +9,7 @@ SPlayer-Z uses Rust and NAPI-RS for decoding, output, metadata, and operating-sy
 | Module         | Responsibility                                                 | Platforms              |
 | -------------- | -------------------------------------------------------------- | ---------------------- |
 | `audio-engine` | FFmpeg decoding, CPAL output, DSP, metadata, covers and lyrics | x86_64 / aarch64 Linux |
-| `media-ctrl`   | System media controls and Discord integration                  | x86_64 / aarch64 Linux |
+| `media-ctrl`   | Linux MPRIS system media controls                              | x86_64 / aarch64 Linux |
 | `opencc`       | Text conversion used by lyric settings                         | x86_64 / aarch64 Linux |
 
 Recognition capture and Windows taskbar modules have been deleted. Do not re-enable removed subsystems to satisfy a stale reference.
