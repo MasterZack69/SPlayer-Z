@@ -46,7 +46,7 @@ For installation and build problems, start with [Downloads and installation](dow
 
 ## Playback and application information
 
-Enable **Settings → Player → Keep Screen Awake During Playback** to prevent display sleep while music is playing. It is off by default. Sleep inhibitors are held only for active playback, not while loading or idle, and are released on pause, stop, completion, playback failure, player reset, or exit. The desktop environment controls whether inhibitors are honored.
+Enable **Settings → Player → Keep Screen Awake During Playback** to prevent display sleep while music is playing. It is on by default. When disabled, the app never blocks screen sleep or automatic system suspension, including during playback. When enabled, sleep inhibitors are held only for active playback, not while loading or idle, and are released on pause, stop, completion, playback failure, player reset, or exit. The desktop environment controls whether inhibitors are honored.
 
 Local PCM preloading and crossfade remain available without a song cache. Streaming tracks play directly from your server; they are not downloaded into an automatic song cache. Cover, artist-artwork, background, and lyric caches remain under **Local & Cache**.
 

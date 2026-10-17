@@ -18,7 +18,7 @@ const playerCategory: SettingCategory = {
           key: "keepScreenAwake",
           type: "switch",
           binding: { store: "settings", path: "system.player.keepScreenAwake" },
-          defaultValue: false,
+          defaultValue: true,
         },
         {
           key: "autoPlay",

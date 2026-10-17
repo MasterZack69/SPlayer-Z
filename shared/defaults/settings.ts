@@ -14,7 +14,7 @@ export const DYNAMIC_ISLAND_BASE_HEIGHT = 40;
 export const defaultSystemConfig: SystemConfig = {
   player: {
     autoPlay: false,
-    keepScreenAwake: false,
+    keepScreenAwake: true,
     rememberLastTrack: true,
     fadeEnabled: true,
     fadeDuration: 200,

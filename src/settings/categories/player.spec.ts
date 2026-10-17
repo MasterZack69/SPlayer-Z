@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defaultSystemConfig } from "@shared/defaults/settings";
+import { deepMerge } from "../../../electron/main/store/utils";
 import playerCategory from "./player";
 
 const player = vi.hoisted(() => ({ preloadNextTrack: false, transitionMode: "none" }));
@@ -32,10 +34,14 @@ describe("local preloading and screen-awake settings", () => {
     await items.find((item) => item.key === "preloadNextTrack")!.action!(false);
     expect(player.transitionMode).toBe("none");
   });
-  it("offers a persistent opt-in screen-awake setting", () => {
+  it("enables screen-awake by default without overriding a saved off preference", () => {
+    expect(defaultSystemConfig.player.keepScreenAwake).toBe(true);
+    expect(
+      deepMerge(defaultSystemConfig, { player: { keepScreenAwake: false } }).player.keepScreenAwake,
+    ).toBe(false);
     expect(items.find((item) => item.key === "keepScreenAwake")).toMatchObject({
       type: "switch",
-      defaultValue: false,
+      defaultValue: true,
       binding: { store: "settings", path: "system.player.keepScreenAwake" },
     });
   });

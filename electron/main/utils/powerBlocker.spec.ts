@@ -12,11 +12,16 @@ describe("playback power inhibition", () => {
     mocks.nextId = 0;
     mocks.start.mockImplementation(() => mocks.nextId++);
   });
-  it("retains system sleep protection by default, without keeping the display awake", async () => {
+  it("never inhibits sleep when disabled, whether idle or playing", async () => {
     const service = await import("./powerBlocker");
+    service.updatePowerBlocker(false);
+    service.refreshPowerBlocker();
     service.updatePowerBlocker(true);
     service.updatePowerBlocker(true);
-    expect(mocks.start).toHaveBeenCalledExactlyOnceWith("prevent-app-suspension");
+    service.refreshPowerBlocker();
+    service.releasePowerBlocker();
+    expect(mocks.start).not.toHaveBeenCalled();
+    expect(mocks.stop).not.toHaveBeenCalled();
   });
   it("keeps the display awake only while playing and releases it on pause", async () => {
     mocks.enabled = true;
@@ -30,17 +35,25 @@ describe("playback power inhibition", () => {
     service.releasePowerBlocker();
     expect(mocks.stop).toHaveBeenCalledTimes(1);
   });
-  it("applies preference changes immediately without waiting for another player event", async () => {
+  it("releases immediately when disabled and reacquires only if enabled while playing", async () => {
     const service = await import("./powerBlocker");
     service.updatePowerBlocker(true);
+    expect(mocks.start).not.toHaveBeenCalled();
     mocks.enabled = true;
     service.refreshPowerBlocker();
-    expect(mocks.start).toHaveBeenLastCalledWith("prevent-display-sleep");
+    expect(mocks.start).toHaveBeenCalledExactlyOnceWith("prevent-display-sleep");
     mocks.enabled = false;
     service.refreshPowerBlocker();
-    expect(mocks.start).toHaveBeenLastCalledWith("prevent-app-suspension");
+    expect(mocks.stop).toHaveBeenCalledExactlyOnceWith(0);
+    expect(mocks.start).toHaveBeenCalledTimes(1);
+    service.refreshPowerBlocker();
+    service.updatePowerBlocker(true);
+    expect(mocks.start).toHaveBeenCalledTimes(1);
+    mocks.enabled = true;
+    service.refreshPowerBlocker();
+    expect(mocks.start).toHaveBeenCalledTimes(2);
     service.releasePowerBlocker();
-    expect(mocks.stop).toHaveBeenLastCalledWith(2);
+    expect(mocks.stop).toHaveBeenLastCalledWith(1);
   });
   it("never reacquires a lock from a settings refresh after a terminal release", async () => {
     mocks.enabled = true;
