@@ -17,7 +17,8 @@ Same as upstream: LRC, eLRC, KRC, QRC, TTML
 - Public-platform accounts, My Cloud, online playlists, daily picks, heart mode, and Personal FM
 - Playback History and Favorites sidebar shortcuts (local history/statistics and local liked songs remain)
 - Home discovery sections, On Repeat, and quick actions
-- Desktop/Dynamic Island lyric controls and automatic window restoration
+- Desktop/Dynamic Island lyric controls
+- Discord RPC and NCM Scrobble
 - Online lyric matching and AMLL TTML network fetching
 - Plugin initialization, plugin playback/lyric/cover fallbacks, and plugin settings
 - Download UI/service startup, music recognition, external API servers, and AI/MCP integration
