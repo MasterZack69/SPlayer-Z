@@ -32,8 +32,7 @@ import {
   setTrayLikeState,
 } from "@main/services/tray";
 import { getMainWindow } from "@main/window";
-import { appName, getSongCacheDir } from "@main/utils/config";
-import * as songCache from "@main/services/songCache";
+import { appName } from "@main/utils/config";
 import {
   parseArtists,
   parseAlbum,
@@ -132,8 +131,8 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
     switch (event.type) {
       case "stateChanged": {
         const state = (event.state ?? "idle") as PlayerState;
-        // 播放中阻止系统休眠，暂停/停止时释放唤醒锁，保证系统可正常休眠
-        updatePowerBlocker(state === "playing" || state === "loading");
+        // Inhibit system sleep during loading/playback; inhibit display sleep only while playing.
+        updatePowerBlocker(state === "playing" || state === "loading", state === "playing");
         // 更新缩略图工具栏和托盘菜单
         setTrayPlayState(state === "playing" ? "playing" : "paused");
         if (state === "playing") {
@@ -356,7 +355,7 @@ const completeTrackLoad = (
   };
 };
 
-/** 播放器相关 IPC */
+/** Register playback IPC and native state handling. */
 export const registerPlayerIpc = (): void => {
   ipcMain.handle(
     "player:prepareNext",
@@ -576,17 +575,6 @@ export const registerPlayerIpc = (): void => {
     } catch (error) {
       if (seq === loadSeq) activeCueRange = null;
       const code = classifyLoadError(error, source);
-      // 解码失败的源指向歌曲缓存目录 → 文件已损坏，把这条缓存项作废
-      if (
-        [
-          ErrorCode.FILE_DECODE_ERROR,
-          ErrorCode.FILE_NOT_FOUND,
-          ErrorCode.FILE_NO_AUDIO_STREAM,
-        ].includes(code) &&
-        source.startsWith(getSongCacheDir())
-      ) {
-        await songCache.invalidate(source);
-      }
       return fail(code, error);
     }
   });

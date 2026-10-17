@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@main/utils/proxy", () => ({ fetchWithProxy: vi.fn() }));
 vi.mock("../core/checktoken", () => ({ getAntiCheatTokenV3: vi.fn() }));
 vi.mock("../core/device", () => ({ getAnonymousToken: () => "", getDeviceId: () => "device" }));
 

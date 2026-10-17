@@ -40,6 +40,8 @@ export interface EqualizerSettings {
 export interface PlayerSettings {
   /** 加载后自动播放 */
   autoPlay: boolean;
+  /** Keep the display awake only while audio is playing. */
+  keepScreenAwake: boolean;
   /** 记忆上次播放的歌曲 */
   rememberLastTrack: boolean;
   /** 是否启用渐入渐出 */
@@ -110,19 +112,6 @@ export interface McpSettings {
   accessKey: string;
 }
 
-/** 网络代理协议 */
-export type NetworkProxyProtocol = "off" | "http" | "https" | "socks5";
-
-/** 网络代理配置 */
-export interface NetworkProxySettings {
-  /** 代理协议；off 时不改变原始请求路径 */
-  protocol: NetworkProxyProtocol;
-  /** 代理服务器地址 */
-  host: string;
-  /** 代理服务器端口 */
-  port: number;
-}
-
 /** 外部 API 服务运行时状态 */
 export interface ExternalApiStatus {
   /** 是否正在监听 */
@@ -177,22 +166,10 @@ export interface OnlineLyricSettings {
   amllDbServer: string;
 }
 
-/** 歌曲缓存配置 */
-export interface SongCacheSettings {
-  /** 歌曲缓存总开关 */
-  enabled: boolean;
-  /** 是否缓存个人流媒体服务器歌曲 */
-  cacheStreaming: boolean;
-  /** 上限（GB），0 表示不限制；超限按 LRU 淘汰 */
-  sizeLimitGb: number;
-}
-
 /** 缓存配置 */
 export interface CacheSettings {
   /** 自定义缓存目录；null 使用默认 {userData}/app-data/cache */
   dir: string | null;
-  /** 歌曲文件级缓存 */
-  songCache: SongCacheSettings;
 }
 
 /** 下载配置 */
@@ -239,20 +216,6 @@ export interface WindowStates {
   main: MainWindowState;
 }
 
-/** 应用更新通道候选值，同时作为运行时校验名单 */
-export const UPDATE_CHANNELS = ["stable", "beta", "alpha", "nightly"] as const;
-
-/** 应用更新通道 */
-export type UpdateChannel = (typeof UPDATE_CHANNELS)[number];
-
-/** 应用更新配置 */
-export interface AppUpdateSettings {
-  /** 自动检查更新 */
-  autoCheck: boolean;
-  /** 更新通道：stable 正式通道 / beta 预览通道 / alpha 内测通道 / nightly 持续构建通道 */
-  channel: UpdateChannel;
-}
-
 /** KG 登录版本 */
 export type KugouLoginVersion = "standard" | "concept";
 
@@ -278,8 +241,6 @@ export interface SystemConfig {
   externalApi: ExternalApiSettings;
   /** AI 集成使用的 MCP 服务 */
   mcp: McpSettings;
-  /** 应用更新配置 */
-  update: AppUpdateSettings;
   /** 系统配置 */
   system: {
     /** 记忆窗口状态 */
@@ -296,8 +257,6 @@ export interface SystemConfig {
     neteaseRealIp: boolean;
     /** KG 登录版本（standard 标准版 / concept 概念版） */
     kugouLoginVersion: KugouLoginVersion;
-    /** 网络代理配置 */
-    networkProxy: NetworkProxySettings;
     /** 注册为 Orpheus 协议处理程序，抢占网页端「用客户端打开」 */
     registerOrpheusProtocol: boolean;
   };

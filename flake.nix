@@ -5,7 +5,7 @@
   };
 
   outputs =
-    { nixpkgs, ... }:
+    { self, nixpkgs, ... }:
     let
       eachSystem = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
     in
@@ -28,7 +28,7 @@
 
             pnpmDeps = pkgs.fetchPnpmDeps {
               inherit (finalAttrs) pname version src;
-              hash = "sha256-wG7DGNQuNcjL3/nt9dNF9YkGc2O6qcwRkmI8fEs40FI=";
+              hash = "sha256-S/cv8pbUkA7kSi+KRHPEvn1D91OB85h9LjaGsHmbXwE=";
               fetcherVersion = 4;
             };
 
@@ -65,6 +65,8 @@
             env = {
               ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
               FFMPEG_MODE = "system";
+              SPLAYER_COMMIT = self.rev or self.dirtyRev or "";
+              SOURCE_DATE_EPOCH = toString (self.lastModified or 0);
             };
 
             postPatch = ''
@@ -195,6 +197,8 @@
 
             env = {
               FFMPEG_MODE = "system";
+              SPLAYER_COMMIT = self.rev or self.dirtyRev or "";
+              SOURCE_DATE_EPOCH = toString (self.lastModified or 0);
             };
 
             postPatch = ''
@@ -262,6 +266,8 @@
 
             env = {
               FFMPEG_MODE = "system";
+              SPLAYER_COMMIT = self.rev or self.dirtyRev or "";
+              SOURCE_DATE_EPOCH = toString (self.lastModified or 0);
               # Expose dynamic libraries for tests running inside dev shell
               LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
                 pkgs.ffmpeg-headless

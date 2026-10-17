@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
       transitionPreference: "standard",
     },
     system: {
-      cache: { songCache: { enabled: true, cacheStreaming: true } },
       lyric: { enableOnlineTTMLLyric: false },
       localLyric: { enableLocalTTMLOverride: false, repoDir: "" },
     },
@@ -34,7 +33,7 @@ const mocks = vi.hoisted(() => ({
     fmMode: false,
     shuffleMode: "off",
   },
-  candidate: { track: { id: "next", source: "netease" } },
+  candidate: { track: { id: "next", source: "local" } },
   resolve: vi.fn(),
   prepare: vi.fn(),
   cancel: vi.fn(),
@@ -63,8 +62,7 @@ describe("下一曲真实预载", () => {
     mocks.settings.player.preloadNextTrack = true;
     mocks.settings.player.transitionMode = "crossfade";
     mocks.settings.player.transitionPreference = "standard";
-    mocks.settings.system.cache.songCache = { enabled: true, cacheStreaming: true };
-    mocks.candidate.track = { id: "next", source: "netease" };
+    mocks.candidate.track = { id: "next", source: "local" };
     mocks.prepare.mockResolvedValue(true);
     mocks.cancel.mockResolvedValue(undefined);
     Object.assign(window, {
@@ -79,8 +77,8 @@ describe("下一曲真实预载", () => {
 
   it("已下载歌曲直接准备原生预载槽位", async () => {
     mocks.resolve.mockResolvedValueOnce({
-      source: "C:/downloads/next.flac",
-      provider: "download",
+      source: "/music/next.flac",
+      provider: "local",
       fromCache: false,
     });
     const preloader = await import("./nextTrackPreloader");
@@ -88,7 +86,7 @@ describe("下一曲真实预载", () => {
     await flushPromises();
     expect(mocks.prepare).toHaveBeenCalledWith(
       expect.any(String),
-      "C:/downloads/next.flac",
+      "/music/next.flac",
       undefined,
       "standard",
     );
@@ -99,9 +97,9 @@ describe("下一曲真实预载", () => {
 
   it("解析返回空值后允许同一候选重新预载", async () => {
     mocks.resolve.mockResolvedValueOnce(null).mockResolvedValueOnce({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
+      source: "/music/next.flac",
+      provider: "local",
+      fromCache: false,
     });
     const preloader = await import("./nextTrackPreloader");
     preloader.scheduleNextTrackPreload();
@@ -118,51 +116,15 @@ describe("下一曲真实预载", () => {
   it("当前歌曲加载完成前不启动下一曲预载", async () => {
     mocks.status.state = "loading";
     mocks.resolve.mockResolvedValue({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
+      source: "/music/next.flac",
+      provider: "local",
+      fromCache: false,
     });
     const preloader = await import("./nextTrackPreloader");
     preloader.installNextTrackPreloadWatchers();
     preloader.scheduleNextTrackPreload();
     await flushPromises();
     expect(mocks.resolve).not.toHaveBeenCalled();
-    mocks.status.state = "playing";
-    await flushPromises();
-    expect(mocks.prepare).toHaveBeenCalledOnce();
-  });
-
-  it("停止播放会取消在途下载，迟到结果不能创建槽位，恢复后可重新预载", async () => {
-    let finish!: (path: string) => void;
-    const cacheRequest = vi.fn(
-      (_id: string, _signal: AbortSignal) =>
-        new Promise<string>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    mocks.resolve.mockResolvedValueOnce({
-      source: "https://music/next",
-      provider: "official",
-      fromCache: false,
-      cacheRequest,
-    });
-    const preloader = await import("./nextTrackPreloader");
-    preloader.installNextTrackPreloadWatchers();
-    preloader.scheduleNextTrackPreload();
-    await flushPromises();
-    mocks.status.state = "stopped";
-    await flushPromises();
-    const [id, signal] = cacheRequest.mock.calls[0]!;
-    expect(signal.aborted).toBe(true);
-    expect(mocks.cancel).toHaveBeenCalledWith(id);
-    finish("C:/cache/next.bin");
-    await flushPromises();
-    expect(mocks.prepare).not.toHaveBeenCalled();
-    mocks.resolve.mockResolvedValue({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
-    });
     mocks.status.state = "playing";
     await flushPromises();
     expect(mocks.prepare).toHaveBeenCalledOnce();
@@ -181,7 +143,7 @@ describe("下一曲真实预载", () => {
     preloader.scheduleNextTrackPreload();
     mocks.status.state = "stopped";
     await flushPromises();
-    finish({ source: "C:/cache/next.bin", provider: "cache", fromCache: true });
+    finish({ source: "/music/next.flac", provider: "local", fromCache: false });
     await flushPromises();
     expect(mocks.prepare).not.toHaveBeenCalled();
     expect(preloader.consumePreloadedTrack(mocks.candidate.track as Track)).toBeNull();
@@ -202,7 +164,7 @@ describe("下一曲真实预载", () => {
     await flushPromises();
     expect(mocks.resolve).toHaveBeenCalledOnce();
     expect(mocks.cancel).not.toHaveBeenCalled();
-    finish({ source: "C:/cache/next.bin", provider: "cache", fromCache: true });
+    finish({ source: "/music/next.flac", provider: "local", fromCache: false });
     await flushPromises();
     expect(
       preloader.consumePreloadedTrack(mocks.candidate.track as Track)?.preparedId,
@@ -221,9 +183,9 @@ describe("下一曲真实预载", () => {
     preloader.scheduleNextTrackPreload();
     preloader.invalidateNextTrackPreload();
     mocks.resolve.mockResolvedValueOnce({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
+      source: "/music/next.flac",
+      provider: "local",
+      fromCache: false,
     });
     preloader.scheduleNextTrackPreload();
     await flushPromises();
@@ -237,7 +199,7 @@ describe("下一曲真实预载", () => {
   it("替换播放列表后等待当前曲加载完成，再准备下一首槽位", async () => {
     mocks.candidate.track.source = "local";
     mocks.resolve.mockResolvedValue({
-      source: "C:/music/next.flac",
+      source: "/music/next.flac",
       provider: "local",
       fromCache: false,
     });
@@ -256,15 +218,10 @@ describe("下一曲真实预载", () => {
     expect(preloader.peekPreparedTrack(mocks.candidate.track as Track)?.preparedId).toBeDefined();
   });
 
-  it.each([
-    { enabled: false, cacheStreaming: false },
-    { enabled: true, cacheStreaming: false },
-    { enabled: false, cacheStreaming: true },
-  ])("本地歌曲不依赖网络缓存开关：%j", async (cache) => {
-    mocks.settings.system.cache.songCache = cache;
+  it("preloads local songs without a disk song cache", async () => {
     mocks.candidate.track.source = "local";
     mocks.resolve.mockResolvedValue({
-      source: "C:/music/next.flac",
+      source: "/music/next.flac",
       provider: "local",
       fromCache: false,
     });
@@ -273,23 +230,22 @@ describe("下一曲真实预载", () => {
     await flushPromises();
     expect(mocks.prepare).toHaveBeenCalledWith(
       expect.any(String),
-      "C:/music/next.flac",
+      "/music/next.flac",
       undefined,
       "standard",
     );
     expect(preloader.peekPreparedTrack(mocks.candidate.track as Track)?.preparedId).toBeDefined();
   });
 
-  it("关闭缓存时本地 CUE 仍按片段起点准备", async () => {
-    mocks.settings.system.cache.songCache = { enabled: false, cacheStreaming: false };
+  it("local CUE preloading retains its start offset", async () => {
     Object.assign(mocks.candidate.track, {
       source: "local",
-      cueAudioPath: "C:/music/album.flac",
+      cueAudioPath: "/music/album.flac",
       cueStartMs: 120000,
       cueEndMs: 240000,
     });
     mocks.resolve.mockResolvedValue({
-      source: "C:/music/album.flac",
+      source: "/music/album.flac",
       provider: "local",
       fromCache: false,
     });
@@ -298,74 +254,19 @@ describe("下一曲真实预载", () => {
     await flushPromises();
     expect(mocks.prepare).toHaveBeenCalledWith(
       expect.any(String),
-      "C:/music/album.flac",
+      "/music/album.flac",
       120000,
       "standard",
     );
     expect(preloader.peekPreparedTrack(mocks.candidate.track as Track)?.preparedId).toBeDefined();
   });
 
-  it("等待缓存完成后才准备原生槽位，并将缓存路径与代次交给切歌", async () => {
-    let finish!: (path: string) => void;
-    const cacheRequest = vi.fn(
-      () =>
-        new Promise<string>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    mocks.resolve.mockResolvedValue({
-      source: "https://music/next",
-      provider: "official",
-      fromCache: false,
-      cacheRequest,
-    });
-    const preloader = await import("./nextTrackPreloader");
-    preloader.scheduleNextTrackPreload();
-    await flushPromises();
-    expect(mocks.prepare).not.toHaveBeenCalled();
-    finish("C:/cache/next.bin");
-    await flushPromises();
-    const id = mocks.prepare.mock.calls[0]![0];
-    expect(mocks.prepare).toHaveBeenCalledWith(id, "C:/cache/next.bin", undefined, "standard");
-    const result = preloader.consumePreloadedTrack(mocks.candidate.track as Track);
-    expect(result?.preparedId).toBe(id);
-    expect(result?.source?.source).toBe("C:/cache/next.bin");
-    expect(preloader.consumePreloadedTrack(mocks.candidate.track as Track)).toBeNull();
-  });
-
-  it("队列作废会取消缓存消费者，迟到下载不得打开原生槽位", async () => {
-    let finish!: (path: string) => void;
-    const cacheRequest = vi.fn(
-      () =>
-        new Promise<string>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    mocks.resolve.mockResolvedValue({
-      source: "https://music/next",
-      provider: "official",
-      fromCache: false,
-      cacheRequest,
-    });
-    const preloader = await import("./nextTrackPreloader");
-    preloader.scheduleNextTrackPreload();
-    await flushPromises();
-    preloader.invalidateNextTrackPreload();
-    const [id, signal] = cacheRequest.mock.calls[0] as unknown as [string, AbortSignal];
-    expect(signal.aborted).toBe(true);
-    expect(mocks.cancel).toHaveBeenCalledWith(id);
-    finish("C:/cache/next.bin");
-    await flushPromises();
-    expect(mocks.prepare).not.toHaveBeenCalled();
-    expect(preloader.consumePreloadedTrack(mocks.candidate.track as Track)).toBeNull();
-  });
-
   it("未准备完就切歌时取消准备任务，不能消费未就绪资源", async () => {
     let finish!: (ready: boolean) => void;
     mocks.resolve.mockResolvedValue({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
+      source: "/music/next.flac",
+      provider: "local",
+      fromCache: false,
     });
     mocks.prepare.mockImplementation(
       () =>
@@ -383,35 +284,11 @@ describe("下一曲真实预载", () => {
     expect(preloader.consumePreloadedTrack(mocks.candidate.track as Track)).toBeNull();
   });
 
-  it("关闭缓存后不再启动预载", async () => {
-    mocks.settings.system.cache.songCache.enabled = false;
-    const preloader = await import("./nextTrackPreloader");
-    preloader.scheduleNextTrackPreload();
-    await flushPromises();
-    expect(mocks.resolve).not.toHaveBeenCalled();
-    expect(mocks.prepare).not.toHaveBeenCalled();
-  });
-
-  it("试听和缓存失败仍保留正常加载路径，不假报原生预载成功", async () => {
-    mocks.resolve.mockResolvedValue({
-      source: "https://music/trial",
-      provider: "trial",
-      fromCache: false,
-    });
-    const preloader = await import("./nextTrackPreloader");
-    preloader.scheduleNextTrackPreload();
-    await flushPromises();
-    expect(mocks.prepare).not.toHaveBeenCalled();
-    expect(
-      preloader.consumePreloadedTrack(mocks.candidate.track as Track)?.preparedId,
-    ).toBeUndefined();
-  });
-
   it.each(["关闭过渡", "修改倾向", "关闭预载"])("%s 时保留已提交交接的所有权", async (change) => {
     mocks.resolve.mockResolvedValue({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
+      source: "/music/next.flac",
+      provider: "local",
+      fromCache: false,
     });
     const preloader = await import("./nextTrackPreloader");
     preloader.installNextTrackPreloadWatchers();
@@ -435,9 +312,9 @@ describe("下一曲真实预载", () => {
 
   it("迟到槽位通知不能取走当前备用槽位", async () => {
     mocks.resolve.mockResolvedValue({
-      source: "C:/cache/next.bin",
-      provider: "cache",
-      fromCache: true,
+      source: "/music/next.flac",
+      provider: "local",
+      fromCache: false,
     });
     const preloader = await import("./nextTrackPreloader");
     preloader.scheduleNextTrackPreload();
@@ -446,5 +323,14 @@ describe("下一曲真实预载", () => {
       preloader.beginPreparedTransition(mocks.candidate.track as Track, "old-slot"),
     ).toBeNull();
     expect(preloader.peekPreparedTrack(mocks.candidate.track as Track)?.preparedId).toBeTruthy();
+  });
+  it("never preloads or downloads a streaming track to disk", async () => {
+    mocks.candidate.track.source = "streaming";
+    const preloader = await import("./nextTrackPreloader");
+    preloader.scheduleNextTrackPreload();
+    await flushPromises();
+    expect(mocks.resolve).not.toHaveBeenCalled();
+    expect(mocks.prepare).not.toHaveBeenCalled();
+    expect(preloader.consumePreloadedTrack(mocks.candidate.track as Track)).toBeNull();
   });
 });

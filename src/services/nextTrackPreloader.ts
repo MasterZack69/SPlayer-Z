@@ -24,7 +24,6 @@ export interface NextTrackPreloadResult {
 
 let currentToken = 0;
 let nativePreloadId: string | null = null;
-let preloadAbort: AbortController | null = null;
 let cachedResult: NextTrackPreloadResult | null = null;
 let currentContextKey: string | null = null;
 let pendingCover: HTMLImageElement | null = null;
@@ -78,12 +77,10 @@ const preloadCover = async (url: string): Promise<void> => {
 };
 
 /**
- * 作废当前的预载缓存
+ * Invalidate prepared audio, artwork, and lyrics for the next track.
  */
 export const invalidateNextTrackPreload = (): void => {
   currentToken++;
-  preloadAbort?.abort();
-  preloadAbort = null;
   if (nativePreloadId) void window.api.player.cancelPrepared(nativePreloadId).catch(console.warn);
   nativePreloadId = null;
   cachedResult = null;
@@ -96,9 +93,9 @@ export const invalidateNextTrackPreload = (): void => {
 };
 
 /**
- * 消费预载结果
- * @param track - 正在切入播放的目标歌曲
- * @returns 匹配的预载结果，未命中或已作废则返回 null
+ * Consume a prepared local track once.
+ * @param track - Track becoming active.
+ * @returns Matching prepared result, or null if absent or stale.
  */
 export const consumePreloadedTrack = (track: Track): NextTrackPreloadResult | null => {
   if (!useSettingsStore().player.preloadNextTrack) {
@@ -121,7 +118,6 @@ export const consumePreloadedTrack = (track: Track): NextTrackPreloadResult | nu
   }
   const result = cachedResult;
   nativePreloadId = null;
-  preloadAbort = null;
   currentToken++;
   cachedResult = null;
   currentContextKey = null;
@@ -206,10 +202,7 @@ export const scheduleNextTrackPreload = (): void => {
   }
 
   const candidateTrack = candidateResult.track;
-  if (
-    candidateTrack.source !== "local" &&
-    (!settings.system.cache.songCache.enabled || !settings.system.cache.songCache.cacheStreaming)
-  ) {
+  if (candidateTrack.source !== "local") {
     invalidateNextTrackPreload();
     return;
   }
@@ -230,8 +223,6 @@ export const scheduleNextTrackPreload = (): void => {
   preloadLyricForTrack(candidateTrack);
   const token = ++currentToken;
   const id = crypto.randomUUID();
-  const abort = new AbortController();
-  preloadAbort = abort;
   nativePreloadId = id;
   currentContextKey = contextKey;
   cachedResult = null;
@@ -246,7 +237,7 @@ export const scheduleNextTrackPreload = (): void => {
         void preloadCover(candidateTrack.cover);
       }
       // 音源预拉取
-      let source = await resolveTrackSource(candidateTrack, {
+      const source = await resolveTrackSource(candidateTrack, {
         silent: true,
       });
       if (token !== currentToken) return;
@@ -257,11 +248,6 @@ export const scheduleNextTrackPreload = (): void => {
         });
         invalidateNextTrackPreload();
         return;
-      }
-      if (source.cacheRequest) {
-        const cachedPath = await source.cacheRequest(id, abort.signal);
-        if (token !== currentToken) return;
-        if (cachedPath) source = { source: cachedPath, fromCache: true, provider: "cache" };
       }
       let preparedId: string | undefined;
       if (source.provider === "local" || source.provider === "download" || source.fromCache) {
@@ -301,7 +287,7 @@ export const scheduleNextTrackPreload = (): void => {
   })();
 };
 
-/** 安装预载上下文监听 */
+/** Watch playback context and invalidate stale local preloads. */
 export const installNextTrackPreloadWatchers = (): void => {
   if (stopContextWatch) return;
   const settings = useSettingsStore();
@@ -312,8 +298,6 @@ export const installNextTrackPreloadWatchers = (): void => {
       settings.player.preloadNextTrack,
       settings.player.transitionMode,
       settings.player.transitionPreference,
-      settings.system.cache.songCache.enabled,
-      settings.system.cache.songCache.cacheStreaming,
       status.playIndex,
       status.state,
       status.fmMode,

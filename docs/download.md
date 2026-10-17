@@ -29,6 +29,6 @@ For development, use `nix develop`. See [Nix and PipeWire diagnostics](troublesh
 
 ## Updates
 
-The in-app updater and packaged update metadata use [SPlayer-Z Releases](https://github.com/MasterZack69/SPlayer-Z/releases). AppImage and supported distribution packages can update in-app; development and unpacked builds open the release page. A channel without a published SPlayer-Z release has no update available; it never falls back to another project.
+Install new versions from [SPlayer-Z Releases](https://github.com/MasterZack69/SPlayer-Z/releases) or through your package manager. The application does not check for, download, or install its own updates.
 
 See [Linux Wayland](troubleshooting/wayland.md), [Ubuntu startup](troubleshooting/ubuntu-sandbox.md) for platform-specific issues.

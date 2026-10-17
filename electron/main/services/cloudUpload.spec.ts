@@ -11,7 +11,6 @@ vi.mock("@main/apis/netease/core/device", () => ({
   getAnonymousToken: () => "",
   getDeviceId: () => "device",
 }));
-vi.mock("@main/utils/proxy", () => ({ fetchWithProxy: vi.fn() }));
 vi.mock("node:fs/promises", () => {
   const mock = { stat: vi.fn(async () => ({ size: 4 })) };
   return { ...mock, default: mock };

@@ -10,7 +10,7 @@ import type {
   PluginMatchCoverArgs,
 } from "@shared/types/plugin";
 import type { HotkeyActionId, HotkeyBinding, HotkeyConflict } from "@shared/types/hotkey";
-import type { LoadOptions, Track, TrackSource, TransitionPreference } from "@shared/types/player";
+import type { LoadOptions, Track, TransitionPreference } from "@shared/types/player";
 import type {
   StreamingServerInput,
   StreamingFavoriteChange,
@@ -18,7 +18,6 @@ import type {
 } from "@shared/types/streaming";
 import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
 import type { TagEditRequest } from "@shared/types/tagEditor";
-import type { UpdateEvent } from "@shared/types/update";
 import type { CloudUploadProgress } from "@shared/types/cloudUpload";
 import type { MusicCommentQuery } from "@shared/types/comment";
 import type { AiModelSaveInput } from "@shared/types/ai";
@@ -210,7 +209,6 @@ const api = {
     // 重启应用
     relaunch: () => ipcRenderer.invoke("system:relaunch"),
     // 测试当前网络代理
-    testNetworkProxy: () => ipcRenderer.invoke("system:testNetworkProxy"),
     // 订阅主进程下发的 orpheus 唤起 URL
     onProtocolUrl: (callback: (url: string) => void) =>
       subscribe<string>("protocol:orpheus", callback),
@@ -462,30 +460,6 @@ const api = {
     pickDir: () => ipcRenderer.invoke("cache:pickDir"),
     // 还原默认缓存目录
     resetDir: () => ipcRenderer.invoke("cache:resetDir"),
-    // 单曲文件缓存运行时
-    song: {
-      // 命中查询：返回本地绝对路径或 null
-      lookup: (cacheKey: string): Promise<string | null> =>
-        ipcRenderer.invoke("cache:song:lookup", cacheKey),
-      /**
-       * 下载歌曲到缓存，预载调用方需要等待下载完成
-       * @param cacheKey - 音源与音质对应的缓存键
-       * @param source - 歌曲来源
-       * @param streamUrl - 下载地址
-       * @param preloadId - 可选的预载消费者标识，用于租约保留和独立取消
-       * @returns 缓存文件路径，失败或取消时返回 null
-       */
-      fetch: (
-        cacheKey: string,
-        source: TrackSource,
-        streamUrl: string,
-        preloadId?: string,
-      ): Promise<string | null> =>
-        ipcRenderer.invoke("cache:song:fetch", cacheKey, source, streamUrl, preloadId),
-      // 取消正在进行的下载
-      cancel: (cacheKey: string): Promise<void> =>
-        ipcRenderer.invoke("cache:song:cancel", cacheKey),
-    },
   },
   streaming: {
     /**
@@ -651,19 +625,6 @@ const api = {
     save: (input: AiModelSaveInput) => ipcRenderer.invoke("aiModel:save", input),
     remove: (id: string) => ipcRenderer.invoke("aiModel:remove", id),
     setActive: (id: string | null) => ipcRenderer.invoke("aiModel:setActive", id),
-  },
-  update: {
-    getState: () => ipcRenderer.invoke("update:getState"),
-    // 检查更新
-    check: (manual: boolean) => ipcRenderer.invoke("update:check", manual),
-    // 下载更新（Win/Linux）
-    download: () => ipcRenderer.invoke("update:download"),
-    // 退出并安装
-    install: () => ipcRenderer.invoke("update:install"),
-    // 打开 Releases 下载页（mac / 兜底）
-    openDownloadPage: () => ipcRenderer.invoke("update:openDownloadPage"),
-    // 订阅更新事件
-    onEvent: (callback: (event: UpdateEvent) => void) => subscribe("update:event", callback),
   },
   stats: {
     // 记录一次播放

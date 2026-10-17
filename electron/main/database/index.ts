@@ -90,18 +90,6 @@ export const initDatabase = (): void => {
       PRIMARY KEY (platform, id)
     );
 
-    CREATE TABLE IF NOT EXISTS song_cache (
-      cache_key TEXT PRIMARY KEY,
-      source TEXT NOT NULL,
-      filename TEXT NOT NULL,
-      size INTEGER NOT NULL,
-      mime TEXT,
-      cached_at INTEGER NOT NULL,
-      last_used_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_song_cache_last_used ON song_cache(last_used_at);
-    CREATE INDEX IF NOT EXISTS idx_song_cache_source ON song_cache(source);
-
     CREATE TABLE IF NOT EXISTS play_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       track_id TEXT NOT NULL,

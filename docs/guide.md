@@ -43,3 +43,11 @@ Open **Queue** from the player controls to inspect or rearrange upcoming tracks.
 Use Settings for appearance, playback, lyrics, shortcuts, services, media sources, local caches, and application information. Optional Last.fm integration remains under **Services**. Media-server credentials are separate from those integrations.
 
 For installation and build problems, start with [Downloads and installation](download.md) or [Debugging](troubleshooting/debug.md).
+
+## Playback and application information
+
+Enable **Settings → Player → Keep Screen Awake During Playback** to prevent display sleep while music is playing. It is off by default and releases the display inhibitor on pause, stop, or exit. The desktop environment controls whether inhibitors are honored.
+
+Local PCM preloading and crossfade remain available without a song cache. Streaming tracks play directly from your server; they are not downloaded into an automatic song cache. Cover, artist-artwork, background, and lyric caches remain under **Local & Cache**.
+
+About identifies MasterZack69 as maintainer and acknowledges upstream SPlayer-Next contributors. Application updates are installed manually, not checked for in the background.

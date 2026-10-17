@@ -15,7 +15,6 @@ import * as playback from "@/services/playback";
 import * as lyricLoader from "@/services/lyric/loader";
 import * as abLoop from "@/services/abLoop";
 import * as autoClose from "@/services/autoClose";
-import * as cacheScheduler from "@/services/cacheScheduler";
 import { getDeviceVolume, setDeviceVolume } from "@/services/deviceVolume";
 import { resolveTrackSource, type ResolvedTrackSource } from "@/services/audioSource";
 import {
@@ -118,9 +117,9 @@ const skipOnFailure = async (
 export type LoadOutcome = { ok: true; track: Track | null } | { ok: false; error?: string };
 
 /**
- * 切歌通用前置
- * @param duration - 新歌时长（毫秒），未知时传 0
- * @param anchor - 已经播放的新曲锚点，交接时保持源时间连续
+ * Reset renderer state for a new track.
+ * @param duration - New track duration in milliseconds, or zero if unknown.
+ * @param anchor - Active playback anchor, preserving time across handoffs.
  */
 const resetForLoad = (duration: number, anchor?: LoadResult["playback"]): void => {
   const status = useStatusStore();
@@ -136,8 +135,6 @@ const resetForLoad = (duration: number, anchor?: LoadResult["playback"]): void =
   if (anchor) playback.setSpeed(anchor.speed);
   playback.setPlaying(anchor?.state === "playing");
   playback.setCurrentTime(status.position, { force: true });
-  // 上一首未达到缓存触发阈值的请求丢弃
-  cacheScheduler.cancel();
 };
 
 /**
@@ -389,16 +386,13 @@ const loadTrack = async (
       if (loaded.error) handleError(loaded.error);
       shouldSkip = Boolean(loaded.error && isSkippableError(loaded.error));
     } else {
-      const { result, resolved } = loaded;
+      const { result } = loaded;
       if (!result.ok && result.error && isSkippableError(result.error)) {
         handleError(result.error);
         shouldSkip = true;
       } else if (result.ok) {
         // 用户主动触发的成功播放记入历史；initPlayer 的恢复路径走 load() 不经此处
         void useHistoryStore().record(track);
-        if (resolved.cacheRequest) {
-          cacheScheduler.schedule(track.id, resolved.cacheRequest);
-        }
         scheduleNextTrackPreload();
       } else if (result.error) {
         handleError(result.error);
@@ -416,10 +410,9 @@ const loadTrack = async (
 };
 
 /**
- * 热替换当前播放
- * 切换在线音质、或在线 URL 过期时调用：重新解析 URL 并从当前进度续播
- * @param forcePlay - 重载后强制播放
- * @returns 是否完成（成功或被更新的加载接管）；解析/加载失败返回 false，调用方据此决定是否跳曲
+ * Refresh the current remote source without losing playback position.
+ * @param forcePlay - Force playback after reloading.
+ * @returns Whether loading succeeded or was superseded; false lets callers skip failed sources.
  */
 export const reloadCurrentTrack = async (forcePlay?: boolean): Promise<boolean> => {
   const media = useMediaStore();
@@ -462,9 +455,6 @@ export const reloadCurrentTrack = async (forcePlay?: boolean): Promise<boolean> 
   }
   if (shouldPlay && myPauseToken === pauseToken) await play();
   if (resumeToken !== trackToken) return true;
-  if (loaded.resolved.cacheRequest) {
-    cacheScheduler.schedule(track.id, loaded.resolved.cacheRequest);
-  }
   scheduleNextTrackPreload();
   return true;
 };
@@ -1432,7 +1422,7 @@ export const initPlayer = async (): Promise<void> => {
   scheduleNextTrackPreload();
 };
 
-/** 恢复上次播放状态 */
+/** Restore the saved last track and its optional playback position. */
 export const restoreLastTrack = async (): Promise<void> => {
   const status = useStatusStore();
   const settings = useSettingsStore();
@@ -1458,9 +1448,6 @@ export const restoreLastTrack = async (): Promise<void> => {
     if (loaded.status === "loaded" && loaded.result.ok) {
       if (settings.system.player.rememberLastTrack && lastPosition > 0) {
         await seek(lastPosition);
-      }
-      if (loaded.resolved.cacheRequest) {
-        cacheScheduler.schedule(lastTrack.id, loaded.resolved.cacheRequest);
       }
       if (pendingPlayAfterRestore) {
         pendingPlayAfterRestore = false;

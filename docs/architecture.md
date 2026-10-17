@@ -28,7 +28,7 @@ Home contains library statistics and listening insights below the random-track s
 
 ## Media servers
 
-`electron/main/services/streaming/` contains server configuration, connection handling, adapters, cover proxying, synchronization, and playback sessions. Complete staging snapshots publish atomically. Server identity and media revisions isolate playback, cached files, and downloads across configuration changes.
+`electron/main/services/streaming/` contains server configuration, connection handling, adapters, cover proxying, synchronization, and playback sessions. Complete staging snapshots publish atomically. Server identity and media revisions isolate playback and downloads across configuration changes.
 
 Server responses are authoritative for artist fields and favorites. Reports follow native playback events, not preloads or downloads. See [Media servers](streaming.md).
 
@@ -47,7 +47,7 @@ Settings are declared in `src/settings/schema.ts`, with category implementations
 ```text
 config/             settings.json, streaming.json, lastfm.json
 database/           library.db
-cache/              covers, artists, backgrounds, songs
+cache/              covers, artists, backgrounds
 logs/               application and native diagnostics
 ```
 

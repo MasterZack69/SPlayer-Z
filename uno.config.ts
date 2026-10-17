@@ -10,7 +10,6 @@ export default defineConfig({
   },
   theme: {
     fontFamily: {
-      logo: "logo",
       sans: "var(--user-font, var(--app-font))",
     },
     animation: {

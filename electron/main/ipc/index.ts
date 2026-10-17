@@ -10,7 +10,6 @@ import { registerStreamingIpc } from "./streaming";
 import { registerLastfmIpc } from "./lastfm";
 import { registerCacheIpc } from "./cache";
 import { registerStatsIpc } from "./stats";
-import { registerUpdateIpc } from "./update";
 import { registerPlaylistIpc } from "./playlist";
 import { registerOpenccIpc } from "./opencc";
 
@@ -33,5 +32,4 @@ export const registerIpcHandlers = (onStartupComplete: () => void): void => {
   registerLastfmIpc();
   registerCacheIpc();
   registerStatsIpc();
-  registerUpdateIpc();
 };

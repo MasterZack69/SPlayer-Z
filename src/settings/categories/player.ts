@@ -15,6 +15,12 @@ const playerCategory: SettingCategory = {
       id: "playControl",
       items: [
         {
+          key: "keepScreenAwake",
+          type: "switch",
+          binding: { store: "settings", path: "system.player.keepScreenAwake" },
+          defaultValue: false,
+        },
+        {
           key: "autoPlay",
           type: "switch",
           binding: { store: "settings", path: "system.player.autoPlay" },
@@ -71,23 +77,8 @@ const playerCategory: SettingCategory = {
           type: "switch",
           binding: { store: "settings", path: "player.preloadNextTrack" },
           defaultValue: false,
-          confirm: {
-            when: (next) =>
-              Boolean(next) &&
-              (!useSettingsStore().system.cache.songCache.enabled ||
-                !useSettingsStore().system.cache.songCache.cacheStreaming),
-            titleKey: "settings.confirm.preloadCacheTitle",
-            contentKey: "settings.confirm.preloadCacheContent",
-            type: "warning",
-          },
-          action: async (enabled) => {
-            if (!enabled) {
-              useSettingsStore().player.transitionMode = "none";
-              return;
-            }
-            const settings = useSettingsStore();
-            await settings.setSystem("cache.songCache.enabled", true);
-            await settings.setSystem("cache.songCache.cacheStreaming", true);
+          action: (enabled) => {
+            if (!enabled) useSettingsStore().player.transitionMode = "none";
           },
         },
       ],
@@ -104,25 +95,8 @@ const playerCategory: SettingCategory = {
             { value: "crossfade", labelKey: "settings.transitionMode.crossfade" },
           ],
           defaultValue: "none",
-          confirm: {
-            when: (next) =>
-              next === "crossfade" &&
-              (!useSettingsStore().system.cache.songCache.enabled ||
-                !useSettingsStore().system.cache.songCache.cacheStreaming),
-            titleKey: "settings.confirm.preloadCacheTitle",
-            contentKey: "settings.confirm.preloadCacheContent",
-            type: "warning",
-          },
-          action: async (mode) => {
-            if (mode !== "crossfade") return;
-            const settings = useSettingsStore();
-            settings.player.preloadNextTrack = true;
-            if (!settings.system.cache.songCache.enabled) {
-              await settings.setSystem("cache.songCache.enabled", true);
-            }
-            if (!settings.system.cache.songCache.cacheStreaming) {
-              await settings.setSystem("cache.songCache.cacheStreaming", true);
-            }
+          action: (mode) => {
+            if (mode === "crossfade") useSettingsStore().player.preloadNextTrack = true;
           },
           children: [
             {

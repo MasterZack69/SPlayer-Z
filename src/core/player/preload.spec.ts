@@ -82,7 +82,6 @@ vi.mock("@/services/playback", () => ({
 vi.mock("@/services/lyric/loader", () => ({ beginLoad: vi.fn(), loadForTrack: vi.fn() }));
 vi.mock("@/services/coverLoader", () => ({ loadCoverForTrack: vi.fn() }));
 vi.mock("@/services/abLoop", () => ({ reset: vi.fn() }));
-vi.mock("@/services/cacheScheduler", () => ({ cancel: vi.fn(), schedule: vi.fn() }));
 vi.mock("@/services/deviceVolume", () => ({ getDeviceVolume: vi.fn(), setDeviceVolume: vi.fn() }));
 vi.mock("@/services/audioSource", () => ({ resolveTrackSource: mocks.resolve }));
 vi.mock("@/services/nextTrackPreloader", () => ({

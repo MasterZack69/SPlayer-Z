@@ -39,7 +39,7 @@ describe("离线应用功能边界", () => {
     const core = source("electron/main/core/index.ts");
     for (const feature of ["pluginRegistry", "initDownload", "startMcpServer", "startServer"])
       expect(core).not.toContain(feature);
-    expect(core).toContain("initSongCache");
+    expect(core).not.toContain("initSongCache");
     expect(ipc).toContain("registerStreamingIpc");
   });
   it("removes NCM scrobbling, public quality switching, and taskbar progress", () => {

@@ -6,19 +6,18 @@
  */
 
 import { DUN_DOMAIN_V3 } from "./config";
-import { fetchWithProxy } from "@main/utils/proxy";
 import { neteaseLog } from "@main/utils/logger";
 
 const PRODUCT_NUMBER = "YD00000558929251";
 
 /**
- * 实时从易盾获取反作弊 Token (v3)
- * @returns 成功返回 token 字符串，失败返回空字符串
+ * Fetch a live v3 anti-cheat token for the legacy API client.
+ * @returns Token on success, or an empty string on failure.
  */
 export const getAntiCheatTokenV3 = async (): Promise<string> => {
   const url = `${DUN_DOMAIN_V3}/v3/b?pn=${PRODUCT_NUMBER}`;
   try {
-    const res = await fetchWithProxy(url, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     const text = await res.text();
     const match = text.match(/null\(\[(\d+),\d+,"([^"]+)"\]\)/);
     if (match && match[1] === "200") {

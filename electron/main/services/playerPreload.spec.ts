@@ -10,11 +10,6 @@ vi.mock("@main/services/engine", () => ({
     analyzeTail: mocks.analyze,
   }),
 }));
-vi.mock("@main/services/songCache", () => ({
-  pinPreload: vi.fn(),
-  cancelPreload: vi.fn(),
-  invalidate: vi.fn(),
-}));
 vi.mock("@main/store", () => ({ store: { get: () => false } }));
 vi.mock("@main/utils/logger", () => ({ playerLog: { info: vi.fn(), warn: vi.fn() } }));
 

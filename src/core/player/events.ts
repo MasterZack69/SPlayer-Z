@@ -6,7 +6,6 @@ import { useFavorite } from "@/composables/useFavorite";
 import * as playback from "@/services/playback";
 import * as autoClose from "@/services/autoClose";
 import * as abLoop from "@/services/abLoop";
-import * as cacheScheduler from "@/services/cacheScheduler";
 import { setDeviceVolume } from "@/services/deviceVolume";
 import * as playStats from "./stats";
 import {
@@ -121,8 +120,6 @@ export const handleEvent = async (event: PlayerEvent): Promise<void> => {
       useMediaStore().updateLyricIndex(adjusted + status.lyricOffsetMs);
       // AB 循环：到达 B 点 seek 回 A
       abLoop.checkLoop(adjusted);
-      // 推进延时缓存调度
-      cacheScheduler.tick(adjusted);
       void trySmartTransition(adjusted).catch((error) => {
         console.warn("[player] 播放过渡失败", error);
       });

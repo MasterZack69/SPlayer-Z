@@ -25,4 +25,4 @@ This setting concerns playback, not which categories search returns.
 
 ## Troubleshooting
 
-Wait for local scanning or server synchronization to finish. Check that the intended media server is active. If a server is offline, its synchronized metadata may still be searchable even though an uncached track cannot play. Report the current page, query, expected category, and whether the missing item is local or server-backed.
+Wait for local scanning or server synchronization to finish. Check that the intended media server is active. If a server is offline, its synchronized metadata may still be searchable even though a server-backed track cannot play. Report the current page, query, expected category, and whether the missing item is local or server-backed.

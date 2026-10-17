@@ -5,6 +5,7 @@ defineProps<{
 
 const router = useRouter();
 
+/** Navigate to the application home page. */
 const goHome = (): void => {
   router.push("/");
 };
@@ -17,13 +18,15 @@ const goHome = (): void => {
       tabindex="0"
       class="inline-flex items-center cursor-pointer transform-gpu transition-transform duration-300 hover:scale-105 active:scale-100"
       @click="goHome"
+      @keydown.enter="goHome"
+      @keydown.space.prevent="goHome"
     >
       <SLogo :size="30" class="shrink-0" />
       <span
-        class="text-[22px] text-primary mt-0.5 leading-10 overflow-hidden whitespace-nowrap font-logo transition-[width,opacity,margin] duration-300"
-        :class="collapsed ? 'w-0 opacity-0 ml-0' : 'w-[90px] ml-2'"
+        class="text-[22px] text-primary mt-0.5 leading-10 overflow-hidden whitespace-nowrap font-semibold transition-[width,opacity,margin] duration-300"
+        :class="collapsed ? 'w-0 opacity-0 ml-0' : 'w-[110px] ml-2'"
       >
-        SPlayer
+        SPlayer-Z
       </span>
     </div>
   </div>

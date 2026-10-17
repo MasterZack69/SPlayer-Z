@@ -111,7 +111,6 @@ vi.mock("@/services/autoClose", () => ({
   onTrackEnded: () => mocks.stopAfterEnd,
   shouldStopAfterCurrentTrack: () => false,
 }));
-vi.mock("@/services/cacheScheduler", () => ({ cancel: vi.fn(), schedule: vi.fn() }));
 vi.mock("@/services/deviceVolume", () => ({ getDeviceVolume: vi.fn(), setDeviceVolume: vi.fn() }));
 vi.mock("@/composables/useFavorite", () => ({ useFavorite: vi.fn() }));
 vi.mock("@/composables/useToast", () => ({ toast: { error: mocks.toast } }));

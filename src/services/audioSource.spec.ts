@@ -83,25 +83,13 @@ describe("离线与自托管音源", () => {
     });
     expect(mocks.download).not.toHaveBeenCalled();
   });
-  it("服务器缓存按身份版本隔离", async () => {
+  it("ignores old cache settings and always resolves the server stream", async () => {
     mocks.settings.system.cache.songCache.enabled = true;
-    mocks.lookup.mockResolvedValue("/cache/server.flac");
-    expect((await resolveTrackSource(server))?.provider).toBe("cache");
-    expect(mocks.lookup).toHaveBeenCalledWith("s:server:remote:r3");
-  });
-  it("服务器缓存仍支持预载和取消", async () => {
-    mocks.settings.system.cache.songCache.enabled = true;
+    mocks.lookup.mockResolvedValue("/cache/old.flac");
     const result = await resolveTrackSource(server);
-    const abort = new AbortController();
-    abort.abort();
-    expect(await result?.cacheRequest?.("next", abort.signal)).toBeNull();
+    expect(result?.provider).toBe("streaming");
+    expect(result).not.toHaveProperty("cacheRequest");
+    expect(mocks.lookup).not.toHaveBeenCalled();
     expect(mocks.fetch).not.toHaveBeenCalled();
-    await result?.cacheRequest?.("next");
-    expect(mocks.fetch).toHaveBeenCalledWith(
-      "s:server:remote:r3",
-      "streaming",
-      "streaming://server/remote?revision=3",
-      "next",
-    );
   });
 });

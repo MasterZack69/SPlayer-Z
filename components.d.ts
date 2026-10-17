@@ -77,13 +77,12 @@ declare module 'vue' {
     HotkeyConfig: typeof import('./src/components/settings/custom/HotkeyConfig.vue')['default']
     IconLucideArrowRight: typeof import('~icons/lucide/arrow-right')['default']
     IconLucideArrowUp: typeof import('~icons/lucide/arrow-up')['default']
-    IconLucideCalendar: typeof import('~icons/lucide/calendar')['default']
+    IconLucideArrowUpRight: typeof import('~icons/lucide/arrow-up-right')['default']
     IconLucideCheck: typeof import('~icons/lucide/check')['default']
     IconLucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     IconLucideChevronLeft: typeof import('~icons/lucide/chevron-left')['default']
     IconLucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
     IconLucideChevronUp: typeof import('~icons/lucide/chevron-up')['default']
-    IconLucideCircleArrowUp: typeof import('~icons/lucide/circle-arrow-up')['default']
     IconLucideCloud: typeof import('~icons/lucide/cloud')['default']
     IconLucideCopy: typeof import('~icons/lucide/copy')['default']
     IconLucideDisc3: typeof import('~icons/lucide/disc3')['default']
@@ -274,7 +273,6 @@ declare module 'vue' {
     TooltipTrigger: typeof import('reka-ui')['TooltipTrigger']
     TrackInfo: typeof import('./src/components/player/TrackInfo.vue')['default']
     UiZoomDialog: typeof import('./src/components/modals/UiZoomDialog.vue')['default']
-    UpdateDialog: typeof import('./src/components/modals/UpdateDialog.vue')['default']
     WindowControls: typeof import('./src/components/layout/WindowControls.vue')['default']
   }
 }

@@ -14,6 +14,7 @@ export const DYNAMIC_ISLAND_BASE_HEIGHT = 40;
 export const defaultSystemConfig: SystemConfig = {
   player: {
     autoPlay: false,
+    keepScreenAwake: false,
     rememberLastTrack: true,
     fadeEnabled: true,
     fadeDuration: 200,
@@ -40,11 +41,6 @@ export const defaultSystemConfig: SystemConfig = {
   },
   cache: {
     dir: null,
-    songCache: {
-      enabled: false,
-      cacheStreaming: false,
-      sizeLimitGb: 10,
-    },
   },
   download: {
     enabled: false,
@@ -81,10 +77,6 @@ export const defaultSystemConfig: SystemConfig = {
     port: 14559,
     accessKey: "",
   },
-  update: {
-    autoCheck: true,
-    channel: "stable",
-  },
   system: {
     rememberWindowState: true,
     borderlessWindow: true,
@@ -93,11 +85,6 @@ export const defaultSystemConfig: SystemConfig = {
     agreedAgreementVersion: 1,
     neteaseRealIp: false,
     kugouLoginVersion: "standard",
-    networkProxy: {
-      protocol: "off",
-      host: "127.0.0.1",
-      port: 7890,
-    },
     registerOrpheusProtocol: false,
   },
   windowStates: {

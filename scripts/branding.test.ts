@@ -38,17 +38,11 @@ test("package, Linux desktop, executable, and Nix identities agree", () => {
   assert.ok(mpris.includes(`.desktop_entry("${appId}")`));
 });
 
-test("all update channels point to SPlayer-Z, not another project's releases", () => {
-  const updater = source("electron/main/services/updater.ts");
-  assert.ok(updater.includes(`${repository}/releases`));
-  assert.ok(updater.includes('owner: "MasterZack69", repo: "SPlayer-Z"'));
+test("release packaging retains the fork identity without an in-app updater", () => {
   const builder = source("electron-builder.config.ts");
   assert.ok(builder.includes('owner: "MasterZack69"'));
   assert.ok(builder.includes('repo: "SPlayer-Z"'));
-  const dev = source("dev-app-update.yml");
-  assert.match(dev, /owner: MasterZack69/);
-  assert.match(dev, /repo: SPlayer-Z/);
-  assert.match(dev, /updaterCacheDirName: splayer-z-updater/);
+  assert.doesNotMatch(source("electron/main/core/index.ts"), /initUpdater/);
 });
 
 test("renderer storage uses its own SPlayer-Z namespace", () => {

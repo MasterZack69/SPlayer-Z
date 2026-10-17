@@ -8,7 +8,7 @@ export const SUPPORTED_ARCHITECTURES = ["x64", "arm64"] as const;
 export const assertSupportedPlatform = (platform = process.platform, arch = process.arch): void => {
   if (platform !== "linux" || !SUPPORTED_ARCHITECTURES.some((candidate) => candidate === arch)) {
     throw new Error(
-      `Unsupported platform: ${platform}/${arch}. SPlayer requires x86_64 or ARM64 Linux.`,
+      `Unsupported platform: ${platform}/${arch}. SPlayer-Z requires x86_64 or ARM64 Linux.`,
     );
   }
 };

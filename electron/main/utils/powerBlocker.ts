@@ -1,25 +1,37 @@
 import { powerSaveBlocker } from "electron";
+import { store } from "@main/store";
 import { systemLog } from "./logger";
 
 let blockerId: number | null = null;
+let blockerType: "prevent-app-suspension" | "prevent-display-sleep" | null = null;
+let active = false;
+let playing = false;
 
-/**
- * 按播放状态更新系统休眠抑制
- *
- * 播放中（含缓冲 loading）通过 prevent-app-suspension 阻止系统睡眠，
- * 其它状态立即释放，避免空闲时持续占用唤醒锁导致无法休眠
- * @param active - 是否有正在进行的播放
- */
-export const updatePowerBlocker = (active: boolean): void => {
-  if (active && blockerId === null) {
-    blockerId = powerSaveBlocker.start("prevent-app-suspension");
-    systemLog.info(`已启用休眠抑制 (id: ${blockerId})`);
-  } else if (!active && blockerId !== null) {
-    powerSaveBlocker.stop(blockerId);
-    systemLog.info(`已释放休眠抑制 (id: ${blockerId})`);
-    blockerId = null;
-  }
+/** Apply the saved screen-awake preference to the current playback state. */
+export const refreshPowerBlocker = (): void => {
+  const desired =
+    playing && store.get("player.keepScreenAwake")
+      ? "prevent-display-sleep"
+      : active
+        ? "prevent-app-suspension"
+        : null;
+  if (desired === blockerType) return;
+  const previous = blockerId;
+  blockerId = desired ? powerSaveBlocker.start(desired) : null;
+  blockerType = desired;
+  if (previous !== null) powerSaveBlocker.stop(previous);
+  systemLog.info(`Playback power inhibition: ${desired ?? "off"}`);
 };
 
-/** 释放休眠抑制（应用退出前调用） */
-export const releasePowerBlocker = (): void => updatePowerBlocker(false);
+/** Update inhibitors without blocking display sleep when playback is paused or loading.
+ * @param playbackActive - Playback is running or loading and needs system-sleep protection.
+ * @param isPlaying - Audio is actively playing, allowing optional display-sleep protection.
+ */
+export const updatePowerBlocker = (playbackActive: boolean, isPlaying = playbackActive): void => {
+  active = playbackActive;
+  playing = isPlaying;
+  refreshPowerBlocker();
+};
+
+/** Release all playback power inhibitors before the application exits. */
+export const releasePowerBlocker = (): void => updatePowerBlocker(false, false);

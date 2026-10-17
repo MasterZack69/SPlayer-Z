@@ -66,3 +66,7 @@ Also attach the test output and node/monitor logs when available. Do not reuse a
 Linux real-time thread promotion can use D-Bus to contact `org.freedesktop.RealtimeKit1`. If that service is absent, the engine logs a warning and keeps the current output stream without real-time priority. This is separate from build-time D-Bus headers and does not, by itself, prove a sample-rate or playback-speed bug.
 
 A failing rate test needs its elapsed-time result, negotiated output format, clock state, and server logs. Do not suppress timing assertions just to make a test pass. Use the distribution's supported real-time scheduling configuration if appropriate; do not grant broad privileges to the player as a workaround.
+
+## Source information in About
+
+Git checkouts embed the current commit and commit date. Nix source copies do not include `.git`, so the flake passes `SPLAYER_COMMIT` and `SOURCE_DATE_EPOCH` from the flake source metadata. The displayed source date is reproducible, not the wall-clock build time. Dirty Git sources display their base revision with a `-dirty` suffix. Git-less archives may lack a revision; About labels that absence instead of creating an invalid commit link. Other packagers can set `SPLAYER_COMMIT` and `SPLAYER_COMMIT_DATE` explicitly.

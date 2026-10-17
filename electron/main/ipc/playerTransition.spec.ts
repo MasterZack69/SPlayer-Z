@@ -74,7 +74,7 @@ vi.mock("@main/utils/broadcast", () => ({ sendToMain: vi.fn() }));
 vi.mock("@main/server/broadcast", () => ({ wsBroadcast: vi.fn() }));
 vi.mock("@main/utils/encoding", () => ({}));
 vi.mock("@main/utils/protocol", () => ({ toCacheUrl: () => undefined }));
-vi.mock("@main/utils/config", () => ({ appName: "SPlayer", getSongCacheDir: () => "cache" }));
+vi.mock("@main/utils/config", () => ({ appName: "SPlayer-Z" }));
 vi.mock("@main/utils/fetchBytes", () => ({}));
 vi.mock("@main/utils/powerBlocker", () => ({}));
 vi.mock("@main/services/lastfm", () => ({
@@ -91,7 +91,6 @@ vi.mock("@main/services/streaming/playback", () => ({
 vi.mock("@main/services/streaming/adapters/resolve", () => ({
   invalidateStreamingSession: vi.fn(),
 }));
-vi.mock("@main/services/songCache", () => ({}));
 vi.mock("@main/services/thumbar", () => ({ getThumbar: () => null }));
 vi.mock("@main/services/tray", () => ({ setTraySongName: vi.fn(), setTrayPlayState: vi.fn() }));
 vi.mock("@main/services/thumbnail", () => ({ setTaskbarThumbnailCover: vi.fn() }));

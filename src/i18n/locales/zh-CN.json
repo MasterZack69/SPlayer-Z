@@ -1,16 +1,4 @@
 {
-  "update": {
-    "dialogTitle": "发现新版本",
-    "later": "稍后",
-    "download": "下载",
-    "downloading": "下载中",
-    "installNow": "立即重启安装",
-    "goDownload": "前往下载页",
-    "upToDate": "当前通道暂无更高版本",
-    "readyToast": "更新已就绪，可重启安装",
-    "failed": "更新失败，请稍后重试",
-    "installing": "正在启动安装程序"
-  },
   "onboarding": {
     "next": "下一步",
     "back": "上一步",
@@ -773,12 +761,8 @@
       "about": "关于软件"
     },
     "section": {
-      "network": "网络代理",
       "aboutApp": "关于软件",
-      "specialThanks": "特别致谢",
       "developers": "开发人员",
-      "community": "社区与资讯",
-      "update": "更新",
       "language": "语言",
       "playControl": "播放控制",
       "playbackTransition": "播放过渡",
@@ -809,7 +793,6 @@
       "pluginsList": "插件管理",
       "streaming": "媒体源配置",
       "mediaServerManagement": "媒体源管理",
-      "songCache": "歌曲缓存",
       "cache": "缓存管理",
       "database": "数据库管理",
       "downloadLocation": "下载配置",
@@ -821,15 +804,13 @@
       "envInfo": "环境信息"
     },
     "about": {
-      "checkUpdate": "检查更新",
-      "checking": "检查中",
-      "newVersion": "发现新版本",
       "openLogs": "打开日志",
-      "officialSite": "官方网站",
-      "showMore": "更多贡献者",
-      "collapse": "收起",
       "commit": "提交",
-      "date": "日期"
+      "date": "源码日期",
+      "maintainer": "维护者",
+      "upstreamThanks": "特别感谢所有为上游 SPlayer-Next 作出贡献的人",
+      "sourceArchive": "此源码构建未提供",
+      "notProvided": "打包者未提供"
     },
     "language": {
       "label": "界面语言",
@@ -901,7 +882,7 @@
     },
     "transitionMode": {
       "label": "过渡方式",
-      "description": "调整歌曲在交替时的播放效果",
+      "description": "调整本地歌曲之间的过渡。流媒体歌曲不使用交叉淡化。",
       "none": "无过渡",
       "crossfade": "交叉过渡"
     },
@@ -930,7 +911,7 @@
     },
     "preloadNextTrack": {
       "label": "预载下一首歌曲",
-      "description": "提前缓存并解码下一曲，可能会增加网络占用"
+      "description": "提前在内存中解码下一首本地歌曲。流媒体歌曲不进行预加载。"
     },
     "outputDevice": {
       "label": "输出设备",
@@ -1112,9 +1093,7 @@
       "restartRequiredTitle": "需要重启应用",
       "restartRequiredContent": "此设置需要重启应用后生效。确定保存并立即重启吗？",
       "testChannelTitle": "切换到测试通道",
-      "testChannelContent": "Beta 与 Alpha 通道会提前收到测试版本，其中 Alpha 版本可能非常不稳定。确定切换吗？",
-      "preloadCacheTitle": "开启预载所需的缓存？",
-      "preloadCacheContent": "歌曲预载需要缓存下一首音频。继续将同时开启歌曲缓存和流媒体缓存，可能增加网络流量和磁盘占用"
+      "testChannelContent": "Beta 与 Alpha 通道会提前收到测试版本，其中 Alpha 版本可能非常不稳定。确定切换吗？"
     },
     "useAMSpring": {
       "label": "弹簧动画",
@@ -1451,44 +1430,9 @@
       "label": "开启无边框窗口",
       "description": "关闭后使用系统原生窗口边框和标题栏"
     },
-    "autoCheckUpdate": {
-      "label": "自动检查更新",
-      "description": "启动后及定时在后台检查新版本"
-    },
-    "updateChannel": {
-      "label": "更新通道",
-      "description": "选择接收更新的通道，切换通道不会自动降级",
-      "stable": "正式版",
-      "beta": "Beta 预览版",
-      "alpha": "Alpha 内测版",
-      "nightly": "Nightly 持续构建"
-    },
     "showPerformanceMonitor": {
       "label": "性能监视器",
       "description": "悬浮显示 FPS / 帧时间 / 内存占用，点击切换指标"
-    },
-    "networkProxyProtocol": {
-      "label": "网络代理",
-      "description": "为在线请求配置手动代理",
-      "off": "关闭代理",
-      "http": "HTTP 代理",
-      "https": "HTTPS 代理",
-      "socks5": "SOCKS5 代理"
-    },
-    "networkProxyHost": {
-      "label": "代理服务器地址",
-      "description": "填写代理服务器地址，例如 127.0.0.1",
-      "placeholder": "127.0.0.1"
-    },
-    "networkProxyPort": {
-      "label": "代理服务器端口",
-      "description": "填写代理服务器端口，例如 7890"
-    },
-    "networkProxyTest": {
-      "label": "测试代理",
-      "description": "测试代理配置是否可以正常连通",
-      "success": "该代理可正常使用",
-      "failed": "代理测试失败，请检查配置"
     },
     "neteaseRealIp": {
       "label": "使用真实IP地址",
@@ -1761,18 +1705,6 @@
       "lyricTTML": "TTML 歌词缓存",
       "lyricMatch": "歌词匹配缓存"
     },
-    "enableSongCache": {
-      "label": "歌曲缓存",
-      "description": "播放在线歌曲时缓存至本地，提升加载速度"
-    },
-    "cacheStreaming": {
-      "label": "缓存流媒体",
-      "description": "播放个人流媒体服务器歌曲时缓存至本地"
-    },
-    "songCacheSizeLimit": {
-      "label": "缓存上限",
-      "description": "缓存达到上限后将自动清理，∞ 表示不限制"
-    },
     "downloadEnabled": {
       "label": "启用下载功能"
     },
@@ -1853,6 +1785,10 @@
       "button": "清空全部",
       "confirmTitle": "清空全部数据库缓存？",
       "confirmDesc": "将删除上方全部数据库缓存，操作不可恢复"
+    },
+    "keepScreenAwake": {
+      "label": "播放时保持屏幕常亮",
+      "description": "仅在音乐播放时防止屏幕自动关闭，暂停或停止后释放。"
     }
   },
   "collection": {

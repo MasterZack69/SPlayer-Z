@@ -1,4 +1,3 @@
-import { cancelPreparedTrack } from "@main/services/playerPreload";
 import { dialog, ipcMain } from "electron";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -9,21 +8,18 @@ import {
   getCoverCacheDir,
   getArtistCacheDir,
   getBackgroundsDir,
-  getSongCacheDir,
 } from "@main/utils/config";
 import { syncCoverCacheDir } from "@main/services/engine";
 import { getDb } from "@main/database";
 import { clearLyricCache } from "@main/database/lyricCache";
 import { clearLyricTtmlCache } from "@main/database/lyricTtmlCache";
 import { clearLyricMatchCache } from "@main/database/lyricMatchCache";
-import * as songCache from "@main/services/songCache";
-import type { TrackSource } from "@shared/types/player";
 import { systemLog } from "@main/utils/logger";
 import { defaultCacheDir } from "@main/utils/paths";
 
 /** 已知的缓存类别 */
 export type CacheCategory =
-  "covers" | "artists" | "backgrounds" | "songs" | "lyric" | "lyricTTML" | "lyricMatch";
+  "covers" | "artists" | "backgrounds" | "lyric" | "lyricTTML" | "lyricMatch";
 
 /** 缓存介质 */
 export type CacheKind = "file" | "db";
@@ -134,15 +130,6 @@ const categoryHandlers: Record<
     size: () => dirSize(getBackgroundsDir()),
     clear: () => clearDir(getBackgroundsDir()),
   },
-  songs: {
-    kind: "file",
-    path: getSongCacheDir,
-    size: () => songCache.stats().size,
-    clear: () => {
-      cancelPreparedTrack();
-      return songCache.clearAll();
-    },
-  },
   lyric: {
     kind: "db",
     path: () => "lyric_cache",
@@ -173,7 +160,7 @@ const idsByKind = (kind: CacheKind): CacheCategory[] =>
     (id) => categoryHandlers[id].kind === kind,
   );
 
-/** 注册缓存相关 IPC */
+/** Register artwork and lyric cache management endpoints. */
 export const registerCacheIpc = (): void => {
   ipcMain.handle("cache:getStats", async (): Promise<CacheStat[]> => {
     const ids = Object.keys(categoryHandlers) as CacheCategory[];
@@ -231,7 +218,6 @@ export const registerCacheIpc = (): void => {
       await Promise.all(idsByKind("file").map((id) => categoryHandlers[id].clear()));
       store.set("cache.dir", next);
       syncCoverCacheDir();
-      songCache.reloadDir();
       systemLog.info(`[cache] dir switched to ${next}`);
       return { ok: true, dir: next };
     },
@@ -242,29 +228,6 @@ export const registerCacheIpc = (): void => {
     await Promise.all(idsByKind("file").map((id) => categoryHandlers[id].clear()));
     store.set("cache.dir", null);
     syncCoverCacheDir();
-    songCache.reloadDir();
     return defaultCacheDir;
-  });
-
-  /** 歌曲文件级缓存：命中查询 */
-  ipcMain.handle("cache:song:lookup", (_event, cacheKey: string): Promise<string | null> =>
-    songCache.lookup(cacheKey),
-  );
-
-  /** 歌曲文件级缓存：排队下载 */
-  ipcMain.handle(
-    "cache:song:fetch",
-    (
-      _event,
-      cacheKey: string,
-      source: TrackSource,
-      streamUrl: string,
-      preloadId?: string,
-    ): Promise<string | null> => songCache.fetchAsync(cacheKey, source, streamUrl, preloadId),
-  );
-
-  /** 歌曲文件级缓存：取消进行中的下载 */
-  ipcMain.handle("cache:song:cancel", (_event, cacheKey: string): void => {
-    songCache.cancel(cacheKey);
   });
 };

@@ -43,7 +43,6 @@ const config: Configuration = {
   fileAssociations,
   afterPack: "./scripts/after-pack.ts",
   compression: "maximum",
-  generateUpdatesFilesForAllChannels: true,
   files: [
     "public/**",
     "out/main/**",

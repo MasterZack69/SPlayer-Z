@@ -93,7 +93,7 @@ onMounted(() => {
           <template #icon><IconLucideGithub /></template>
           {{ REPO_NAME }}
         </SButton>
-        <STag size="tiny">v{{ APP_VERSION }}</STag>
+        <STag size="tiny">V{{ APP_VERSION }}</STag>
       </div>
     </div>
 

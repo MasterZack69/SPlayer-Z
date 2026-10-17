@@ -1,6 +1,5 @@
 import { app, session, type Session, type WebContents } from "electron";
 import { getMainWindow } from "@main/window/main";
-import { getNetworkProxyUrl } from "@main/utils/proxy";
 import { neteaseLog } from "@main/utils/logger";
 import { DOMAIN, UA_MAP, WEB_LOG_DOMAIN } from "./config";
 import { cookieToJson } from "./cookie";
@@ -51,11 +50,11 @@ app.once("before-quit", () => {
 });
 
 /**
- * 统一排队网页写请求，按路径装配 SDK 凭据并直接返回业务结果
- * @param uri - 加密前的 API 路径
- * @param data - 业务模块提供的请求参数
- * @param options - 当前账号的请求配置
- * @returns 服务端业务响应与会话 Cookie，不重复发送业务写入
+ * Serialize legacy web requests with SDK credentials.
+ * @param uri - Unencrypted API path.
+ * @param data - Business request parameters.
+ * @param options - Current session request options.
+ * @returns Business response and cookies, without repeating writes.
  */
 export const requestWithWebClient = (
   uri: string,
@@ -135,11 +134,6 @@ export const requestWithWebClient = (
         ensureCurrent();
         sessionDirty = false;
       }
-      const proxy = getNetworkProxyUrl();
-      const proxyConfig = proxy
-        ? { mode: "fixed_servers" as const, proxyRules: proxy }
-        : { mode: "direct" as const };
-      await ses.setProxy(proxyConfig);
       ensureCurrent();
       const existing = await ses.cookies.get({ url: DOMAIN });
       for (const [name, value] of Object.entries(cookie)) {
@@ -228,9 +222,6 @@ export const requestWithWebClient = (
         mainContents.once("render-process-gone", onGone);
         mainContents.once("destroyed", onGone);
         mainContents.on("did-start-navigation", onNavigation);
-        /** 采样和业务请求沿用同一代理出口，避免环境信息与请求出口不一致 */
-        await mainContents.session.setProxy(proxyConfig);
-        ensureCurrent();
         const tokens = await getWatchmanTokens({
           contents: mainContents,
           session: ses,

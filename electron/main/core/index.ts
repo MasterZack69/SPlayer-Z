@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import { releasePowerBlocker } from "@main/utils/powerBlocker";
 import { configureLinuxGraphics } from "@main/utils/chromium";
 import { optimizer } from "@electron-toolkit/utils";
 import { createMainWindow, getMainWindow, focusMainWindow } from "@main/window";
@@ -8,9 +9,7 @@ import { init as initMedia, shutdown as shutdownMedia } from "@main/services/med
 import { init as initLastfm } from "@main/services/lastfm";
 import { initGlobalHotkey } from "@main/services/globalHotkey";
 import { initDatabase, closeDatabase } from "@main/database";
-import { init as initSongCache } from "@main/services/songCache";
 import { registerCacheScheme, handleCacheProtocol } from "@main/utils/protocol";
-import { initUpdater, disposeUpdater } from "@main/services/updater";
 import { coreLog, initLogger } from "@main/utils/logger";
 import {
   initOrpheusRegistration,
@@ -98,14 +97,11 @@ export const initApp = (): void => {
     if (coldOrpheusUrl) captureOrpheusUrl(coldOrpheusUrl);
     const coldAudioFiles = extractAudioFiles(process.argv);
     if (coldAudioFiles.length > 0) captureAudioFiles(coldAudioFiles);
-    // Initialize the song cache.
-    void initSongCache();
     // Initialize Last.fm.
     initLastfm();
 
     // Register global shortcuts.
     initGlobalHotkey();
-    initUpdater();
     // Sample process memory periodically.
     setTimeout(logProcessMemory, MEMORY_LOG_FIRST_DELAY_MS);
     setInterval(logProcessMemory, MEMORY_LOG_INTERVAL_MS);
@@ -121,8 +117,8 @@ export const initApp = (): void => {
   /** Release resources before exiting. */
   app.on("before-quit", () => {
     coreLog.info("Application exiting; releasing resources.");
+    releasePowerBlocker();
     shutdownMedia();
     closeDatabase();
-    disposeUpdater();
   });
 };

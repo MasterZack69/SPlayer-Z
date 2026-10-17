@@ -17,7 +17,6 @@ import * as encrypt from "./crypto";
 import { getAnonymousToken, getDeviceId } from "./device";
 import { ensureXeapiKey, getXeapiSession, updateXeapiSession } from "./xeapi";
 import { getAntiCheatTokenV3 } from "./checktoken";
-import { fetchWithProxy } from "@main/utils/proxy";
 import { NeteaseRequestError, type RequestResponse } from "./response";
 import { requestWithWebClient } from "./webClient";
 
@@ -127,11 +126,11 @@ const chooseUserAgent = (
 };
 
 /**
- * 构造并发送请求
- * @param uri - 接口路径，例如 `/api/w/login`；weapi 会自动替换前缀为 `/weapi/`
- * @param data - 业务参数（不含 cookie/csrf，请求层会自动注入）
- * @param options - 加密方式 / cookie / 代理等
- * @returns 接口响应与会话 Cookie
+ * Build and send a legacy encrypted API request.
+ * @param uri - API path; weapi rewrites its prefix to `/weapi/`.
+ * @param data - Business parameters, excluding injected cookie and CSRF values.
+ * @param options - Encryption and session options.
+ * @returns API response and session cookies.
  */
 export const createRequest = async (
   uri: string,
@@ -286,7 +285,7 @@ export const createRequest = async (
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      res = await fetchWithProxy(url, {
+      res = await fetch(url, {
         method: "POST",
         headers,
         body,

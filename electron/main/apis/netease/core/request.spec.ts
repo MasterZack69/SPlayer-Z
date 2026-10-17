@@ -1,8 +1,7 @@
 import { createCipheriv } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({ fetch: vi.fn(), v3: vi.fn(), web: vi.fn() }));
-vi.mock("@main/utils/proxy", () => ({ fetchWithProxy: api.fetch }));
 vi.mock("./webClient", () => ({ requestWithWebClient: api.web }));
 vi.mock("./checktoken", () => ({ getAntiCheatTokenV3: api.v3 }));
 vi.mock("./device", () => ({ getAnonymousToken: () => "", getDeviceId: () => "device" }));
@@ -11,7 +10,9 @@ import { eapiReqDecrypt } from "./crypto";
 import { createRequest } from "./request";
 
 describe("平台请求协议与解析", () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
+    vi.stubGlobal("fetch", api.fetch);
     api.fetch.mockReset().mockResolvedValue(new Response('{"code":200}'));
     api.v3.mockReset().mockResolvedValue("v3-fresh-token");
     api.web.mockReset().mockResolvedValue({ status: 200, body: { code: 200 }, cookie: [] });

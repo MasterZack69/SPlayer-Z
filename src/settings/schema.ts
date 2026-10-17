@@ -8,7 +8,6 @@ import servicesCategory from "./categories/services";
 import mediaSourceCategory from "./categories/streaming";
 import localCacheCategory from "./categories/localCache";
 import otherCategory from "./categories/other";
-import { updateSection } from "./sections/update";
 import AboutSettings from "@/components/settings/custom/AboutSettings.vue";
 import IconLucideInfo from "~icons/lucide/info";
 
@@ -22,5 +21,5 @@ export const settingsSchema: SettingCategory[] = [
   mediaSourceCategory,
   localCacheCategory,
   otherCategory,
-  { id: "about", icon: IconLucideInfo, component: AboutSettings, sections: [updateSection] },
+  { id: "about", icon: IconLucideInfo, component: AboutSettings, sections: [] },
 ];

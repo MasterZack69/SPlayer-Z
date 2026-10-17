@@ -5,11 +5,14 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { fetchWithProxy } from "@main/utils/proxy";
 import type { NeteaseModule } from "../core/types";
 
 const MATCH_URL = "https://interface.music.163.com/api/music/audio/match";
 
+/** Submit a legacy fingerprint matching request.
+ * @param query - Fingerprint and duration fields.
+ * @returns Legacy API response.
+ */
 const audioMatch: NeteaseModule = async (query) => {
   const fingerprint = typeof query.audioFP === "string" ? query.audioFP : "";
   const duration = Number(query.duration);
@@ -25,7 +28,7 @@ const audioMatch: NeteaseModule = async (query) => {
     times: "1",
     decrypt: "1",
   });
-  const response = await fetchWithProxy(`${MATCH_URL}?${params}`, {
+  const response = await fetch(`${MATCH_URL}?${params}`, {
     headers: {
       Accept: "application/json",
       Referer: "https://music.163.com/",

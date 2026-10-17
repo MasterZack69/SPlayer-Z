@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { refreshPowerBlocker } from "@main/utils/powerBlocker";
 import { dialog, ipcMain } from "electron";
 import { store } from "@main/store";
 import type { ConfigPath } from "@main/store/types";
@@ -14,8 +15,6 @@ import {
 import { applyMainWindowZoom } from "@main/window";
 
 import { setOrpheusProtocolRegistered } from "@main/services/orpheus";
-import { getUpdateState, syncUpdateChannel } from "@main/services/updater";
-import { UPDATE_CHANNELS } from "@shared/types/settings";
 
 /**
  * Apply integration and playback changes after saving configuration.
@@ -24,8 +23,8 @@ import { UPDATE_CHANNELS } from "@shared/types/settings";
  */
 const applyConfigChange = (keyPath: string, value: unknown): void => {
   switch (keyPath) {
-    case "update.channel":
-      syncUpdateChannel();
+    case "player.keepScreenAwake":
+      refreshPowerBlocker();
       break;
     case "media.systemMediaControls":
       value ? enableMedia() : disableMedia();
@@ -57,31 +56,23 @@ const applyConfigChange = (keyPath: string, value: unknown): void => {
   }
 };
 
-/** 注册配置相关 IPC */
+/** Register configuration IPC and apply saved playback preferences. */
 export const registerConfigIpc = (): void => {
   ipcMain.handle("config:get", (_event, keyPath: string) => store.get(keyPath as ConfigPath));
   ipcMain.handle("config:set", (_event, keyPath: string, value: unknown) => {
-    if (keyPath === "update.channel" && getUpdateState().phase === "installing") {
-      throw new Error("安装启动中，无法切换更新通道");
-    }
-    if (keyPath === "update.channel" && !UPDATE_CHANNELS.some((channel) => channel === value)) {
-      throw new Error(`无效的更新通道: ${String(value)}`);
-    }
     store.set(keyPath, value);
     applyConfigChange(keyPath, value);
   });
   ipcMain.handle("config:getAll", () => store.store);
   ipcMain.handle("config:reset", () => {
-    if (getUpdateState().phase === "installing") throw new Error("安装启动中，无法重置配置");
     store.clear();
-    syncUpdateChannel();
+    refreshPowerBlocker();
   });
 
   /** 替换整盘配置 */
   ipcMain.handle("config:replaceAll", (_event, payload: unknown) => {
-    if (getUpdateState().phase === "installing") throw new Error("安装启动中，无法替换配置");
     store.replaceAll(payload);
-    syncUpdateChannel();
+    refreshPowerBlocker();
   });
 
   /** 备份 */

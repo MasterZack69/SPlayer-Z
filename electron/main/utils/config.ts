@@ -31,9 +31,6 @@ export const getArtistCacheDir = (): string => path.join(getAppCacheDir(), "arti
 /** 当前生效的背景图目录 */
 export const getBackgroundsDir = (): string => path.join(getAppCacheDir(), "backgrounds");
 
-/** 当前生效的歌曲缓存目录 */
-export const getSongCacheDir = (): string => path.join(getAppCacheDir(), "songs");
-
 /** 当前生效的下载目录（默认：系统音乐目录下的软件名子目录） */
 export const getDownloadDir = (): string =>
   store.get("download.dir") || path.join(app.getPath("music"), appName);

@@ -67,11 +67,11 @@ The software does not include developer-controlled telemetry or usage analytics 
 
 This fork's source and published packages are available at <https://github.com/MasterZack69/SPlayer-Z>. The upstream project remains <https://github.com/SPlayer-Dev/SPlayer-Next>. Packages from these projects are not interchangeable guarantees of behavior or support.
 
-The documentation download page can offer third-party acceleration routes that proxy GitHub assets, so requests pass through those services. Mirrors, app stores, repackaged builds, and redistributions are not automatically controlled or verified by this fork's maintainers. They may be modified, outdated, bundled, or malicious.
+Mirrors, app stores, repackaged builds, and redistributions are not automatically controlled or verified by this fork's maintainers. They may be modified, outdated, bundled, or malicious.
 
 ## 11. Updates
 
-The application can check for and download releases from the SPlayer-Z repository at <https://github.com/MasterZack69/SPlayer-Z>. Check the release origin before accepting an update. No release is guaranteed continued maintenance, and development or distribution may change or stop.
+Install updates manually from the SPlayer-Z repository at <https://github.com/MasterZack69/SPlayer-Z> or through your package manager. The app does not check for or install updates. Verify the release origin before installing a package. No release is guaranteed continued maintenance, and development or distribution may change or stop.
 
 ## 12. Third-party open-source components
 

@@ -1,16 +1,4 @@
 {
-  "update": {
-    "dialogTitle": "New Version Available",
-    "later": "Later",
-    "download": "Download",
-    "downloading": "Downloading",
-    "installNow": "Restart & Install",
-    "goDownload": "Go to Download",
-    "upToDate": "No newer version is available on this channel",
-    "readyToast": "Update ready — restart to install",
-    "failed": "Update failed, please try again later",
-    "installing": "Starting installer"
-  },
   "onboarding": {
     "next": "Next",
     "back": "Back",
@@ -773,12 +761,8 @@
       "about": "About"
     },
     "section": {
-      "network": "Network & Proxy",
       "aboutApp": "About",
-      "specialThanks": "Special Thanks",
       "developers": "Developers",
-      "community": "Community",
-      "update": "Update",
       "language": "Language",
       "playControl": "Playback Control",
       "playbackTransition": "Playback Transition",
@@ -809,7 +793,6 @@
       "pluginsList": "Plugin Management",
       "streaming": "Media Source Config",
       "mediaServerManagement": "Media Source Management",
-      "songCache": "Song Cache",
       "downloadLocation": "Download Settings",
       "downloadGeneral": "Download Options",
       "downloadTags": "What to Write",
@@ -821,15 +804,13 @@
       "envInfo": "Environment Info"
     },
     "about": {
-      "checkUpdate": "Check for Updates",
-      "checking": "Checking",
-      "newVersion": "Update Available",
       "openLogs": "Open Logs",
-      "officialSite": "Official Site",
-      "showMore": "More Contributors",
-      "collapse": "Collapse",
       "commit": "Commit",
-      "date": "Date"
+      "date": "Source date",
+      "maintainer": "Maintainer",
+      "upstreamThanks": "special thanks to everyone who contributes to the upstream SPlayer-Next",
+      "sourceArchive": "Not provided by this source build",
+      "notProvided": "Not provided by the packager"
     },
     "language": {
       "label": "Language",
@@ -901,7 +882,7 @@
     },
     "transitionMode": {
       "label": "Transition mode",
-      "description": "Adjust how songs sound when they change",
+      "description": "Adjust transitions between local tracks. Streaming tracks play without crossfade.",
       "none": "No transition",
       "crossfade": "Crossfade"
     },
@@ -930,7 +911,7 @@
     },
     "preloadNextTrack": {
       "label": "Preload next track",
-      "description": "Cache and decode the next track in advance, which may increase network usage"
+      "description": "Decode the next local track in memory ahead of playback. Streaming tracks are not preloaded."
     },
     "outputDevice": {
       "label": "Output Device",
@@ -1112,9 +1093,7 @@
       "restartRequiredTitle": "Restart Required",
       "restartRequiredContent": "This setting requires an app restart. Save and relaunch now?",
       "testChannelTitle": "Switch to a Test Channel",
-      "testChannelContent": "Beta and Alpha channels receive test releases early. Alpha releases may be highly unstable. Switch anyway?",
-      "preloadCacheTitle": "Enable the caches required for preloading?",
-      "preloadCacheContent": "Preloading requires caching the next track's audio. Continuing will enable both song caching and streaming caching, which may increase network traffic and disk usage"
+      "testChannelContent": "Beta and Alpha channels receive test releases early. Alpha releases may be highly unstable. Switch anyway?"
     },
     "useAMSpring": {
       "label": "Spring Animation",
@@ -1451,44 +1430,9 @@
       "label": "Enable Borderless Window",
       "description": "Disable to use the system native window frame and title bar"
     },
-    "autoCheckUpdate": {
-      "label": "Auto Check for Updates",
-      "description": "Check for new versions in the background on launch and periodically"
-    },
-    "updateChannel": {
-      "label": "Update Channel",
-      "description": "Choose which releases to receive. Switching channels never automatically downgrades the app.",
-      "stable": "Stable",
-      "beta": "Beta Preview",
-      "alpha": "Alpha Experimental",
-      "nightly": "Nightly Build"
-    },
     "showPerformanceMonitor": {
       "label": "Performance Monitor",
       "description": "Floating widget showing FPS / frame time / memory. Click to switch"
-    },
-    "networkProxyProtocol": {
-      "label": "Network Proxy",
-      "description": "Configure a manual proxy for online requests",
-      "off": "Proxy off",
-      "http": "HTTP proxy",
-      "https": "HTTPS proxy",
-      "socks5": "SOCKS5 proxy"
-    },
-    "networkProxyHost": {
-      "label": "Proxy server",
-      "description": "Enter the proxy server address, for example 127.0.0.1",
-      "placeholder": "127.0.0.1"
-    },
-    "networkProxyPort": {
-      "label": "Proxy port",
-      "description": "Enter the proxy server port, for example 7890"
-    },
-    "networkProxyTest": {
-      "label": "Test proxy",
-      "description": "Test whether the proxy configuration can connect successfully",
-      "success": "Proxy is available",
-      "failed": "Proxy test failed. Check the configuration"
     },
     "neteaseRealIp": {
       "label": "Use Real IP",
@@ -1761,18 +1705,6 @@
       "lyricTTML": "TTML Lyric Cache",
       "lyricMatch": "Lyric Match Cache"
     },
-    "enableSongCache": {
-      "label": "Song Cache",
-      "description": "Cache online tracks locally to improve loading speed"
-    },
-    "cacheStreaming": {
-      "label": "Cache Streaming Tracks",
-      "description": "Cache tracks from personal media servers locally during playback"
-    },
-    "songCacheSizeLimit": {
-      "label": "Size Limit",
-      "description": "When the limit is reached, entries are evicted automatically; ∞ means unlimited"
-    },
     "downloadEnabled": {
       "label": "Enable Downloads"
     },
@@ -1853,6 +1785,10 @@
       "button": "Clear All",
       "confirmTitle": "Clear all database caches?",
       "confirmDesc": "All database caches above will be cleared. This cannot be undone."
+    },
+    "keepScreenAwake": {
+      "label": "Keep Screen Awake During Playback",
+      "description": "Prevent the display from turning off while music is playing. Released when paused or stopped."
     }
   },
   "collection": {

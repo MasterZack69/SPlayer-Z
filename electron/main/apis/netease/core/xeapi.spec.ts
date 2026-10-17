@@ -1,8 +1,7 @@
 import { createCipheriv } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({ fetch: vi.fn() }));
-vi.mock("@main/utils/proxy", () => ({ fetchWithProxy: api.fetch }));
 
 import { xeapiSign } from "./crypto";
 import { ensureXeapiKey, getXeapiSession, resetXeapiKey, updateXeapiSession } from "./xeapi";
@@ -32,7 +31,9 @@ const makeResponse = (_url: string, init: RequestInit) => {
 };
 
 describe("xeapi 公钥与会话", () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
+    vi.stubGlobal("fetch", api.fetch);
     resetXeapiKey();
     api.fetch.mockReset().mockImplementation(makeResponse);
   });

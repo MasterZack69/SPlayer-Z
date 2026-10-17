@@ -7,7 +7,6 @@
 
 import { API_DOMAIN, UA_MAP } from "./config";
 import { xeapiSign, xeapiDecryptPublicKey, type XeapiPublicKey } from "./crypto";
-import { fetchWithProxy } from "@main/utils/proxy";
 
 let publicKeyState: XeapiPublicKey | null = null;
 let sessionId = "";
@@ -22,7 +21,11 @@ const generateNonce = (): string => {
   return nonce;
 };
 
-/** 向反爬接口拉取并解密公钥包 */
+/** Fetch and decrypt the legacy API public-key bundle.
+ * @param deviceId - Client device identifier.
+ * @param currentKeyVersion - Currently installed key version.
+ * @returns Decrypted public key and version.
+ */
 const fetchPublicKey = async (
   deviceId: string,
   currentKeyVersion: string,
@@ -43,7 +46,7 @@ const fetchPublicKey = async (
     uid: "",
   };
 
-  const res = await fetchWithProxy(`${API_DOMAIN}/api/bsr/sk/get`, {
+  const res = await fetch(`${API_DOMAIN}/api/bsr/sk/get`, {
     method: "POST",
     headers: {
       "User-Agent": UA_MAP.api.android,

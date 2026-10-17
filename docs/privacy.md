@@ -24,6 +24,7 @@ This policy explains how SPlayer-Z processes, stores, and protects information w
 ### 2.2 Local runtime and cache data
 
 - Selected music folders, audio metadata, local playlists, lyric caches, and cover thumbnails.
+- Audio from streaming servers is not saved into a persistent song cache. Artwork, lyric, and library-index caches are separate.
 - Local diagnostic logs. They are not uploaded automatically; you must explicitly provide them when requesting support.
 
 ## 3. Purpose
@@ -34,7 +35,7 @@ The software processes this information to play and organize media, restore your
 
 1. **Self-hosted media servers:** Traffic is sent directly from your client to the configured server. You and the server operator are responsible for its security and privacy.
 2. **Last.fm:** When enabled, the app communicates with the official Last.fm API. Its own terms and privacy policy apply.
-3. **Releases and downloads:** Update checks can contact GitHub and the currently configured update feed, whose defaults still point upstream. The documentation download widget also requests GitHub release metadata. Selecting a download mirror routes that request through the chosen provider.
+3. **Releases:** The app does not check for updates or automatically contact a release feed. Opening a release or profile link in your browser contacts that website.
 4. **Lyrics:** Local files and embedded lyrics stay local; lyrics supplied by your media server are requested from that server, not from a public lyric-search provider.
 5. **Artist artwork:** Local artist-avatar lookup can send artist names to MusicBrainz, then request artwork metadata from TheAudioDB and download the returned image. Images and unsuccessful lookup markers are cached locally. Offline-first playback does not mean the application never makes network requests.
 

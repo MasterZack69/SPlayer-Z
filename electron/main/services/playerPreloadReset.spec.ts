@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
       instances.push(this);
     }
   }
-  return { instances, MockPlayer, release: vi.fn(), pin: vi.fn(), invalidate: vi.fn() };
+  return { instances, MockPlayer };
 });
 
 vi.mock("@main/utils/nativeLoader", () => ({
@@ -24,11 +24,6 @@ vi.mock("@main/utils/logger", () => ({
   nativeLogsDir: "logs",
 }));
 vi.mock("@main/store", () => ({ store: { get: () => true } }));
-vi.mock("@main/services/songCache", () => ({
-  cancelPreload: mocks.release,
-  pinPreload: mocks.pin,
-  invalidate: mocks.invalidate,
-}));
 
 describe("播放器重置时清理预载", () => {
   beforeEach(() => {
@@ -37,7 +32,7 @@ describe("播放器重置时清理预载", () => {
     mocks.instances.length = 0;
   });
 
-  it("重置释放已就绪槽位的租约，并不再保留旧实例记录", async () => {
+  it("reset cancels the prepared slot and releases the old player", async () => {
     const service = await import("./playerPreload");
     const engine = await import("./engine");
     await service.prepareNextTrack("next", "next.wav");
@@ -45,13 +40,12 @@ describe("播放器重置时清理预载", () => {
     engine.resetPlayer();
     expect(previous.cancelPrepared).toHaveBeenCalledWith("next");
     expect(previous.stop).toHaveBeenCalledOnce();
-    expect(mocks.release).toHaveBeenCalledWith("next");
     service.cancelPreparedTrack();
     expect(previous.cancelPrepared).toHaveBeenCalledOnce();
     expect(engine.getPlayer()).not.toBe(previous);
   });
 
-  it("原生取消失败仍释放租约并完成重置", async () => {
+  it("reset finishes even when native slot cancellation fails", async () => {
     const service = await import("./playerPreload");
     const engine = await import("./engine");
     await service.prepareNextTrack("next", "next.wav");
@@ -59,7 +53,6 @@ describe("播放器重置时清理预载", () => {
       throw new Error("设备丢失");
     });
     engine.resetPlayer();
-    expect(mocks.release).toHaveBeenCalledWith("next");
     expect(mocks.instances[0]!.stop).toHaveBeenCalledOnce();
     service.cancelPreparedTrack();
     expect(mocks.instances[0]!.cancelPrepared).toHaveBeenCalledOnce();
@@ -82,9 +75,7 @@ describe("播放器重置时清理预载", () => {
     finish(true);
     expect(await pending).toBe(false);
     expect(mocks.instances[1]!.cancelPrepared).not.toHaveBeenCalled();
-    expect(mocks.release).not.toHaveBeenCalledWith("new");
     service.cancelPreparedTrack();
     expect(mocks.instances[1]!.cancelPrepared).toHaveBeenCalledWith("new");
-    expect(mocks.invalidate).not.toHaveBeenCalled();
   });
 });

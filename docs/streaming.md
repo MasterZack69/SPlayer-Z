@@ -25,7 +25,7 @@ Songs, albums, artists, and playlists are synchronized into a local SQLite snaps
 
 The main process resolves authenticated playback and cover requests. Server-backed tracks retain their originating server ID; identical track IDs from different servers are not interchangeable. Credentials and session tokens must not be embedded in renderer-visible cover URLs.
 
-Changing a server's media identity invalidates the corresponding media revision used by playback, caches, and completed downloads. Renaming a server does not change that identity or interrupt playback.
+Changing a server's media identity invalidates the corresponding media revision used by playback and completed downloads. Renaming a server does not change that identity or interrupt playback.
 
 Server favorites use the server's returned state. Listening reports are driven by actual playback: Jellyfin/Emby sessions and Subsonic now-playing/scrobble reports are not generated merely by preloading or downloading a file.
 
@@ -33,7 +33,7 @@ Server favorites use the server's returned state. Listening reports are driven b
 
 Song caching is controlled under **Settings → Local & Cache**. Server-backed caching and authorized original-file downloads remain available where supported by the server and account. The removed public-catalog Downloads page is not required for these operations.
 
-Cached metadata is not cached audio. A synchronized song still needs the server unless its audio is available locally. Server permissions, original-file endpoints, and authentication can affect downloads independently of playback.
+Synchronized metadata is not cached audio. Streaming playback does not save tracks into a persistent song cache and requires the server to remain accessible. Local-file PCM preloading/crossfade does not download server tracks. Server permissions, original-file endpoints, and authentication can affect downloads independently of playback.
 
 ## Security and diagnostics
 
