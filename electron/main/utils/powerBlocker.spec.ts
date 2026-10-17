@@ -21,15 +21,14 @@ describe("playback power inhibition", () => {
   it("keeps the display awake only while playing and releases it on pause", async () => {
     mocks.enabled = true;
     const service = await import("./powerBlocker");
-    service.updatePowerBlocker(true, false);
-    expect(mocks.start).toHaveBeenLastCalledWith("prevent-app-suspension");
-    service.updatePowerBlocker(true, true);
-    expect(mocks.start).toHaveBeenLastCalledWith("prevent-display-sleep");
-    expect(mocks.stop).toHaveBeenCalledWith(0);
     service.updatePowerBlocker(false);
-    expect(mocks.stop).toHaveBeenCalledWith(1);
+    expect(mocks.start).not.toHaveBeenCalled();
+    service.updatePowerBlocker(true);
+    expect(mocks.start).toHaveBeenLastCalledWith("prevent-display-sleep");
+    service.updatePowerBlocker(false);
+    expect(mocks.stop).toHaveBeenCalledWith(0);
     service.releasePowerBlocker();
-    expect(mocks.stop).toHaveBeenCalledTimes(2);
+    expect(mocks.stop).toHaveBeenCalledTimes(1);
   });
   it("applies preference changes immediately without waiting for another player event", async () => {
     const service = await import("./powerBlocker");
@@ -43,9 +42,21 @@ describe("playback power inhibition", () => {
     service.releasePowerBlocker();
     expect(mocks.stop).toHaveBeenLastCalledWith(2);
   });
+  it("never reacquires a lock from a settings refresh after a terminal release", async () => {
+    mocks.enabled = true;
+    const service = await import("./powerBlocker");
+    service.updatePowerBlocker(true);
+    service.releasePowerBlocker();
+    mocks.start.mockClear();
+    service.refreshPowerBlocker();
+    service.releasePowerBlocker();
+    expect(mocks.start).not.toHaveBeenCalled();
+    expect(mocks.stop).toHaveBeenCalledExactlyOnceWith(0);
+  });
   it("does not acquire a display lock while stopped even when enabled", async () => {
     mocks.enabled = true;
     const service = await import("./powerBlocker");
+    service.updatePowerBlocker(false);
     service.refreshPowerBlocker();
     expect(mocks.start).not.toHaveBeenCalled();
   });

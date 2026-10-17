@@ -18,11 +18,9 @@ export interface HeroContent {
   cover?: string;
 }
 
-/** 选中的来源：曲目 + 代表曲目下标 */
+/** Selected source in featured-first playback order. */
 interface HeroSource {
   kind: HeroKind;
-  /** 代表曲目下标：决定封面、daily 标题歌名、立即播放的起点 */
-  featuredIndex: number;
   tracks: Track[];
 }
 
@@ -35,13 +33,20 @@ const HERO_PREVIEW_COUNT = 4;
 /** 随机下标 */
 const randomIndex = (length: number): number => Math.floor(Math.random() * length);
 
-/** 曲目组装成来源，空则返回 null */
-const toSource = (kind: HeroKind, tracks: Track[]): HeroSource | null =>
-  tracks.length > 0 ? { kind, featuredIndex: randomIndex(tracks.length), tracks } : null;
+/** Build one queue order shared by the card, preview, and playback.
+ * @param kind - Library source kind.
+ * @param tracks - Random library selection, left unchanged.
+ * @returns Selection rotated to put its featured track first, or null when empty.
+ */
+const toSource = (kind: HeroKind, tracks: Track[]): HeroSource | null => {
+  if (tracks.length === 0) return null;
+  const start = randomIndex(tracks.length);
+  return { kind, tracks: [...tracks.slice(start), ...tracks.slice(0, start)] };
+};
 
 /**
- * 从本地曲库构建首页播放卡片
- * @returns 卡片状态与播放操作
+ * Build the Home playback card from the local library.
+ * @returns Card state and featured-first queue actions.
  */
 export const useDailyRecommend = () => {
   const { t } = useI18n();
@@ -53,7 +58,7 @@ export const useDailyRecommend = () => {
   const hero = computed<HeroContent | null>(() => {
     const current = slide.value;
     if (!current) return null;
-    const featured = current.tracks[current.featuredIndex];
+    const featured = current.tracks[0];
     return {
       kind: current.kind,
       tag: t(`home.hero.${current.kind}.tag`),
@@ -63,14 +68,11 @@ export const useDailyRecommend = () => {
     };
   });
 
-  /** hero 队列预览曲目：从代表曲目（封面/标题所示那首）起，截取展示数 */
+  /** Preview the beginning of the same queue used by Play now. */
   const previewTracks = computed<Track[]>(() => {
     const current = slide.value;
     if (!current) return [];
-    return Array.from(
-      { length: Math.min(HERO_PREVIEW_COUNT, current.tracks.length) },
-      (_, index) => current.tracks[(current.featuredIndex + index) % current.tracks.length],
-    );
+    return current.tracks.slice(0, HERO_PREVIEW_COUNT);
   });
 
   /** 构建单个来源，失败返回 null */
@@ -96,14 +98,14 @@ export const useDailyRecommend = () => {
     loading.value = false;
   };
 
-  /** 立即播放：从代表曲目起播整组 */
+  /** Start the featured track at the head of the replacement queue. */
   const playAll = async (): Promise<void> => {
     const current = slide.value;
     if (!current || current.tracks.length === 0) {
       toast.warning(t("home.hero.empty"));
       return;
     }
-    await player.playFrom(current.tracks, { startIndex: current.featuredIndex });
+    await player.playFrom(current.tracks, { startIndex: 0 });
   };
 
   /** 添加到队列：整组插入当前曲目之后 */

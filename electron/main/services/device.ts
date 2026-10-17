@@ -1,5 +1,6 @@
 import { sendToMain } from "@main/utils/broadcast";
 import { playerLog } from "@main/utils/logger";
+import { updatePowerBlocker, releasePowerBlocker } from "@main/utils/powerBlocker";
 
 type AudioEngineModule = typeof import("@splayer/audio-engine");
 type PlayerInstance = InstanceType<AudioEngineModule["AudioPlayer"]>;
@@ -43,8 +44,9 @@ const readDefaultId = (player: PlayerInstance): string | null => {
 };
 
 /**
- * 执行一次恢复
- * 仅对端点未就绪的瞬态失败重试一次，持续失败交给设备事件或用户操作
+ * Rebuild audio output and reconcile sleep inhibition with the recovered player.
+ * @param player - Player owning this recovery attempt.
+ * @param attempt - Zero for the initial attempt, one for its transient retry.
  */
 const runReinit = (player: PlayerInstance, attempt: number): void => {
   const startedDefault = readDefaultId(player);
@@ -52,6 +54,10 @@ const runReinit = (player: PlayerInstance, attempt: number): void => {
     .reinitOutput()
     .then(() => {
       outputBroken = false;
+      if (activePlayer === player) {
+        const state = player.getStatus();
+        updatePowerBlocker(state.state === "playing" && !state.isFinished);
+      }
       playerLog.info("音频输出已重建");
     })
     .catch((error) => {
@@ -65,6 +71,7 @@ const runReinit = (player: PlayerInstance, attempt: number): void => {
         return;
       }
       outputBroken = true;
+      if (activePlayer === player) releasePowerBlocker();
       playerLog.warn("音频输出重建失败，等待设备事件或用户操作恢复:", error);
     })
     .finally(() => {

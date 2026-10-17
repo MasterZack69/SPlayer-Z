@@ -4,7 +4,6 @@ import { systemLog } from "./logger";
 
 let blockerId: number | null = null;
 let blockerType: "prevent-app-suspension" | "prevent-display-sleep" | null = null;
-let active = false;
 let playing = false;
 
 /** Apply the saved screen-awake preference to the current playback state. */
@@ -12,7 +11,7 @@ export const refreshPowerBlocker = (): void => {
   const desired =
     playing && store.get("player.keepScreenAwake")
       ? "prevent-display-sleep"
-      : active
+      : playing
         ? "prevent-app-suspension"
         : null;
   if (desired === blockerType) return;
@@ -23,15 +22,13 @@ export const refreshPowerBlocker = (): void => {
   systemLog.info(`Playback power inhibition: ${desired ?? "off"}`);
 };
 
-/** Update inhibitors without blocking display sleep when playback is paused or loading.
- * @param playbackActive - Playback is running or loading and needs system-sleep protection.
- * @param isPlaying - Audio is actively playing, allowing optional display-sleep protection.
+/** Inhibit sleep only while audio is actually playing, never while loading.
+ * @param isPlaying - Whether the current native player is actively playing audio.
  */
-export const updatePowerBlocker = (playbackActive: boolean, isPlaying = playbackActive): void => {
-  active = playbackActive;
+export const updatePowerBlocker = (isPlaying: boolean): void => {
   playing = isPlaying;
   refreshPowerBlocker();
 };
 
-/** Release all playback power inhibitors before the application exits. */
-export const releasePowerBlocker = (): void => updatePowerBlocker(false, false);
+/** Release all playback power inhibitors on pause, stop, failure, reset, or exit. */
+export const releasePowerBlocker = (): void => updatePowerBlocker(false);

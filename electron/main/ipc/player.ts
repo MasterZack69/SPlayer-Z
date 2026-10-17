@@ -122,17 +122,22 @@ const classifyLoadError = (error: unknown, source: string): ErrorCode => {
   return ErrorCode.FILE_DECODE_ERROR;
 };
 
+let eventPlayer: InstanceType<AudioEngineModule["AudioPlayer"]> | null = null;
+
 /**
  * Forward native playback events to Linux media controls and the renderer.
  * @param inst - Active native audio player.
  */
 const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"]>): void => {
+  eventPlayer = inst;
   inst.onEvent((event: JsPlayerEvent) => {
+    if (eventPlayer !== inst) return;
     switch (event.type) {
       case "stateChanged": {
         const state = (event.state ?? "idle") as PlayerState;
-        // Inhibit system sleep during loading/playback; inhibit display sleep only while playing.
-        updatePowerBlocker(state === "playing" || state === "loading", state === "playing");
+        // Native callbacks are queued; an old Playing event must not undo a later pause.
+        const current = inst.getStatus();
+        updatePowerBlocker(current.state === "playing" && !current.isFinished);
         // 更新缩略图工具栏和托盘菜单
         setTrayPlayState(state === "playing" ? "playing" : "paused");
         if (state === "playing") {
@@ -160,6 +165,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "ended": {
+        releasePowerBlocker();
         sendToMain("player:event", { type: "ended" });
         mediaService.setPlayState({ status: "Paused" });
         lastfm.onEnded();
@@ -167,6 +173,7 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "sourceError": {
+        releasePowerBlocker();
         // 音源失效（网络中断 / URL 过期）
         sendToMain("player:event", { type: "sourceError" });
         mediaService.setPlayState({ status: "Paused" });
@@ -222,12 +229,14 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
         break;
       }
       case "outputFailed": {
+        releasePowerBlocker();
         // 运行期流错误（CPAL/Rodio），重建输出流恢复播放
         playerLog.warn("检测到音频输出流错误，触发恢复");
         requestReinit(inst);
         break;
       }
       case "outputStalled": {
+        releasePowerBlocker();
         // 看门狗：无流错误但长期未消费样本
         playerLog.warn("检测到音频输出停滞，触发恢复");
         requestReinit(inst);
@@ -241,20 +250,23 @@ const registerNativeEvents = (inst: InstanceType<AudioEngineModule["AudioPlayer"
 let loadSeq = 0;
 let streamingServerId: string | undefined;
 onPlayerReset(() => {
+  eventPlayer = null;
+  releasePowerBlocker();
   loadSeq++;
   void streamingPlayback.stopStreamingPlayback();
 });
 
 /**
- * 服务器断开或身份变化时停止对应曲目，并作废在途加载
- * @param serverId - 服务器 ID
- * @returns 服务端停止通知完成
+ * Stop the active server track when its session is disconnected or replaced.
+ * @param serverId - Server identifier.
+ * @returns Completion of the server playback-stop notification.
  */
 export const stopStreamingPlayer = (serverId: string): Promise<void> => {
   if (streamingServerId === serverId) {
     loadSeq++;
     streamingServerId = undefined;
     cancelPreparedTrack();
+    releasePowerBlocker();
     getPlayer().stop();
   }
   return streamingPlayback.stopStreamingPlayback(serverId);
@@ -459,6 +471,7 @@ export const registerPlayerIpc = (): void => {
   // 加载音频文件
   ipcMain.handle("player:load", async (_event, source: string, options: LoadOptions = {}) => {
     cancelPendingReinit();
+    releasePowerBlocker();
     const autoPlay = options.autoPlay ?? true;
     const authoritative = options.meta ?? null;
     const cueRange = cueRangeFromTrack(authoritative);
@@ -573,7 +586,10 @@ export const registerPlayerIpc = (): void => {
       );
       return result;
     } catch (error) {
-      if (seq === loadSeq) activeCueRange = null;
+      if (seq === loadSeq) {
+        activeCueRange = null;
+        releasePowerBlocker();
+      }
       const code = classifyLoadError(error, source);
       return fail(code, error);
     }
@@ -585,12 +601,14 @@ export const registerPlayerIpc = (): void => {
       await getPlayer().play();
       return { success: true };
     } catch (error) {
+      releasePowerBlocker();
       return fail(ErrorCode.DEVICE_NOT_FOUND, error);
     }
   });
 
   // 暂停播放
   ipcMain.handle("player:pause", () => {
+    releasePowerBlocker();
     try {
       getPlayer().pause();
       return { success: true };
@@ -601,6 +619,7 @@ export const registerPlayerIpc = (): void => {
 
   // 停止播放并释放资源
   ipcMain.handle("player:stop", () => {
+    releasePowerBlocker();
     loadSeq++;
     void streamingPlayback.stopStreamingPlayback();
     try {
@@ -911,12 +930,14 @@ export const registerPlayerIpc = (): void => {
       const inst = getPlayer();
       switch (event.type) {
         case "Play":
-          void inst.play().catch(() => {});
+          void inst.play().catch(() => releasePowerBlocker());
           break;
         case "Pause":
+          releasePowerBlocker();
           inst.pause();
           break;
         case "Stop":
+          releasePowerBlocker();
           loadSeq++;
           void streamingPlayback.stopStreamingPlayback();
           cancelPreparedTrack();
@@ -993,6 +1014,7 @@ export const registerPlayerIpc = (): void => {
   });
   // 系统进入睡眠时暂停播放
   powerMonitor.on("suspend", () => {
+    releasePowerBlocker();
     try {
       getPlayer().pause();
       playerLog.info("系统进入睡眠，已暂停播放");
@@ -1029,6 +1051,7 @@ export const registerPlayerIpc = (): void => {
   powerMonitor.on("resume", resumeHandler);
   // 退出前停止设备监听并释放休眠抑制
   app.on("before-quit", () => {
+    eventPlayer = null;
     stopDeviceMonitoring();
     releasePowerBlocker();
   });

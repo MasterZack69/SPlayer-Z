@@ -200,3 +200,20 @@ describe("single-entry queue navigation", () => {
     expect(mocks.toast).not.toHaveBeenCalled();
   });
 });
+
+describe("explicit featured-first playback", () => {
+  it.each(["off", "on"] as const)(
+    "keeps the requested first track at queue index zero with shuffle %s",
+    async (shuffle) => {
+      const queue = await import("@/stores/queue");
+      const featuredFirst = [tracks[2], tracks[0], tracks[1]];
+      status.shuffleMode = shuffle;
+      await player.playFrom(featuredFirst, { startIndex: 0 });
+      expect(queue.queue.value[0].id).toBe(tracks[2].id);
+      expect(status.playIndex).toBe(0);
+      expect(media.track?.id).toBe(tracks[2].id);
+      expect(mocks.load).toHaveBeenCalledOnce();
+      expect(queue.queue.value).toHaveLength(3);
+    },
+  );
+});

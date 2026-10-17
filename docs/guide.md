@@ -10,7 +10,7 @@ Continue through the agreement and remaining setup pages, choose your music fold
 
 ## Home
 
-The greeting is followed by a random selection from your library, up to 50 tracks. Use **Play now** or **Add to queue**. The layout adapts to the available width.
+The greeting is followed by a random selection from your library, up to 50 tracks. **Play now** replaces the queue with that selection, starting with the featured song at the top. **Add to queue** inserts the same featured-first order after the current song. The layout adapts to the available width.
 
 The **Stats** section below the selection contains:
 
@@ -46,7 +46,7 @@ For installation and build problems, start with [Downloads and installation](dow
 
 ## Playback and application information
 
-Enable **Settings → Player → Keep Screen Awake During Playback** to prevent display sleep while music is playing. It is off by default and releases the display inhibitor on pause, stop, or exit. The desktop environment controls whether inhibitors are honored.
+Enable **Settings → Player → Keep Screen Awake During Playback** to prevent display sleep while music is playing. It is off by default. Sleep inhibitors are held only for active playback, not while loading or idle, and are released on pause, stop, completion, playback failure, player reset, or exit. The desktop environment controls whether inhibitors are honored.
 
 Local PCM preloading and crossfade remain available without a song cache. Streaming tracks play directly from your server; they are not downloaded into an automatic song cache. Cover, artist-artwork, background, and lyric caches remain under **Local & Cache**.
 

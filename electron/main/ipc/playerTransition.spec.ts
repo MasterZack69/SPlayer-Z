@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  updatePower: vi.fn(),
+  releasePower: vi.fn(),
+  created: [] as Array<(player: unknown) => void>,
+  nativeEvent: (_event: { type: string; state?: string }) => {},
+  state: "playing",
+  finished: false,
+  pause: vi.fn(),
+  powerEvents: new Map<string, () => void>(),
+  appEvents: new Map<string, Array<() => void>>(),
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   reset: [] as Array<() => void>,
   transition: vi.fn(),
@@ -23,25 +32,35 @@ vi.mock("electron", () => ({
       mocks.handlers.set(name, callback),
     on: vi.fn(),
   },
-  powerMonitor: { on: vi.fn() },
-  app: { on: vi.fn() },
+  powerMonitor: {
+    on: (name: string, callback: () => void) => mocks.powerEvents.set(name, callback),
+  },
+  app: {
+    on: (name: string, callback: () => void) => {
+      mocks.appEvents.set(name, [...(mocks.appEvents.get(name) ?? []), callback]);
+    },
+  },
 }));
 vi.mock("@main/services/engine", () => {
   const player = {
     transitionToPrepared: mocks.transition,
     load: mocks.load,
     stop: mocks.stop,
+    pause: mocks.pause,
+    onEvent: (callback: typeof mocks.nativeEvent) => {
+      mocks.nativeEvent = callback;
+    },
     seek: mocks.seek,
     getDuration: () => 10,
     getPosition: () => 5,
     getSpeed: () => 1,
     getVolume: () => 1,
     getCoverRaw: () => null,
-    getStatus: () => ({ state: "playing" }),
+    getStatus: () => ({ state: mocks.state, isFinished: mocks.finished }),
   };
   return {
     getPlayer: () => player,
-    onPlayerCreated: vi.fn(),
+    onPlayerCreated: (callback: (player: unknown) => void) => mocks.created.push(callback),
     onPlayerReset: (callback: () => void) => mocks.reset.push(callback),
     resetPlayer: () => mocks.reset.forEach((callback) => callback()),
   };
@@ -54,7 +73,7 @@ vi.mock("@main/services/playerPreload", () => ({
   getTransitionEndMs: (end: number) => end,
 }));
 vi.mock("@main/utils/logger", () => ({
-  playerLog: { info: vi.fn(), debug: vi.fn(), error: vi.fn() },
+  playerLog: { info: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 vi.mock("@main/services/media", () => ({
   setMetadata: mocks.metadata,
@@ -64,8 +83,12 @@ vi.mock("@main/services/media", () => ({
     mocks.mediaEvent = callback;
   },
 }));
-vi.mock("@main/services/nowPlaying", () => ({ prepareTransition: mocks.prepareTransition }));
+vi.mock("@main/services/nowPlaying", () => ({
+  prepareTransition: mocks.prepareTransition,
+  onPlayStateChange: vi.fn(),
+}));
 vi.mock("@main/services/device", () => ({
+  requestReinit: vi.fn(),
   cancelPendingReinit: vi.fn(),
   startDeviceMonitoring: vi.fn(),
   stopDeviceMonitoring: vi.fn(),
@@ -76,9 +99,14 @@ vi.mock("@main/utils/encoding", () => ({}));
 vi.mock("@main/utils/protocol", () => ({ toCacheUrl: () => undefined }));
 vi.mock("@main/utils/config", () => ({ appName: "SPlayer-Z" }));
 vi.mock("@main/utils/fetchBytes", () => ({}));
-vi.mock("@main/utils/powerBlocker", () => ({}));
+vi.mock("@main/utils/powerBlocker", () => ({
+  updatePowerBlocker: mocks.updatePower,
+  releasePowerBlocker: mocks.releasePower,
+}));
 vi.mock("@main/services/lastfm", () => ({
   onTrackLoaded: vi.fn(),
+  onState: vi.fn(),
+  onEnded: vi.fn(),
   onStopped: vi.fn(),
   onRepeatOneRestart: mocks.lastfmRestart,
 }));
@@ -87,6 +115,7 @@ vi.mock("@main/services/streaming/playback", () => ({
   startStreamingPlayback: mocks.streamingStart,
   stopStreamingPlayback: mocks.streamingStop,
   onStreamingSeek: vi.fn(),
+  onStreamingState: vi.fn(),
 }));
 vi.mock("@main/services/streaming/adapters/resolve", () => ({
   invalidateStreamingSession: vi.fn(),
@@ -125,12 +154,19 @@ describe("交接响应的主进程竞态保护", () => {
     vi.clearAllMocks();
     mocks.handlers.clear();
     mocks.reset.length = 0;
+    mocks.created.length = 0;
+    mocks.powerEvents.clear();
+    mocks.appEvents.clear();
+    mocks.state = "playing";
+    mocks.finished = false;
     mocks.seek.mockResolvedValue(undefined);
     mocks.load.mockResolvedValue(meta);
     mocks.streamingPrepare.mockReset().mockResolvedValue(undefined);
     mocks.streamingStop.mockResolvedValue(undefined);
     const { registerPlayerIpc } = await import("./player");
     registerPlayerIpc();
+    const { getPlayer } = await import("@main/services/engine");
+    mocks.created.forEach((callback) => callback(getPlayer()));
   });
 
   it.each(["停止", "跳转", "重置", "加载新曲", "系统停止", "系统跳转"])(
@@ -259,5 +295,74 @@ describe("交接响应的主进程竞态保护", () => {
       success: false,
       error,
     });
+  });
+  it.each(["player:pause", "player:stop"])(
+    "%s releases sleep inhibition even if native control fails",
+    async (channel) => {
+      mocks.pause.mockImplementationOnce(() => {
+        throw new Error("device lost");
+      });
+      mocks.stop.mockImplementationOnce(() => {
+        throw new Error("device lost");
+      });
+      expect(await invoke(channel)).toMatchObject({ success: false });
+      expect(mocks.releasePower).toHaveBeenCalled();
+    },
+  );
+
+  it.each(["ended", "sourceError", "outputFailed", "outputStalled"])(
+    "%s releases without waiting for StateChanged",
+    (type) => {
+      mocks.nativeEvent({ type });
+      expect(mocks.releasePower).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(["paused", "stopped", "idle"])(
+    "a queued Playing event cannot inhibit sleep when native state is %s",
+    (state) => {
+      mocks.state = state;
+      mocks.nativeEvent({ type: "stateChanged", state: "playing" });
+      expect(mocks.updatePower).toHaveBeenLastCalledWith(false);
+    },
+  );
+
+  it("only inhibits for unfinished playing audio, and ignores reset-instance callbacks", () => {
+    mocks.nativeEvent({ type: "stateChanged", state: "playing" });
+    expect(mocks.updatePower).toHaveBeenLastCalledWith(true);
+    mocks.finished = true;
+    mocks.nativeEvent({ type: "stateChanged", state: "playing" });
+    expect(mocks.updatePower).toHaveBeenLastCalledWith(false);
+    mocks.reset.forEach((callback) => callback());
+    expect(mocks.releasePower).toHaveBeenCalled();
+    mocks.updatePower.mockClear();
+    mocks.nativeEvent({ type: "stateChanged", state: "playing" });
+    expect(mocks.updatePower).not.toHaveBeenCalled();
+  });
+
+  it.each(["Pause", "Stop"])("MPRIS %s releases inhibition immediately", (type) => {
+    mocks.mediaEvent({ type });
+    expect(mocks.releasePower).toHaveBeenCalled();
+  });
+
+  it("failed loading and system suspend release any existing inhibition", async () => {
+    mocks.load.mockRejectedValueOnce(new Error("broken source"));
+    await invoke("player:load", "broken.wav", {});
+    expect(mocks.releasePower).toHaveBeenCalledTimes(2);
+    mocks.releasePower.mockClear();
+    mocks.powerEvents.get("suspend")!();
+    expect(mocks.releasePower).toHaveBeenCalledOnce();
+  });
+  it("ignores callbacks after shutdown starts, even before the process exits", () => {
+    mocks.appEvents.get("before-quit")![0]();
+    expect(mocks.releasePower).toHaveBeenCalled();
+    mocks.nativeEvent({ type: "stateChanged", state: "playing" });
+    expect(mocks.updatePower).not.toHaveBeenCalled();
+  });
+
+  it("a delayed Paused event does not clear a resumed player's inhibitor", () => {
+    mocks.state = "playing";
+    mocks.nativeEvent({ type: "stateChanged", state: "paused" });
+    expect(mocks.updatePower).toHaveBeenLastCalledWith(true);
   });
 });
