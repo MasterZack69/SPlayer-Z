@@ -27,3 +27,6 @@ Same as upstream: LRC, eLRC, KRC, QRC, TTML
 ## Contributing
 
 See the [contribution guide](docs/en/contributing.md) for setup and contribution requirements. All future commit messages, pull request titles and descriptions, reviews, and new or updated documentation must be in English. Application localization strings may remain in their target languages.
+
+## Credits
+SPlayer-Z couldn't be possible without SPlayer-Next, and that could not be possible without the various people who contribute to it. Special thanks to imsyy, MoYingJi, Kyv001, PhantomPixel and a dozen other cool and awesome people! 
