@@ -36,14 +36,23 @@ const onCategorySelect = (id: string) => {
   nextTick(() => scrollRef.value?.scrollTo({ top: 0 }));
 };
 
-const onSearchSelect = (categoryId: string, itemKey: string) => {
+/**
+ * Locate a result, falling back to its nearest rendered ancestor when collapsed.
+ * @param categoryId - Category containing the result.
+ * @param itemKey - Selected setting key.
+ * @param parentKeys - Ancestor keys ordered from outermost to innermost.
+ */
+const onSearchSelect = (categoryId: string, itemKey: string, parentKeys: string[] = []) => {
   highlightKey.value = itemKey;
   if (activeId.value !== categoryId) {
     activeId.value = categoryId;
   }
   nextTick(() => {
     setTimeout(() => {
-      const el = document.getElementById(`setting-${itemKey}`);
+      const el = [itemKey, ...parentKeys.toReversed()]
+        .map((key) => document.getElementById(`setting-${key}`))
+        .find((element) => element !== null);
+      if (el) highlightKey.value = el.id.slice("setting-".length);
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
       setTimeout(() => {
         highlightKey.value = undefined;

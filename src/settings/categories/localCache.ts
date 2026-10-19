@@ -14,7 +14,7 @@ const localCacheCategory: SettingCategory = {
           type: "custom",
           component: FileCacheManager,
           fullWidth: true,
-          keywords: ["cacheDir.label", "fileClearAll.label"],
+          keywords: ["settings.cacheDir.label", "settings.fileClearAll.label"],
         },
       ],
     },

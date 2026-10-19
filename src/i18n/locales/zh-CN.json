@@ -1774,6 +1774,12 @@
     "keepScreenAwake": {
       "label": "播放时保持屏幕常亮",
       "description": "仅在音乐播放时防止屏幕自动关闭，暂停或停止后释放。"
+    },
+    "lastfmAccount": {
+      "label": "Last.fm 账号"
+    },
+    "streamingServerList": {
+      "label": "媒体源管理"
     }
   },
   "collection": {

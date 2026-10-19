@@ -1774,6 +1774,12 @@
     "keepScreenAwake": {
       "label": "Keep Screen Awake During Playback",
       "description": "Prevent the display from turning off while music is playing. Released when paused or stopped."
+    },
+    "lastfmAccount": {
+      "label": "Last.fm Account"
+    },
+    "streamingServerList": {
+      "label": "Media Source Management"
     }
   },
   "collection": {
