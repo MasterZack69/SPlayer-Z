@@ -131,7 +131,7 @@ describe("single-entry queue navigation", () => {
     ["paused", "off"],
     ["playing", "on"],
     ["paused", "on"],
-  ] as const)("leaves %s playback intact with shuffle %s", async (state, shuffle) => {
+  ] as const)("leaves %s playback intact on Next with shuffle %s", async (state, shuffle) => {
     const queue = await import("@/stores/queue");
     queue.setQueue([tracks[0]]);
     status.state = state;
@@ -139,16 +139,14 @@ describe("single-entry queue navigation", () => {
     status.position = resumePosition;
     const entries = queue.queueEntries.value;
     const current = media.track;
-    for (const skip of [() => player.nextTrack(), () => player.prevTrack()]) {
-      await skip();
-      expect(status.playIndex).toBe(0);
-      expect(status.position).toBe(resumePosition);
-      expect(status.state).toBe(state);
-      expect(status.currentSource).toBe(oldUrl);
-      expect(media.track).toBe(current);
-      expect(queue.queueEntries.value).toBe(entries);
-    }
-    expect(mocks.toast).toHaveBeenCalledTimes(2);
+    await player.nextTrack();
+    expect(status.playIndex).toBe(0);
+    expect(status.position).toBe(resumePosition);
+    expect(status.state).toBe(state);
+    expect(status.currentSource).toBe(oldUrl);
+    expect(media.track).toBe(current);
+    expect(queue.queueEntries.value).toBe(entries);
+    expect(mocks.toast).toHaveBeenCalledTimes(1);
     expect(mocks.toast).toHaveBeenCalledWith("player.noOtherTracks", {
       duration: 2000,
       icon: false,
@@ -160,16 +158,53 @@ describe("single-entry queue navigation", () => {
     expect(mocks.pause).not.toHaveBeenCalled();
   });
 
-  it.each(["next", "prev"] as const)("guards the system media %s command too", async (type) => {
+  it.each([
+    ["playing", "off"],
+    ["paused", "off"],
+    ["playing", "on"],
+    ["paused", "on"],
+  ] as const)("restarts the sole %s track on Previous with shuffle %s", async (state, shuffle) => {
     const queue = await import("@/stores/queue");
     queue.setQueue([tracks[0]]);
-    status.state = "playing";
-    await events.handleEvent({ type });
-    expect(status.position).toBe(resumePosition);
-    expect(status.state).toBe("playing");
+    status.state = state;
+    status.shuffleMode = shuffle;
+    const entries = queue.queueEntries.value;
+    const current = media.track;
+    await player.prevTrack();
+    expect(mocks.seek).toHaveBeenCalledExactlyOnceWith(0, true);
+    expect(status.position).toBe(0);
+    expect(playback.getCurrentTime()).toBe(0);
+    expect(status.state).toBe(state);
+    expect(status.playIndex).toBe(0);
+    expect(status.currentSource).toBe(oldUrl);
+    expect(media.track).toBe(current);
+    expect(queue.queueEntries.value).toBe(entries);
+    expect(mocks.toast).not.toHaveBeenCalled();
     expect(mocks.load).not.toHaveBeenCalled();
-    expect(mocks.toast).toHaveBeenCalledTimes(1);
+    expect(mocks.stop).not.toHaveBeenCalled();
+    expect(mocks.play).not.toHaveBeenCalled();
+    expect(mocks.pause).not.toHaveBeenCalled();
   });
+
+  it.each(["next", "prev"] as const)(
+    "honors single-entry behavior for system media %s",
+    async (type) => {
+      const queue = await import("@/stores/queue");
+      queue.setQueue([tracks[0]]);
+      status.state = "playing";
+      await events.handleEvent({ type });
+      expect(status.position).toBe(type === "prev" ? 0 : resumePosition);
+      expect(status.state).toBe("playing");
+      expect(mocks.load).not.toHaveBeenCalled();
+      if (type === "prev") {
+        expect(mocks.seek).toHaveBeenCalledExactlyOnceWith(0, true);
+        expect(mocks.toast).not.toHaveBeenCalled();
+      } else {
+        expect(mocks.seek).not.toHaveBeenCalled();
+        expect(mocks.toast).toHaveBeenCalledTimes(1);
+      }
+    },
+  );
 
   it.each(["list", "one"] as const)("still repeats automatically in %s mode", async (mode) => {
     const queue = await import("@/stores/queue");
@@ -197,6 +232,7 @@ describe("single-entry queue navigation", () => {
     await player.nextTrack();
     await player.prevTrack();
     expect(mocks.load).not.toHaveBeenCalled();
+    expect(mocks.seek).not.toHaveBeenCalled();
     expect(mocks.toast).not.toHaveBeenCalled();
   });
 });

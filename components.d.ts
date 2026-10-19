@@ -45,7 +45,6 @@ declare module 'vue' {
     CopyLyricsDialog: typeof import('./src/components/modals/CopyLyricsDialog.vue')['default']
     CoverCard: typeof import('./src/components/list/CoverCard.vue')['default']
     CoverList: typeof import('./src/components/list/CoverList.vue')['default']
-    DbCacheManager: typeof import('./src/components/settings/custom/DbCacheManager.vue')['default']
     DeviceSelector: typeof import('./src/components/settings/custom/DeviceSelector.vue')['default']
     DialogClose: typeof import('reka-ui')['DialogClose']
     DialogContent: typeof import('reka-ui')['DialogContent']

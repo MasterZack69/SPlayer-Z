@@ -453,7 +453,7 @@ const api = {
     // 清除单个类别
     clear: (id: string) => ipcRenderer.invoke("cache:clear", id),
     // 按介质清空
-    clearAllByKind: (kind: "file" | "db") => ipcRenderer.invoke("cache:clearAllByKind", kind),
+    clearAllByKind: (kind: "file") => ipcRenderer.invoke("cache:clearAllByKind", kind),
     // 获取当前缓存目录
     getDir: () => ipcRenderer.invoke("cache:getDir"),
     // 选择新的缓存目录

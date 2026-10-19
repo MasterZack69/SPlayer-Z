@@ -77,9 +77,9 @@ declare global {
         clearBackgroundImages: () => Promise<void>;
       };
       cache: {
-        getStats: () => Promise<{ id: string; kind: "file" | "db"; path: string; size: number }[]>;
+        getStats: () => Promise<{ id: string; kind: "file"; path: string; size: number }[]>;
         clear: (id: string) => Promise<void>;
-        clearAllByKind: (kind: "file" | "db") => Promise<void>;
+        clearAllByKind: (kind: "file") => Promise<void>;
         getDir: () => Promise<string>;
         pickDir: () => Promise<{ ok: boolean; dir: string; reason?: "canceled" | "notEmpty" }>;
         resetDir: () => Promise<string>;

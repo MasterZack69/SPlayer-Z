@@ -10,19 +10,14 @@ import {
   getBackgroundsDir,
 } from "@main/utils/config";
 import { syncCoverCacheDir } from "@main/services/engine";
-import { getDb } from "@main/database";
-import { clearLyricCache } from "@main/database/lyricCache";
-import { clearLyricTtmlCache } from "@main/database/lyricTtmlCache";
-import { clearLyricMatchCache } from "@main/database/lyricMatchCache";
 import { systemLog } from "@main/utils/logger";
 import { defaultCacheDir } from "@main/utils/paths";
 
 /** 已知的缓存类别 */
-export type CacheCategory =
-  "covers" | "artists" | "backgrounds" | "lyric" | "lyricTTML" | "lyricMatch";
+export type CacheCategory = "covers" | "artists" | "backgrounds";
 
 /** 缓存介质 */
-export type CacheKind = "file" | "db";
+export type CacheKind = "file";
 
 /** 单类别的占用情况 */
 export interface CacheStat {
@@ -82,23 +77,6 @@ const isDirEmpty = async (dir: string): Promise<boolean> => {
 };
 
 /**
- * sqlite 单表占用：取所有 TEXT/BLOB 字段 length 之和
- * @param table - 表名
- * @param columns - 列名列表
- * @returns 占用字节数
- */
-const tableSize = (table: string, columns: string[]): number => {
-  try {
-    const expr = columns.map((c) => `COALESCE(length(${c}), 0)`).join(" + ");
-    const row = getDb().prepare(`SELECT SUM(${expr}) AS total FROM ${table}`).get() as
-      { total: number | null } | undefined;
-    return row?.total ?? 0;
-  } catch {
-    return 0;
-  }
-};
-
-/**
  * 类别 → 介质 / 占用统计 / 路径展示 / 清空动作
  * @param category - 类别
  * @returns 介质 / 占用统计 / 路径展示 / 清空动作
@@ -130,24 +108,6 @@ const categoryHandlers: Record<
     size: () => dirSize(getBackgroundsDir()),
     clear: () => clearDir(getBackgroundsDir()),
   },
-  lyric: {
-    kind: "db",
-    path: () => "lyric_cache",
-    size: () => tableSize("lyric_cache", ["data"]),
-    clear: clearLyricCache,
-  },
-  lyricTTML: {
-    kind: "db",
-    path: () => "lyric_ttml_cache",
-    size: () => tableSize("lyric_ttml_cache", ["content"]),
-    clear: clearLyricTtmlCache,
-  },
-  lyricMatch: {
-    kind: "db",
-    path: () => "lyric_match_cache",
-    size: () => tableSize("lyric_match_cache", ["fingerprint", "platform_id", "extra"]),
-    clear: clearLyricMatchCache,
-  },
 };
 
 /**
@@ -160,7 +120,7 @@ const idsByKind = (kind: CacheKind): CacheCategory[] =>
     (id) => categoryHandlers[id].kind === kind,
   );
 
-/** Register artwork and lyric cache management endpoints. */
+/** Register artwork and background cache management endpoints. */
 export const registerCacheIpc = (): void => {
   ipcMain.handle("cache:getStats", async (): Promise<CacheStat[]> => {
     const ids = Object.keys(categoryHandlers) as CacheCategory[];

@@ -797,7 +797,6 @@
       "downloadGeneral": "Download Options",
       "downloadTags": "What to Write",
       "cache": "Cache Management",
-      "database": "Database Management",
       "backupReset": "Backup & Reset",
       "debug": "Debug",
       "preset": "OCD Settings",
@@ -1673,10 +1672,6 @@
       "label": "Cache Manager",
       "description": "Inspect cache usage and clear it"
     },
-    "dbCacheManager": {
-      "label": "Database Manager",
-      "description": "Inspect database usage and clear it"
-    },
     "cacheDir": {
       "label": "Cache Directory",
       "open": "Open in file manager",
@@ -1686,7 +1681,7 @@
       "changedHint": "Cache directory switched",
       "notEmpty": "The selected folder isn't empty. Please pick an empty folder.",
       "switchConfirmTitle": "Switch cache directory?",
-      "switchConfirmDesc": "Current cover / artist / background caches will be cleared before the switch, and the new location must be an empty folder. Database-backed lyric caches are unaffected.",
+      "switchConfirmDesc": "Current cover / artist / background caches will be cleared before the switch, and the new location must be an empty folder.",
       "switchConfirmOk": "Pick Folder",
       "resetConfirmTitle": "Reset to default cache directory?",
       "resetConfirmDesc": "Current file caches will be cleared before resetting."
@@ -1700,10 +1695,7 @@
       "covers": "Cover Thumbnails",
       "artists": "Artist Avatars",
       "backgrounds": "Backgrounds",
-      "songs": "Song Files",
-      "lyric": "Lyric Content Cache",
-      "lyricTTML": "TTML Lyric Cache",
-      "lyricMatch": "Lyric Match Cache"
+      "songs": "Song Files"
     },
     "downloadEnabled": {
       "label": "Enable Downloads"
@@ -1778,13 +1770,6 @@
       "button": "Clear All",
       "confirmTitle": "Clear all file caches?",
       "confirmDesc": "All file caches above will be deleted and regenerated on next use. This cannot be undone."
-    },
-    "dbClearAll": {
-      "label": "Clear Database Caches",
-      "description": "Wipe lyric and matching caches stored in the database. Your local library and account data are not affected.",
-      "button": "Clear All",
-      "confirmTitle": "Clear all database caches?",
-      "confirmDesc": "All database caches above will be cleared. This cannot be undone."
     },
     "keepScreenAwake": {
       "label": "Keep Screen Awake During Playback",

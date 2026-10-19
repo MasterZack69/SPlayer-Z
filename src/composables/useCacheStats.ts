@@ -1,4 +1,4 @@
-type CacheKind = "file" | "db";
+type CacheKind = "file";
 
 interface CacheStat {
   id: string;
@@ -11,9 +11,6 @@ const stats = ref<CacheStat[]>([
   { id: "covers", kind: "file", path: "", size: 0 },
   { id: "artists", kind: "file", path: "", size: 0 },
   { id: "backgrounds", kind: "file", path: "", size: 0 },
-  { id: "lyric", kind: "db", path: "", size: 0 },
-  { id: "lyricTTML", kind: "db", path: "", size: 0 },
-  { id: "lyricMatch", kind: "db", path: "", size: 0 },
 ]);
 const cacheDir = ref<string>("");
 const loading = ref(false);

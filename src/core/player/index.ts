@@ -1062,13 +1062,13 @@ export const playAtIndex = async (index: number): Promise<void> => {
   await loadTrack(status.currentTrack, status.currentPlaybackContext);
 };
 
-/** Move to the previous entry, leaving single-entry playback untouched. */
+/** Play the previous queue entry, or seek to the beginning when it is the only entry. */
 export const prevTrack = async (): Promise<void> => {
   const status = useStatusStore();
   if (status.fmMode) return;
   if (queue.queueLength.value === 0) return;
   if (queue.queueLength.value === 1 && status.playIndex === 0) {
-    toast.info(i18n.global.t("player.noOtherTracks"), { duration: 2000, icon: false });
+    await seek(0, true);
     return;
   }
   status.playIndex = status.playIndex > 0 ? status.playIndex - 1 : queue.queueLength.value - 1;
