@@ -1,8 +1,9 @@
-/** 静态启动层与应用共享窗口；此入口不能静态导入 Vue 或业务模块。 */
+/** Display the startup layer and hand over playback control after the first screen is ready, avoiding static imports of Vue or business modules. */
 export const bootstrap = async (): Promise<void> => {
   const splash = document.getElementById("app-loading")!;
   const root = document.getElementById("app")!;
   const logo = splash.querySelector<HTMLImageElement>(".splash-logo")!;
+  /** Pause the startup animation according to page visibility. */
   const syncVisibility = (): void => {
     splash.classList.toggle("paused", document.hidden);
   };
@@ -48,5 +49,8 @@ export const bootstrap = async (): Promise<void> => {
 
 void bootstrap().catch((error) => {
   console.error("[app] 初始化失败", error);
-  window.api.window.startupFailed(String(error));
+
+  window.api.window.startupFailed(
+    error instanceof Error ? error.stack || String(error) : String(error),
+  );
 });

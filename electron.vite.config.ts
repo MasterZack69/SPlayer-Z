@@ -57,8 +57,12 @@ export default defineConfig({
     server: {
       port: 14558,
       watch: {
-        ignored: ["**/native/**/target/**"],
+        ignored: ["**/target/**"],
       },
+    },
+    optimizeDeps: {
+      entries: ["index.html", "windows/**/index.html", "src/components/**/*.vue"],
+      include: ["reka-ui"],
     },
     publicDir: resolve(__dirname, "public"),
     build: {
