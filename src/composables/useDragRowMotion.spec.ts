@@ -34,6 +34,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   motion?.dispose();
+  document.documentElement.removeAttribute("data-reduced-motion");
   document.body.replaceChildren();
   Reflect.deleteProperty(HTMLElement.prototype, "animate");
   vi.unstubAllGlobals();
@@ -215,6 +216,19 @@ describe("lifted queue row motion", () => {
     expect(animate).not.toHaveBeenCalled();
     expect(document.querySelector(".queue-drag-preview")).toBeNull();
     expect(rows[1].classList.contains("queue-drag-source")).toBe(false);
+  });
+
+  it("honors manual reduced motion while preserving direct pointer movement", () => {
+    document.documentElement.setAttribute("data-reduced-motion", "");
+    setup();
+    motion.move(450, 400, 4);
+    paint();
+    expect(document.querySelector<HTMLElement>(".queue-drag-preview")!.style.transform).toContain(
+      "translate3d",
+    );
+    motion.finish(4);
+    expect(animate).not.toHaveBeenCalled();
+    expect(document.querySelector(".queue-drag-preview")).toBeNull();
   });
 
   it("cleans up a pending frame and settling animation when disposed", () => {

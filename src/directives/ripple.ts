@@ -14,6 +14,10 @@ interface RippleElement extends HTMLElement {
   [RIPPLE_HANDLER]?: (e: PointerEvent) => void;
 }
 
+/**
+ * Register the pointer ripple on an element.
+ * @param el - Element receiving pointer feedback.
+ */
 const setupRipple = (el: RippleElement) => {
   if (el[RIPPLE_HANDLER]) return;
 
@@ -23,7 +27,12 @@ const setupRipple = (el: RippleElement) => {
   }
   el.style.overflow = "hidden";
 
+  /**
+   * Skip ripple nodes and animation work when reduced motion is active.
+   * @param e - Pointer press event.
+   */
   const handler = (e: PointerEvent) => {
+    if (document.documentElement.hasAttribute("data-reduced-motion")) return;
     const rect = el.getBoundingClientRect();
     const radius = Math.sqrt(rect.width ** 2 + rect.height ** 2);
     const size = radius * 2;

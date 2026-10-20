@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { setPlayerExpanded } from "@/services/playerTransition";
 import type { Artist } from "@shared/types/player";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
 import { useMediaStore } from "@/stores/media";
@@ -83,11 +84,11 @@ const isAlbumLinkable = computed(() =>
 );
 
 /**
- * 跳转详情页并收起全屏播放器
- * @param target - 详情页目标
+ * Navigate to a resource and collapse Now Playing.
+ * @param target - Destination resource, or null if it cannot be opened.
  */
 const goToResource = (target: ResourceNavigationTarget | null): void => {
-  if (target && navigateToResource(target)) status.isPlayerExpanded = false;
+  if (target && navigateToResource(target)) setPlayerExpanded(false);
 };
 
 /** 来源标签 */

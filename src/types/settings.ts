@@ -264,6 +264,10 @@ export interface AppearanceSettings {
   layoutMode: LayoutMode;
   /** 路由切换动效 */
   routeTransition: RouteTransition;
+  /** Animate matching cover artwork between views. */
+  seamlessTransition: boolean;
+  /** Reduce interface motion in addition to the system preference. */
+  reduceMotion: boolean;
   /** 侧边栏折叠 */
   sidebarCollapsed: boolean;
   /** 侧边栏歌单项显示封面 */

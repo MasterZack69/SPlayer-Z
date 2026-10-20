@@ -61,6 +61,8 @@ const props = withDefaults(
 interface Emits {
   /** 点击歌词行进行播放进度跳转 */
   (e: "seek", timeMs: number): void;
+  /** The initial lyric layout has completed. */
+  (e: "ready"): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -259,6 +261,7 @@ onMounted(async () => {
   processLyricLanguage(player);
   initialized.value = true;
   contentVisible.value = true;
+  emit("ready");
 });
 
 onUnmounted(() => {

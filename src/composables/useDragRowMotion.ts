@@ -102,7 +102,9 @@ export const useDragRowMotion = (listRef: Ref<SVirtualListExposed | null>) => {
     };
     pointer = { x, y };
     grab = { x: x - rect.left, y: y - rect.top };
-    reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    reducedMotion =
+      document.documentElement.hasAttribute("data-reduced-motion") ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     preview = document.createElement("div");
     preview.className = "queue-drag-preview";
     preview.setAttribute("aria-hidden", "true");
@@ -155,7 +157,12 @@ export const useDragRowMotion = (listRef: Ref<SVirtualListExposed | null>) => {
     render();
     active = false;
     const list = listRef.value;
-    if (!list?.wrapperRef || reducedMotion || document.hidden) {
+    if (
+      !list?.wrapperRef ||
+      reducedMotion ||
+      document.hidden ||
+      document.documentElement.hasAttribute("data-reduced-motion")
+    ) {
       dispose();
       return;
     }

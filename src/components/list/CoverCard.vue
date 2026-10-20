@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CoverItem } from "@/types/artist";
+import { captureCover } from "@/services/coverTransition";
 import artistFallback from "@/assets/images/artist.jpg";
 
 export interface CoverCardProps {
@@ -22,11 +23,20 @@ const props = withDefaults(defineProps<CoverCardProps>(), {
 });
 
 const emit = defineEmits<{ click: []; play: [] }>();
+const coverKey = computed(() => `${props.type}:${props.item.id}`);
+
+/** Capture the card header for the navigation initiated by this click. */
+const handleClick = (): void => {
+  captureCover(props.item, coverKey.value);
+  emit("click");
+};
 
 /** 播放按钮是否可交互：歌手卡片中间是头像占位图，不做播放入口 */
 const canPlay = computed(() => props.playable && props.type !== "artist");
 
-/** 点击封面上的播放按钮：不触发卡片跳转 */
+/** Play a card without triggering detail navigation.
+ * @param event - Cover play-button click.
+ */
 const handlePlay = (event: MouseEvent): void => {
   if (!canPlay.value) return;
   event.stopPropagation();
@@ -43,18 +53,20 @@ const actualFallback = computed(() => (props.type === "artist" ? artistFallback 
   <div
     class="cursor-pointer group rounded-xl transition-colors duration-300"
     :class="type !== 'artist' ? 'hover:bg-primary/10' : ''"
-    @click="$emit('click')"
+    @click="handleClick"
   >
     <!-- 封面 -->
     <div class="relative overflow-hidden group-hover:will-change-transform" :class="coverRounded">
       <SImg
+        :data-cover-key="coverKey"
         :src="item.cover"
         :fallback="actualFallback"
         :alt="item.title"
-        class="w-full aspect-square transition-[transform,filter] duration-300 ease-out group-hover:scale-108 group-hover:brightness-80"
+        class="cover-card-image w-full aspect-square transition-[transform,filter] duration-300 ease-out group-hover:scale-108 group-hover:brightness-80"
       />
-      <!-- 播放按钮 -->
+      <!-- Playback actions remain separate from card navigation. -->
       <div
+        data-cover-action
         class="absolute size-9 flex items-center justify-center rounded-full opacity-0 transition-[opacity,transform,background-color] duration-300 group-hover:opacity-100"
         :class="[
           type === 'artist'
@@ -91,3 +103,15 @@ const actualFallback = computed(() => (props.type === "artist" ? artistFallback 
     </div>
   </div>
 </template>
+
+<style scoped>
+[data-cover-shared] {
+  transform: none !important;
+  filter: none !important;
+  transition: none;
+}
+[data-cover-shared] + [data-cover-action] {
+  opacity: 0 !important;
+  transition: none;
+}
+</style>

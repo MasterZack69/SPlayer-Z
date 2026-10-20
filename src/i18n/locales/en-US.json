@@ -800,7 +800,8 @@
       "backupReset": "Backup & Reset",
       "debug": "Debug",
       "preset": "OCD Settings",
-      "envInfo": "Environment Info"
+      "envInfo": "Environment Info",
+      "softwareAnimations": "Transitions & Animations"
     },
     "about": {
       "openLogs": "Open Logs",
@@ -1780,6 +1781,14 @@
     },
     "streamingServerList": {
       "label": "Media Source Management"
+    },
+    "reduceMotion": {
+      "label": "Reduce Motion",
+      "description": "Reduce interface motion and resource usage"
+    },
+    "seamlessTransition": {
+      "label": "Shared Element Transitions",
+      "description": "Seamlessly transition elements between two pages"
     }
   },
   "collection": {

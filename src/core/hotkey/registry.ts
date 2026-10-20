@@ -1,3 +1,4 @@
+import { setPlayerExpanded } from "@/services/playerTransition";
 /**
  * 渲染端动作注册表
  *
@@ -20,7 +21,7 @@ const SEEK_STEP_MS = 5000;
  */
 const handlers = new Map<HotkeyActionId, () => boolean | void | Promise<void>>();
 
-/** 填充 handler 表 */
+/** Register playback, navigation, and shared player expansion actions. */
 export const buildRegistry = (): void => {
   handlers.clear();
 
@@ -58,13 +59,13 @@ export const buildRegistry = (): void => {
   handlers.set("player.toggleShuffle", () => player.toggleShuffleMode());
   // 打开播放器
   handlers.set("view.openPlayer", () => {
-    useStatusStore().isPlayerExpanded = true;
+    setPlayerExpanded(true);
   });
   // 关闭播放器
   handlers.set("view.closePlayer", (): boolean => {
     const status = useStatusStore();
     if (!status.isPlayerExpanded) return false;
-    status.isPlayerExpanded = false;
+    setPlayerExpanded(false);
     return true;
   });
   // 切换播放列表

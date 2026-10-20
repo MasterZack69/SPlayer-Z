@@ -44,6 +44,10 @@ Open **Queue** from the player controls to inspect or rearrange upcoming tracks.
 
 Use Settings for appearance, playback, lyrics, shortcuts, services, media sources, local caches, and application information. Settings search includes nested controls and translated descriptions; selecting a result highlights that control, or its nearest visible parent if collapsed. Optional Last.fm integration remains under **Services**. Media-server credentials are separate from those integrations.
 
+Under **Appearance → Transitions & Animations**, enable **Reduce Motion** for lighter interface effects. The system's reduced-motion preference is also honored, including when the app switch is off. Queue dragging still follows the pointer, but skips animated settling.
+
+**Shared Element Transitions** is off by default. Enable it to animate artwork between a card and its artist/collection detail page, and between the player bar and Now Playing. Reduced motion disables these shared transitions. Unavailable browser support or unloaded artwork falls back to ordinary navigation. Fluid backgrounds continue initializing during player entry.
+
 For installation and build problems, start with [Downloads and installation](download.md) or [Debugging](troubleshooting/debug.md).
 
 ## Playback and application information

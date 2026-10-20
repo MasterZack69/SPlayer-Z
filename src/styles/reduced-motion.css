@@ -1,0 +1,145 @@
+html[data-reduced-motion] {
+  :is(.transition, .transition-all, .transition-transform, [class*="transition-["]) {
+    /* Keep opacity transitions; apply position and scale changes immediately. */
+    transition-property: opacity;
+    transition-duration: 150ms;
+    transition-delay: 0s;
+  }
+
+  :is(
+    [class*="route-"],
+    [class*="slide-left-"],
+    [class*="slide-up-"],
+    [class*="scale-switch-"],
+    .motion-enter
+  ) {
+    /* Override inline movement written by TransitionGroup. */
+    transform: none !important;
+    transition: opacity 150ms ease;
+  }
+
+  .player-shell {
+    --un-scale-x: 1;
+    --un-scale-y: 1;
+    transition: opacity 240ms ease;
+  }
+
+  .player-panel {
+    transition:
+      opacity 240ms ease,
+      transform 240ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .player-panel.translate-y-full {
+    --un-translate-y: 12px;
+    opacity: 0;
+  }
+
+  /* Preserve popup positioning and completion events with opacity-only entry. */
+  :is(
+    [class*="animate-popover-"],
+    [class*="animate-dialog-"],
+    [class*="animate-panel-"],
+    [class*="animate-select-"],
+    [class*="animate-drawer-"],
+    [class*="animate-overlay-"]
+  ) {
+    animation-duration: 150ms;
+    animation-timing-function: ease;
+
+    &[data-state$="open"] {
+      animation-name: reduced-motion-in;
+    }
+
+    &[data-state="closed"] {
+      animation-name: reduced-motion-out;
+    }
+  }
+
+  :is(.animate-slide-in-item, .animate-fade-in) {
+    animation: reduced-motion-in 150ms ease both;
+  }
+
+  .animate-highlight-pulse {
+    animation: none;
+    outline: 2px solid rgb(var(--s-primary) / 0.3);
+  }
+
+  /* Override hover and active scale utilities. */
+  :is([class*="hover:scale-"], [class*="active:scale-"]) {
+    --un-scale-x: 1 !important;
+    --un-scale-y: 1 !important;
+  }
+
+  [data-cover-action] {
+    --un-translate-y: 0px;
+  }
+
+  :is(.cover-card-image, .blur-1, .blur-4) {
+    filter: none !important;
+  }
+
+  :is(.will-change-transform, [class*="hover:will-change-"], .s-marquee-scrolling) {
+    will-change: auto !important;
+  }
+
+  :is(.s-marquee-scrolling, .s-marquee-mask) {
+    animation: none;
+  }
+
+  .s-marquee-scrolling > [aria-hidden="true"] {
+    display: none;
+  }
+
+  :is(.glass-panel, [class*="backdrop-blur-"]) {
+    backdrop-filter: none;
+  }
+
+  footer.glass-panel {
+    background-color: rgb(var(--s-surface-panel) / 0.92);
+  }
+
+  /* Use an opaque background to preserve readability without backdrop blur. */
+  &[data-appearance-style="image"]
+    :is(
+      .glass-panel,
+      .bg-surface-bright,
+      .bg-field,
+      footer.bg-surface-panel,
+      [role="dialog"].bg-surface-panel,
+      [role="dialog"].bg-surface-alt,
+      [role="alertdialog"].bg-surface-panel,
+      [role="alertdialog"].bg-surface-alt
+    ) {
+    backdrop-filter: none;
+    background-color: rgb(var(--s-surface-panel) / 0.92);
+  }
+
+  :is(.queue-drag-card, .queue-drag-shifting) {
+    transition: none;
+  }
+
+  .player-transition-shine {
+    animation: none;
+    background: none;
+    color: rgb(var(--s-on-surface));
+  }
+}
+
+@keyframes reduced-motion-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reduced-motion-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

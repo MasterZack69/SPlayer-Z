@@ -21,6 +21,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: "seek", timeMs: number): void;
+  (e: "ready"): void;
 }>();
 
 const settings = useSettingsStore();
@@ -75,6 +76,7 @@ defineExpose({
     :show-word-romanization="settings.lyric.showWordRomanization"
     :bg-always-below="settings.lyric.bgAlwaysBelow"
     @seek="emit('seek', $event)"
+    @ready="emit('ready')"
   >
     <template #bottom>
       <slot name="bottom">

@@ -139,18 +139,6 @@ const appearanceCategory: SettingCategory = {
           defaultValue: "default",
         },
         {
-          key: "routeTransition",
-          type: "select",
-          binding: { store: "settings", path: "appearance.routeTransition" },
-          options: [
-            { value: "none", labelKey: "settings.routeTransition.none" },
-            { value: "fade", labelKey: "settings.routeTransition.fade" },
-            { value: "slide", labelKey: "settings.routeTransition.slide" },
-            { value: "zoom", labelKey: "settings.routeTransition.zoom" },
-          ],
-          defaultValue: "fade",
-        },
-        {
           key: "sidebarCollapsed",
           type: "switch",
           binding: { store: "settings", path: "appearance.sidebarCollapsed" },
@@ -166,6 +154,35 @@ const appearanceCategory: SettingCategory = {
           key: "sidebarCustomize",
           type: "custom",
           component: SidebarCustomizeConfig,
+        },
+      ],
+    },
+    {
+      id: "softwareAnimations",
+      items: [
+        {
+          key: "reduceMotion",
+          type: "switch",
+          binding: { store: "settings", path: "appearance.reduceMotion" },
+          defaultValue: false,
+        },
+        {
+          key: "routeTransition",
+          type: "select",
+          binding: { store: "settings", path: "appearance.routeTransition" },
+          options: [
+            { value: "none", labelKey: "settings.routeTransition.none" },
+            { value: "fade", labelKey: "settings.routeTransition.fade" },
+            { value: "slide", labelKey: "settings.routeTransition.slide" },
+            { value: "zoom", labelKey: "settings.routeTransition.zoom" },
+          ],
+          defaultValue: "fade",
+        },
+        {
+          key: "seamlessTransition",
+          type: "switch",
+          binding: { store: "settings", path: "appearance.seamlessTransition" },
+          defaultValue: false,
         },
       ],
     },

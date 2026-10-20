@@ -68,6 +68,7 @@ watch(
       <div v-if="src" :key="src" class="absolute inset-0 z-1">
         <img
           :src="src"
+          data-cover-image
           :alt="alt"
           class="w-full h-full object-cover"
           :class="fade ? 'opacity-0 transition-opacity duration-200' : ''"
