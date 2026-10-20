@@ -2,6 +2,10 @@
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
 import { useMediaStore } from "@/stores/media";
+import { useLibraryStore } from "@/stores/library";
+import type { Track } from "@shared/types/player";
+import { dialog } from "@/composables/useDialog";
+import { toast } from "@/composables/useToast";
 import { useFavorite } from "@/composables/useFavorite";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useTrackMenu } from "@/composables/useTrackMenu";
@@ -15,6 +19,8 @@ import IconLucideMoreHorizontal from "~icons/lucide/more-horizontal";
 const status = useStatusStore();
 const settings = useSettingsStore();
 const media = useMediaStore();
+const library = useLibraryStore();
+const { t } = useI18n();
 const fav = useFavorite();
 const { position, duration } = storeToRefs(status);
 const { formatTooltip, snapToNearestLyric } = useProgressLyric();
@@ -37,11 +43,37 @@ const {
   openPicker,
 } = usePlaylistPicker();
 
+/**
+ * Confirm deletion of the selected local file, then remove it from playback.
+ * @param track - Track selected when the menu action was invoked.
+ */
+const deleteTrackFile = async (track: Track): Promise<void> => {
+  if (track.source !== "local" || !track.path || track.cuePath) return;
+  const { id, path, title } = track;
+  const confirmed = await dialog.confirm({
+    title: t("songList.delete.fileTitle"),
+    content: t("songList.delete.fileConfirmOne", { title }),
+    type: "error",
+  });
+  if (!confirmed) return;
+  try {
+    const result = await library.deleteTracks([path]);
+    if (result.deleted !== 1) {
+      toast.error(t("liked.toast.failed"));
+      return;
+    }
+    await player.purgeDeletedTracks([id]);
+  } catch (error) {
+    toast.error(error instanceof Error && error.message ? error.message : t("liked.toast.failed"));
+  }
+};
+
 /** 歌曲菜单 */
 const { enqueue: enqueueDownload } = useDownload();
 const { items: menuItems, handleSelect: onMenuSelect } = useTrackMenu(toRef(media, "track"), {
   hidePlayActions: true,
   onAddToPlaylist: (track) => openPicker([track]),
+  onDeleteFile: (track) => void deleteTrackFile(track),
   onDownload: (track, quality) => void enqueueDownload(track, { quality }),
 });
 </script>
