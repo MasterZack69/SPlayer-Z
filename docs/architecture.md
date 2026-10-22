@@ -22,6 +22,8 @@ Queue entry identity is separate from track identity. `useQueuePanel` shares que
 
 Local scanning builds the SQLite library index. Local playlists also live in SQLite; old renderer playlist storage is migration-only. The shared `SongList` keeps column headers and rows consistent across song-list contexts.
 
+`SongList` sorting is persisted by a finite page-category key in the status store, not globally or per individual album/playlist ID. Library, Folders, Liked Songs, Artists, and collection types (including Genres) keep independent preferences. Unkeyed lists keep sorting component-local. The old global sort is intentionally not migrated; each category initially uses its original order.
+
 Home search uses categorized local and active-server indexes. Other pages use route-bound filters through `usePageSearch`. No renderer request should bypass the main-process authentication boundary to search a media server.
 
 Home contains library statistics and listening insights below the random-track selection. Keep those queries local and avoid reintroducing a separate Stats page.

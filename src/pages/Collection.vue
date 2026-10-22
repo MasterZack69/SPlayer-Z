@@ -426,6 +426,7 @@ onBeforeUnmount(() => {
           :playback-context="playbackContext"
           :can-remove="manage.canManage.value"
           enable-sort
+          :sort-key="`collection.${type}`"
           @scroll="handleListScroll"
           @change="handleTracksRemoved"
         />

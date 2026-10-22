@@ -116,6 +116,7 @@ const handleMoreMenu = (key: string): void => {
           :search-query="searchQuery"
           source="local"
           enable-sort
+          sort-key="liked.local"
         />
       </div>
       <div v-else key="local-empty" class="flex-1 flex items-center justify-center">

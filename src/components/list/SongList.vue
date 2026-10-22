@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Artist, PlaybackContext, Track, TrackSource } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
-import type { SortField } from "@/types/list";
+import type { SortField, SortOrder, SongListSortKey, SongListSortPreference } from "@/types/list";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
@@ -48,6 +48,8 @@ const props = withDefaults(
     showSize?: boolean;
     /** 是否启用排序交互 */
     enableSort?: boolean;
+    /** Persist sorting within this page category; omitted keys stay component-local. */
+    sortKey?: SongListSortKey;
     /** 列表来源 */
     source?: TrackSource;
     /** 集合类型 */
@@ -165,8 +167,26 @@ const goGenre = (item: Track, genre: string): void => {
   navigateToGenre(genre);
 };
 
-/** 排序字段 */
-const { sortField, sortOrder } = storeToRefs(status);
+const localSortPreference = ref<SongListSortPreference>({ field: "none", order: "asc" });
+const sortPreference = computed<SongListSortPreference>({
+  get: () => (props.sortKey ? status.getSortPreference(props.sortKey) : localSortPreference.value),
+  set: (preference) => {
+    if (props.sortKey) status.setSortPreference(props.sortKey, preference);
+    else localSortPreference.value = preference;
+  },
+});
+const sortField = computed<SortField>({
+  get: () => sortPreference.value.field,
+  set: (field) => {
+    sortPreference.value = { ...sortPreference.value, field };
+  },
+});
+const sortOrder = computed<SortOrder>({
+  get: () => sortPreference.value.order,
+  set: (order) => {
+    sortPreference.value = { ...sortPreference.value, order };
+  },
+});
 
 /** 字段文案 key 映射 */
 const sortFieldLabelKeyMap: Record<SortField, string> = {

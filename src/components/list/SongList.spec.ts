@@ -1,17 +1,19 @@
-import { defineComponent, h, reactive, ref, toRefs, type PropType } from "vue";
+import { defineComponent, h, ref, type PropType } from "vue";
 import { shallowMount } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import en from "@/i18n/locales/en-US.json";
 import type { Track } from "@shared/types/player";
 
-vi.mock("pinia", () => ({ storeToRefs: (store: object) => toRefs(store) }));
+import { createPinia, setActivePinia } from "pinia";
+import { useStatusStore } from "@/stores/status";
+beforeEach(() => {
+  localStorage.clear();
+  setActivePinia(createPinia());
+});
 vi.mock("vue-router", () => ({ useRoute: () => ({ name: "library" }) }));
 vi.mock("@/stores/media", () => ({ useMediaStore: () => ({ track: null }) }));
-vi.mock("@/stores/status", () => ({
-  useStatusStore: () => reactive({ sortField: "none", sortOrder: "asc", isPlaying: false }),
-}));
 vi.mock("@/stores/settings", () => ({
   useSettingsStore: () => ({ preset: {}, player: {} }),
 }));
@@ -61,7 +63,14 @@ const track: Track = {
   duration: 180000,
   fileSize: 30000000,
 };
+const RadioGroup = {
+  name: "TestRadioGroup",
+  props: { value: String },
+  emits: ["update:value"],
+  template: "<div><slot /></div>",
+};
 const VirtualList = defineComponent({
+  name: "TestVirtualList",
   props: { items: { type: Array as PropType<Track[]>, default: () => [] } },
   setup:
     (props, { slots }) =>
@@ -79,6 +88,8 @@ const mountList = (props: Record<string, unknown> = {}) =>
       plugins: [createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
       config: { warnHandler: () => {} },
       stubs: {
+        SPopover: { template: '<div><slot name="trigger" /><slot /></div>' },
+        SRadioGroup: RadioGroup,
         SContextMenu: { template: "<div><slot /></div>" },
         SVirtualList: VirtualList,
         SDialog: true,
@@ -124,5 +135,76 @@ describe("shared song-list columns", () => {
       expect(source).toContain("<SongList");
       expect(source).not.toMatch(/:show-(?:album|genre|duration|size)=/);
     }
+  });
+});
+
+/** Change the real list's sorting controls through their model events. */
+const setSort = async (wrapper: ReturnType<typeof mountList>, field: string, order = "asc") => {
+  const controls = wrapper.findAllComponents(RadioGroup);
+  controls[0].vm.$emit("update:value", field);
+  controls[1].vm.$emit("update:value", order);
+  await wrapper.vm.$nextTick();
+};
+
+/** Read the order supplied to virtualization, not the input array. */
+const titles = (wrapper: ReturnType<typeof mountList>) =>
+  wrapper
+    .findComponent({ name: "TestVirtualList" })
+    .props("items")
+    .map((item: Track) => item.title);
+
+const sortTracks = [
+  { ...track, id: "z", title: "Zulu" },
+  { ...track, id: "a", title: "Alpha" },
+];
+
+describe("song-list sorting scopes", () => {
+  it("isolates Library, album and genre sorting while preserving source order", async () => {
+    const library = mountList({ items: sortTracks, enableSort: true, sortKey: "library" });
+    const album = mountList({ items: sortTracks, enableSort: true, sortKey: "collection.album" });
+    const genre = mountList({ items: sortTracks, enableSort: true, sortKey: "collection.genre" });
+    await setSort(library, "title");
+    expect(titles(library)).toEqual(["Alpha", "Zulu"]);
+    expect(titles(album)).toEqual(["Zulu", "Alpha"]);
+    expect(titles(genre)).toEqual(["Zulu", "Alpha"]);
+    await setSort(genre, "title", "desc");
+    expect(titles(library)).toEqual(["Alpha", "Zulu"]);
+    expect(titles(genre)).toEqual(["Zulu", "Alpha"]);
+    expect(sortTracks.map((item) => item.title)).toEqual(["Zulu", "Alpha"]);
+    library.unmount();
+    album.unmount();
+    genre.unmount();
+  });
+
+  it("reuses a category preference after remounting", async () => {
+    const first = mountList({ items: sortTracks, enableSort: true, sortKey: "artist" });
+    await setSort(first, "title");
+    first.unmount();
+    const second = mountList({ items: sortTracks, enableSort: true, sortKey: "artist" });
+    expect(titles(second)).toEqual(["Alpha", "Zulu"]);
+    second.unmount();
+  });
+
+  it("keeps unkeyed lists independent and does not persist their sorting", async () => {
+    const first = mountList({ items: sortTracks, enableSort: true });
+    const second = mountList({ items: sortTracks, enableSort: true });
+    await setSort(first, "title");
+    expect(titles(first)).toEqual(["Alpha", "Zulu"]);
+    expect(titles(second)).toEqual(["Zulu", "Alpha"]);
+    expect(useStatusStore().sortPreferences).toEqual({});
+    first.unmount();
+    second.unmount();
+  });
+
+  it("switches sort keys reactively and ignores sorting when disabled", async () => {
+    const list = mountList({ items: sortTracks, enableSort: true, sortKey: "library" });
+    await setSort(list, "title");
+    await list.setProps({ sortKey: "folders" });
+    expect(titles(list)).toEqual(["Zulu", "Alpha"]);
+    await list.setProps({ sortKey: "library" });
+    expect(titles(list)).toEqual(["Alpha", "Zulu"]);
+    await list.setProps({ enableSort: false });
+    expect(titles(list)).toEqual(["Zulu", "Alpha"]);
+    list.unmount();
   });
 });

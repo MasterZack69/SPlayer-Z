@@ -113,6 +113,7 @@ onMounted(() => {
           :search-query="searchQuery"
           :playback-context="playbackContext"
           enable-sort
+          sort-key="history"
         />
       </div>
       <div v-else key="empty" class="flex-1 flex items-center justify-center">

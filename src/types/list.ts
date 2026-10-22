@@ -1,4 +1,6 @@
-/** 歌曲列表排序字段 */
+import type { CollectionType } from "./collection";
+
+/** Song-list sorting fields. */
 export type SortField =
   | "none"
   | "title"
@@ -11,5 +13,15 @@ export type SortField =
   | "ctime"
   | "track";
 
-/** 歌曲列表排序方向 */
+/** Song-list sorting direction. */
 export type SortOrder = "asc" | "desc";
+
+/** Sorting state shared only by lists in the same page category. */
+export interface SongListSortPreference {
+  field: SortField;
+  order: SortOrder;
+}
+
+/** Finite page categories keep persisted preferences bounded. */
+export type SongListSortKey =
+  "library" | "folders" | "liked.local" | "artist" | "history" | `collection.${CollectionType}`;

@@ -7,7 +7,7 @@ import type {
 } from "@shared/types/player";
 import type { Platform } from "@shared/types/platform";
 import type { ContentScope } from "@/types/collection";
-import type { SortField, SortOrder } from "@/types/list";
+import type { SongListSortKey, SongListSortPreference } from "@/types/list";
 import type { PersonalFmOptions } from "@/types/netease";
 export type { RepeatMode, ShuffleMode } from "@shared/types/player";
 export type { SortField, SortOrder } from "@/types/list";
@@ -90,10 +90,29 @@ export const useStatusStore = defineStore(
     const likedPageTab = ref<ContentScope>("local");
     /** 设置弹窗上次手动选择的大分类 */
     const settingsCategory = ref("");
-    /** 歌曲列表排序字段 */
-    const sortField = ref<SortField>("none");
-    /** 歌曲列表排序方向 */
-    const sortOrder = ref<SortOrder>("asc");
+    /** Persist sorting per page category rather than across the entire app. */
+    const sortPreferences = ref<Partial<Record<SongListSortKey, SongListSortPreference>>>({});
+
+    /**
+     * Read a category's preference without retaining an entry for the default order.
+     * @param key - Song-list page category.
+     */
+    const getSortPreference = (key: SongListSortKey): SongListSortPreference =>
+      sortPreferences.value[key] ?? { field: "none", order: "asc" };
+
+    /**
+     * Save sorting for one category, removing redundant default entries.
+     * @param key - Song-list page category.
+     * @param preference - Selected sorting field and direction.
+     */
+    const setSortPreference = (key: SongListSortKey, preference: SongListSortPreference): void => {
+      const current = getSortPreference(key);
+      if (current.field === preference.field && current.order === preference.order) return;
+      const next = { ...sortPreferences.value };
+      if (preference.field === "none" && preference.order === "asc") delete next[key];
+      else next[key] = { ...preference };
+      sortPreferences.value = next;
+    };
     /** 是否正在播放 */
     const isPlaying = computed(() => state.value === "playing");
     /** 是否暂停 */
@@ -154,8 +173,9 @@ export const useStatusStore = defineStore(
       myPlaylistSource,
       likedPageTab,
       settingsCategory,
-      sortField,
-      sortOrder,
+      sortPreferences,
+      getSortPreference,
+      setSortPreference,
       currentTrack,
       currentPlaybackContext,
       showComments,
@@ -176,8 +196,7 @@ export const useStatusStore = defineStore(
         "myPlaylistSource",
         "likedPageTab",
         "settingsCategory",
-        "sortField",
-        "sortOrder",
+        "sortPreferences",
       ],
     },
   },

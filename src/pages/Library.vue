@@ -170,6 +170,7 @@ const handleMoreMenu = (key: string): void => {
         :search-query="searchQuery"
         :playback-context="playbackContext"
         enable-sort
+        sort-key="library"
       />
     </div>
     <!-- 空状态：无目录或无歌曲 -->

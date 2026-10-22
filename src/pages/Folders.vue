@@ -201,6 +201,7 @@ onMounted(async () => {
           :items="selectedTracks"
           :search-query="searchQuery"
           enable-sort
+          sort-key="folders"
         >
           <template #topInfo>
             <div
