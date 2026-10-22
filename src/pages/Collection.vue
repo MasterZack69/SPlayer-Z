@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { trackYears, validYear } from "@shared/utils/year";
 import { usePageSearch } from "@/composables/usePageSearch";
 import type { PlaybackContext, TrackSource } from "@shared/types/player";
 import type { Collection, CollectionType } from "@/types/collection";
@@ -133,6 +134,12 @@ const artistText = computed(() => {
 });
 
 /** 歌手或创建者 */
+const albumYears = computed(() => {
+  const years = trackYears(collection.value?.tracks ?? []);
+  const fallback = validYear(collection.value?.year);
+  return years.length ? years.join(" / ") : (fallback?.toString() ?? "");
+});
+
 const creatorText = computed(() => {
   return artistText.value || collection.value?.creator || "";
 });
@@ -336,6 +343,13 @@ onBeforeUnmount(() => {
                 <div
                   class="flex items-center gap-3 text-sm leading-none text-on-surface-variant/50"
                 >
+                  <span
+                    v-if="type === 'album' && albumYears"
+                    class="shrink-0 tabular-nums"
+                    data-album-years
+                  >
+                    {{ albumYears }}
+                  </span>
                   <span v-if="creatorText" class="flex items-center gap-1 min-w-0">
                     <IconLucideUser class="shrink-0" />
                     <span class="truncate">{{ creatorText }}</span>

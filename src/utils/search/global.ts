@@ -2,14 +2,23 @@ import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { PlaylistSummary } from "@shared/types/playlist";
 import type { FolderNode } from "@/types/folder";
 import type { CoverItem } from "@/types/artist";
+import { getTrackYear } from "@shared/utils/year";
 import { matchesSearch } from "./match";
 
-export const ENTITY_CATEGORIES = ["albums", "artists", "genres", "playlists", "folders"] as const;
+export const ENTITY_CATEGORIES = [
+  "albums",
+  "artists",
+  "genres",
+  "years",
+  "playlists",
+  "folders",
+] as const;
 export type EntityCategory = (typeof ENTITY_CATEGORIES)[number];
 export type SearchCategory = "all" | "songs" | EntityCategory;
 
 export interface SearchEntity extends CoverItem {
   category: EntityCategory;
+  years?: number[];
   source: "local" | "streaming";
   resourceId: string;
   serverId?: string;
@@ -33,6 +42,7 @@ export interface SearchIndex {
   albums: SearchEntity[];
   artists: SearchEntity[];
   genres: SearchEntity[];
+  years: SearchEntity[];
   playlists: SearchEntity[];
   folders: SearchEntity[];
 }
@@ -65,17 +75,35 @@ export const buildSearchIndex = (library: SearchLibrary): SearchIndex => {
     const id = JSON.stringify([entity.category, entity.source, entity.serverId, entity.resourceId]);
     const existing = maps[entity.category].get(id);
     if (!existing) maps[entity.category].set(id, { ...entity, id });
-    else if (countTrack) existing.trackCount += 1;
+    else if (countTrack) {
+      existing.trackCount += 1;
+      existing.years = [...new Set([...(existing.years ?? []), ...(entity.years ?? [])])].sort(
+        (a, b) => a - b,
+      );
+    }
   };
 
   for (const track of songs) {
     if (track.source !== "local" && track.source !== "streaming") continue;
+    const year = getTrackYear(track);
+    if (year !== undefined)
+      add(
+        {
+          category: "years",
+          source: "local",
+          resourceId: String(year),
+          title: String(year),
+          trackCount: 1,
+        },
+        true,
+      );
     const source = track.source;
     const serverId = track.serverId ?? (source === "streaming" ? library.server.id : undefined);
     if (track.album?.name)
       add(
         {
           category: "albums",
+          years: year === undefined ? [] : [year],
           source,
           serverId,
           resourceId: source === "local" ? track.album.name : (track.album.id ?? track.album.name),
@@ -125,6 +153,7 @@ export const buildSearchIndex = (library: SearchLibrary): SearchIndex => {
       serverId,
       title: album.name,
       subtitle: album.artist,
+      years: existing?.years?.length ? existing.years : album.year ? [album.year] : [],
       cover: album.cover ?? existing?.cover,
       trackCount: album.trackCount ?? existing?.trackCount ?? 0,
     });
@@ -208,6 +237,7 @@ export const searchIndex = (index: SearchIndex, query: string, genre?: string): 
                 query,
                 track.title,
                 track.album?.name,
+                getTrackYear(track)?.toString(),
                 ...track.artists.map((a) => a.name),
                 ...(track.genres ?? []),
               ),
@@ -217,7 +247,14 @@ export const searchIndex = (index: SearchIndex, query: string, genre?: string): 
       ENTITY_CATEGORIES.map((category) => [
         category,
         active
-          ? index[category].filter((entity) => matchesSearch(query, entity.title, entity.subtitle))
+          ? index[category].filter((entity) =>
+              matchesSearch(
+                query,
+                entity.title,
+                entity.subtitle,
+                ...(entity.years ?? []).map(String),
+              ),
+            )
           : [],
       ]),
     ),

@@ -107,6 +107,7 @@ const setup = async (path = "/search?q=Night") => {
     history: createMemoryHistory(),
     routes: [
       { path: "/search", name: "search", component: Search },
+      { path: "/years/local/:year", name: "year", component: { render: () => null } },
       { path: "/folders", name: "folders", component: { render: () => null } },
     ],
   });
@@ -218,4 +219,17 @@ describe("categorized global search view", () => {
     expect(wrapper.get("[data-songs]").text()).toBe("Night Song");
     wrapper.unmount();
   });
+});
+
+it("renders year results as text links and opens the year's songs", async () => {
+  library.tracks = [{ ...track, year: 2024 }];
+  const { wrapper, router } = await setup("/search?q=2024&category=years");
+  expect(wrapper.find("[data-covers]").exists()).toBe(false);
+  const yearButton = wrapper.findAll("button").find((button) => button.text() === "2024");
+  expect(yearButton).toBeDefined();
+  await yearButton!.trigger("click");
+  await flushPromises();
+  expect(router.currentRoute.value.name).toBe("year");
+  expect(router.currentRoute.value.params.year).toBe("2024");
+  wrapper.unmount();
 });

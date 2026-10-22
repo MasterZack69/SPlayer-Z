@@ -16,6 +16,8 @@ static SCAN_CANCEL: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
 /// 已有文件记录，用于增量扫描比对
 #[napi(object)]
 pub struct FileRecord {
+    /// Re-read tags even when size and modification time are unchanged.
+    pub force_scan: Option<bool>,
     pub path: String,
     pub mtime: f64,
     pub size: f64,
@@ -24,6 +26,8 @@ pub struct FileRecord {
 /// 扫描到的曲目信息
 #[napi(object)]
 pub struct JsScannedTrack {
+    /// Calendar year interpreted from the file date/year tags.
+    pub year: Option<u32>,
     pub path: String,
     pub title: Option<String>,
     pub artist: Option<String>,
@@ -52,6 +56,7 @@ pub struct JsScannedTrack {
 impl From<scanner::ScannedTrack> for JsScannedTrack {
     fn from(track: scanner::ScannedTrack) -> Self {
         Self {
+            year: track.year,
             path: track.path,
             title: track.title,
             artist: track.artist,
@@ -113,6 +118,7 @@ pub fn scan_dirs(
     let records: Option<Vec<scanner::FileRecord>> = incremental_data.map(|data| {
         data.into_iter()
             .map(|r| scanner::FileRecord {
+                force_scan: r.force_scan.unwrap_or(false),
                 path: r.path,
                 mtime: r.mtime as u64,
                 size: r.size as u64,

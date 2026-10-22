@@ -12,6 +12,8 @@ import type {
 import { useLibraryStore } from "@/stores/library";
 import StatsOverview from "./StatsOverview.vue";
 import StatsHeatmap from "./StatsHeatmap.vue";
+import StatsYearChart from "./StatsYearChart.vue";
+import StatsAudioFormats from "./StatsAudioFormats.vue";
 import StatsTopList from "./StatsTopList.vue";
 
 const { t } = useI18n();
@@ -72,7 +74,14 @@ watch(
     <h2 class="text-xl font-bold text-on-surface">{{ t("stats.label") }}</h2>
     <p v-if="error" role="alert" class="text-sm text-error">{{ t("common.error") }}</p>
     <StatsOverview :stats="libraryStats" />
-    <StatsHeatmap :daily="daily" :hourly="hourly" :stats="libraryStats" :loading="loading" />
+    <div
+      class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+      data-year-formats-row
+    >
+      <StatsYearChart :tracks="library.tracks" />
+      <StatsAudioFormats :stats="libraryStats" :loading="loading" />
+    </div>
+    <StatsHeatmap :daily="daily" :hourly="hourly" :loading="loading" />
     <StatsTopList :songs="topSongs" :albums="topAlbums" :artists="topArtists" :loading="loading" />
   </section>
 </template>

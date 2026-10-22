@@ -96,12 +96,11 @@ pub fn read_tags(path: &str) -> Result<TrackTags> {
     })
 }
 
-/// 读年份：Year 优先，回退 RecordingDate（取前 4 位数字）
+/// Interpret date tags with the same calendar rules as the library scanner.
 fn read_year(tag: &Tag) -> Option<u32> {
-    tag.get_string(ItemKey::Year)
-        .or_else(|| tag.get_string(ItemKey::RecordingDate))
-        .and_then(|raw| raw.get(..4).or(Some(raw)))
-        .and_then(|raw| raw.parse::<u32>().ok())
+    [ItemKey::RecordingDate, ItemKey::Year]
+        .into_iter()
+        .find_map(|key| tag.get_string(key).and_then(super::parse_year))
 }
 
 /// 从 tag 读取歌词，优先使用 ItemKey，回退时对未知/自定义 key 进行归一化匹配（如 "UNSYNCED LYRICS"）

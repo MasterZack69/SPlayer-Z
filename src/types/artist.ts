@@ -2,6 +2,8 @@ import type { Track, TrackSource } from "@shared/types/player";
 
 /** 封面摘要卡片 */
 export interface CoverItem {
+  /** Distinct known album years. */
+  years?: number[];
   /** ID */
   id: string;
   /** 标题 */

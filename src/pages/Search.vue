@@ -84,7 +84,9 @@ const openEntity = (item: CoverItem): void => {
     results.value[key].find((entry) => entry.id === item.id),
   ).find(Boolean);
   if (!entity) return;
-  if (entity.category === "folders") {
+  if (entity.category === "years") {
+    void router.push({ name: "year", params: { year: entity.resourceId } });
+  } else if (entity.category === "folders") {
     void router.push({ name: "folders", query: { path: entity.resourceId } });
   } else if (entity.category === "genres") {
     void router.push({
@@ -171,7 +173,18 @@ onMounted(load);
               {{ t("search.showAll") }}
             </SButton>
           </div>
+          <div v-if="group === 'years'" class="flex flex-col items-start gap-3">
+            <button
+              v-for="item in results.years.slice(0, 6)"
+              :key="item.id"
+              class="hover:underline focus-visible:underline"
+              @click="openEntity(item)"
+            >
+              {{ item.title }}
+            </button>
+          </div>
           <CoverList
+            v-else
             :items="results[group].slice(0, 6)"
             :virtual="false"
             :type="group === 'artists' ? 'artist' : 'default'"
@@ -183,7 +196,21 @@ onMounted(load);
         <SongList :items="results.songs" />
       </div>
       <div v-else class="flex-1 min-h-0">
+        <div
+          v-if="category === 'years'"
+          class="flex flex-col items-start gap-3 overflow-y-auto h-full"
+        >
+          <button
+            v-for="item in entityResults"
+            :key="item.id"
+            class="hover:underline focus-visible:underline"
+            @click="openEntity(item)"
+          >
+            {{ item.title }}
+          </button>
+        </div>
         <CoverList
+          v-else
           :items="entityResults"
           :type="category === 'artists' ? 'artist' : 'default'"
           @click="openEntity"

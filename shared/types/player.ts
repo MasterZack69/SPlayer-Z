@@ -86,6 +86,8 @@ export type TrackFee = 0 | 1 | 4 | 8;
 
 /** 歌曲信息 */
 export interface Track {
+  /** Calendar year from the file or media-server date tags. */
+  year?: number;
   /** 服务端权威收藏状态；缺失表示尚未读取 */
   favorite?: boolean;
   /** 平台 id */

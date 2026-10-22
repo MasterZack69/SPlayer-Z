@@ -26,6 +26,7 @@ const BATCH_SIZE: usize = 20;
 
 /// 已有文件记录，用于增量扫描比对
 pub struct FileRecord {
+    pub force_scan: bool,
     pub path: String,
     pub mtime: u64,
     pub size: u64,
@@ -33,6 +34,7 @@ pub struct FileRecord {
 
 /// 扫描到的曲目信息
 pub struct ScannedTrack {
+    pub year: Option<u32>,
     pub path: String,
     pub title: Option<String>,
     pub artist: Option<String>,
@@ -135,6 +137,7 @@ pub(crate) fn probe_fast(path: &str, cover_cache_dir: Option<&str>) -> Option<Sc
         cover_cache_dir.and_then(|dir| metadata::extract_cover_thumbnail(&reader, path, dir));
 
     Some(ScannedTrack {
+        year: tags.year,
         path: path.to_string(),
         title: tags.title,
         artist: tags.artist,
@@ -201,6 +204,13 @@ pub fn scan_directories(
         })
         .unwrap_or_default();
 
+    let force_paths: HashSet<&str> = incremental_data
+        .unwrap_or_default()
+        .iter()
+        .filter(|record| record.force_scan)
+        .map(|record| record.path.as_str())
+        .collect();
+
     // 第一遍：收集所有音频文件路径
     let walk_start = Instant::now();
     let mut audio_files: Vec<(String, u64, u64, u64)> = Vec::new();
@@ -250,7 +260,10 @@ pub fn scan_directories(
             scanned_paths.push(path_str.clone());
             // 增量比对：mtime 和 size 都未变化则跳过
             if let Some(&(old_mtime, old_size)) = existing.get(path_str.as_str()) {
-                if old_mtime == mtime && old_size == size {
+                if !force_paths.contains(path_str.as_str())
+                    && old_mtime == mtime
+                    && old_size == size
+                {
                     continue;
                 }
             }

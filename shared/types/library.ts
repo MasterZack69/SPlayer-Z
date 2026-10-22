@@ -3,6 +3,8 @@ import type { TrackTags, TagEditRequest, TagWriteOutcome } from "./tagEditor";
 
 /** 专辑聚合项 */
 export interface AlbumSummary {
+  /** Distinct track years, sorted ascending. */
+  years?: number[];
   name: string;
   cover?: string;
   artist: string;

@@ -8,6 +8,8 @@ export type CollectionType = "album" | "playlist" | "genre" | "radio" | "cloud";
 
 /** 合集信息 */
 export interface Collection {
+  /** Album year supplied by a media server when track years are unavailable. */
+  year?: number;
   id: string;
   type: CollectionType;
   /** 数据来源 */

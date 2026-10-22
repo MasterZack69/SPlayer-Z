@@ -60,3 +60,30 @@ Renderer IndexedDB stores include `splayer-z/library` and `splayer-z/queue`. Sto
 English is the default renderer and main-process locale. A saved language choice takes precedence. The first setup page chooses language before the remaining steps.
 
 Linux MPRIS system media controls and optional Last.fm remain supported integrations. Only x86_64 and ARM64 Linux are supported. The Windows/macOS backends, taskbar integrations, and retired external lyric windows are removed. Linux uses CPAL output, PipeWire device monitoring, and MPRIS media controls.
+
+### Calendar years
+
+The scanner interprets FFmpeg date/year tags as calendar years, without timezone conversion.
+It accepts four-digit years, year-month dates, validated year-first or year-last numeric dates,
+compact `YYYYMMDD`, and ISO timestamps. Unknown, zero, malformed values, original-release-only
+tags, file timestamps, and incidental numbers in comments are not used as substitutes.
+Normalized `date` takes priority over `year`; invalid candidates fall through to recognized
+format-specific aliases. FFmpeg can normalize distinct ID3 date frames to the same key, so
+this layer cannot reconstruct distinctions already lost by the demuxer.
+
+A database row records whether year parsing has run, independently of whether a year exists.
+Upgraded files are re-read once by the next startup scan; cancellation or unavailable directories
+leave pending rows eligible for a later scan. Incremental records retain all existing paths for
+deleted-file detection. CUE tracks inherit the container year and are refreshed once as well.
+
+Shared song lists include a Year column between Genre and Actions, support year filtering and
+scoped sorting, and place unknown years last in either sort direction. Album pages and local
+album cards show distinct known years in ascending order separated by `/`. The Years browser
+is a text-only list across the local and active-server indexes; selecting a year opens its tracks.
+Global search includes Years and matches song/album years. Media-server years use the server's
+authoritative numeric metadata. No year is added to Now Playing.
+
+Home keeps the overview row, then shows Songs by Year alongside Audio Formats. Listening
+Activity and Listening Hours share the following row. The year chart counts local tracks with
+known years, excludes hidden CUE containers, labels missing-year coverage, and scrolls horizontally
+for long year histories; listening statistics and top lists retain their existing semantics.

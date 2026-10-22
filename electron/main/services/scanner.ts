@@ -8,6 +8,7 @@ import {
   upsertTracks,
   deleteTracksByPaths,
   getFileRecords,
+  getPendingYearPaths,
   getCueTrackPathsByDirs,
   hasTracksMissingGenres,
   type UpsertTrack,
@@ -30,8 +31,8 @@ const pathKey = (value: string): string => {
 };
 
 /**
- * Rust 扫描/探测结果 → 数据库 Upsert 记录
- * id 由文件路径哈希生成，标签编辑回灌与扫描共用此规则
+ * Preserve native scanner metadata under a stable path-derived library identity.
+ * @param track - Scanned file metadata, also used after tag edits.
  */
 export const scannedToUpsert = (track: JsScannedTrack): UpsertTrack => {
   const id = createHash("sha256").update(track.path).digest("hex").slice(0, 16);
@@ -40,6 +41,7 @@ export const scannedToUpsert = (track: JsScannedTrack): UpsertTrack => {
     path: track.path,
     title: track.title || track.path.split(/[/\\]/).pop() || track.path,
     track: track.track,
+    year: track.year,
     artists: parseArtists(track.artist ?? ""),
     album: parseAlbum(track.album ?? ""),
     genres: parseGenres(track.genre),
@@ -56,13 +58,20 @@ export const scannedToUpsert = (track: JsScannedTrack): UpsertTrack => {
   };
 };
 
-/** 同步 CUE 虚拟曲目到曲库 */
+/**
+ * Refresh CUE virtual tracks, including pending year backfills.
+ * @param cueFiles - Discovered sheet paths.
+ * @param dirs - Configured library directories.
+ * @param unavailableDirs - Offline directories whose records must be preserved.
+ * @returns Number of virtual tracks updated.
+ */
 const syncCueTracks = async (
   cueFiles: string[],
   dirs: string[],
   unavailableDirs: string[] = [],
 ): Promise<number> => {
   const allTracks = getAllTracks();
+  const pendingYearPaths = getPendingYearPaths();
   // 真实音频文件
   const audioByPath = new Map(
     allTracks.flatMap((track) =>
@@ -87,7 +96,11 @@ const syncCueTracks = async (
       const cueStat = await fs.stat(cuePath);
       const existing = existingByCue.get(pathKey(cuePath));
       // .cue 未变化
-      if (existing && existing.mtime === cueStat.mtimeMs) {
+      if (
+        existing &&
+        existing.mtime === cueStat.mtimeMs &&
+        !existing.paths.some((p) => pendingYearPaths.has(p))
+      ) {
         for (const trackPath of existing.paths) nextPaths.add(trackPath);
         continue;
       }
@@ -113,6 +126,7 @@ const syncCueTracks = async (
           artists: cueTrack.artists,
           album: cueTrack.album,
           genres: cueTrack.genres,
+          year: audio.year,
           duration: cueTrack.duration,
           cover: audio.cover,
           codec: audio.quality?.codec,

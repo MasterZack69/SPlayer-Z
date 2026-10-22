@@ -1,3 +1,4 @@
+import { getTrackYear } from "@shared/utils/year";
 import localforage from "localforage";
 import type { Track, Artist } from "@shared/types/player";
 import type {
@@ -399,22 +400,29 @@ export const useLibraryStore = defineStore("library", () => {
     const res = await window.api.library.getArtistTracks(name);
     if (!res.success || !res.data?.length) return null;
     const artistTracks = res.data;
-    const albumMap = new Map<string, { cover?: string; count: number }>();
+    const albumMap = new Map<string, { cover?: string; count: number; years: Set<number> }>();
     for (const t of artistTracks) {
       if (!t.album?.name) continue;
       const key = t.album.name;
       const existing = albumMap.get(key);
       if (existing) {
         existing.count++;
+        const year = getTrackYear(t);
+        if (year !== undefined) existing.years.add(year);
         if (!existing.cover && t.cover) existing.cover = t.cover;
       } else {
-        albumMap.set(key, { cover: t.cover, count: 1 });
+        albumMap.set(key, {
+          cover: t.cover,
+          count: 1,
+          years: new Set(getTrackYear(t) === undefined ? [] : [getTrackYear(t)!]),
+        });
       }
     }
     const albums: CoverItem[] = [...albumMap.entries()].map(([albumName, info]) => ({
       id: encodeURIComponent(albumName),
       title: albumName,
       cover: info.cover,
+      years: [...info.years].sort((a, b) => a - b),
       trackCount: info.count,
     }));
     return {

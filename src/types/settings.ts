@@ -93,6 +93,7 @@ export interface SidebarNavPlacementFix {
  */
 export const SIDEBAR_NAV_PLACEMENT_FIXES: SidebarNavPlacementFix[] = [
   { id: "genres-under-albums", key: "/genres/local" },
+  { id: "years-under-genres", key: "/years/local" },
 ];
 
 /** 侧边栏导航项默认分组 */
@@ -100,7 +101,15 @@ export const DEFAULT_SIDEBAR_NAV_GROUPS: SidebarNavGroup[] = [
   {
     name: "",
     showName: false,
-    keys: ["/", "/library", "/artists/local", "/albums/local", "/genres/local", "/folders"],
+    keys: [
+      "/",
+      "/library",
+      "/artists/local",
+      "/albums/local",
+      "/genres/local",
+      "/years/local",
+      "/folders",
+    ],
   },
   {
     name: "",

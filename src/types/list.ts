@@ -6,6 +6,7 @@ export type SortField =
   | "title"
   | "artist"
   | "album"
+  | "year"
   | "path"
   | "duration"
   | "size"
@@ -24,4 +25,10 @@ export interface SongListSortPreference {
 
 /** Finite page categories keep persisted preferences bounded. */
 export type SongListSortKey =
-  "library" | "folders" | "liked.local" | "artist" | "history" | `collection.${CollectionType}`;
+  | "library"
+  | "years"
+  | "folders"
+  | "liked.local"
+  | "artist"
+  | "history"
+  | `collection.${CollectionType}`;

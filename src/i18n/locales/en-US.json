@@ -396,7 +396,8 @@
       "playlists": "Playlists",
       "all": "All",
       "genres": "Genres",
-      "folders": "Folders"
+      "folders": "Folders",
+      "years": "Years"
     },
     "globalHint": "Search your local library, playlists, folders, and the active media server’s synchronized library.",
     "partialError": "Some library data could not be loaded. Available results are still shown.",
@@ -411,7 +412,8 @@
       "genres": "Search genres…",
       "folders": "Search this folder…",
       "songs": "Search server songs…",
-      "playlists": "Search playlists…"
+      "playlists": "Search playlists…",
+      "years": "Search years…"
     }
   },
   "streaming": {
@@ -1934,5 +1936,13 @@
       "discNumber": "Disc No.",
       "lyrics": "Embedded Lyrics"
     }
+  },
+  "year": {
+    "label": "Years",
+    "singular": "Year",
+    "byYear": "Sort by Year",
+    "distribution": "Songs by Year",
+    "unknown": "Unknown year",
+    "missing": "{count} track without a year | {count} tracks without a year"
   }
 }

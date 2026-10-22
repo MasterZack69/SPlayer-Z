@@ -30,3 +30,17 @@ fn r128_track_gain_has_priority_and_uses_fixed_point_units() {
 fn decibels_are_converted_to_linear_gain() {
     assert!((db_to_linear(-6.0) - 0.501_187_2).abs() < 0.000_001);
 }
+
+#[test]
+fn year_falls_through_invalid_candidates_without_using_original_dates() {
+    let dict = HashMap::from([
+        ("DATE".into(), "unknown".into()),
+        ("WM/Year".into(), " 2001/02/03 ".into()),
+        ("ORIGINALDATE".into(), "1999".into()),
+    ]);
+    assert_eq!(extract_tags(&dict).year, Some(2001));
+    assert_eq!(
+        extract_tags(&HashMap::from([("ORIGINALDATE".into(), "1999".into())])).year,
+        None
+    );
+}

@@ -14,6 +14,7 @@ interface TrackRow {
   cue_end_ms: number | null;
   title: string;
   track?: number;
+  year?: number | null;
   artists: string;
   album: string | null;
   genres: string | null;
@@ -53,6 +54,7 @@ const rowToTrack = (row: TrackRow): Track => {
     cueEndMs: row.cue_end_ms ?? undefined,
     title: row.title,
     track: row.track ?? undefined,
+    year: row.year ?? undefined,
     artists: JSON.parse(row.artists) as Artist[],
     album: row.album ? (JSON.parse(row.album) as Album) : undefined,
     genres: row.genres ? (JSON.parse(row.genres) as string[]) : [],
@@ -110,15 +112,25 @@ export interface FileRecord {
   path: string;
   mtime: number;
   size: number;
+  forceScan?: boolean;
 }
 
-/** 获取所有真实音频文件记录（path + mtime + size），用于增量扫描比对 */
+/** Retain every real file for removal detection, forcing pending year metadata to be re-read. */
 export const getFileRecords = (): FileRecord[] => {
   return getDb()
     .prepare(
-      "SELECT path, COALESCE(file_mtime, 0) as mtime, file_size as size FROM tracks WHERE cue_path IS NULL",
+      "SELECT path, COALESCE(file_mtime, 0) as mtime, file_size as size, year_scanned FROM tracks WHERE cue_path IS NULL",
     )
-    .all() as FileRecord[];
+    .all()
+    .map((row) => {
+      const record = row as FileRecord & { year_scanned: number };
+      return {
+        path: record.path,
+        mtime: record.mtime,
+        size: record.size,
+        forceScan: record.year_scanned === 0,
+      };
+    });
 };
 
 /** 批量插入/更新的扫描结果 */
@@ -131,6 +143,7 @@ export interface UpsertTrack {
   cueEndMs?: number;
   title: string;
   track?: number;
+  year?: number | null;
   artists: Artist[];
   album?: Album;
   /** 流派列表（已解析拆分） */
@@ -147,15 +160,17 @@ export interface UpsertTrack {
   ctime: number;
 }
 
-/** 批量插入/更新曲目（使用事务） */
+/** Atomically store scanned metadata, including a completed parse with no known year.
+ * @param tracks - Scanner or tag-editor results.
+ */
 export const upsertTracks = (tracks: UpsertTrack[]): void => {
   if (tracks.length === 0) return;
   const d = getDb();
   const stmt = d.prepare(`
     INSERT OR REPLACE INTO tracks
-      (id, path, cue_path, cue_audio_path, cue_start_ms, cue_end_ms, title, track, artists, album, genres, duration, cover, codec, sample_rate, bit_rate, channels, bits_per_sample, file_size, file_mtime, file_ctime, scanned_at)
+      (id, path, cue_path, cue_audio_path, cue_start_ms, cue_end_ms, title, track, year, year_scanned, artists, album, genres, duration, cover, codec, sample_rate, bit_rate, channels, bits_per_sample, file_size, file_mtime, file_ctime, scanned_at)
     VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const now = Date.now();
   const tx = d.transaction(() => {
@@ -169,6 +184,7 @@ export const upsertTracks = (tracks: UpsertTrack[]): void => {
         t.cueEndMs ?? null,
         t.title,
         t.track ?? null,
+        t.year ?? null,
         JSON.stringify(t.artists),
         t.album ? JSON.stringify(t.album) : null,
         JSON.stringify(t.genres ?? []),
@@ -222,17 +238,19 @@ export const deleteTracksByPaths = (paths: string[]): void => {
   tx();
 };
 
-/** 模糊搜索曲目（title / artists / album / genres） */
+/** Search indexed song text and calendar years with literal wildcard escaping.
+ * @param query - User-supplied search text.
+ */
 export const searchTracks = (query: string): Track[] => {
   const escaped = query.replace(/[%_\\]/g, "\\$&");
   const pattern = `%${escaped}%`;
   const rows = getDb()
     .prepare(
       `SELECT * FROM tracks
-       WHERE (title LIKE ? ESCAPE '\\' OR artists LIKE ? ESCAPE '\\' OR album LIKE ? ESCAPE '\\' OR genres LIKE ? ESCAPE '\\')
+       WHERE (title LIKE ? ESCAPE '\\' OR artists LIKE ? ESCAPE '\\' OR album LIKE ? ESCAPE '\\' OR genres LIKE ? ESCAPE '\\' OR CAST(year AS TEXT) LIKE ? ESCAPE '\\')
          AND ${excludeCueContainer()}`,
     )
-    .all(pattern, pattern, pattern, pattern) as TrackRow[];
+    .all(pattern, pattern, pattern, pattern, pattern) as TrackRow[];
   return rows.map(rowToTrack);
 };
 
@@ -265,16 +283,26 @@ export const getAlbumList = (): AlbumSummary[] => {
          json_extract(album, '$.name') AS name,
          MAX(CASE WHEN cover IS NOT NULL THEN cover END) AS cover,
          MAX(artists) AS artists,
-         COUNT(*) AS trackCount
+         COUNT(*) AS trackCount,
+         json_group_array(DISTINCT year) AS years
        FROM tracks
        WHERE album IS NOT NULL AND json_extract(album, '$.name') IS NOT NULL
          AND ${excludeCueContainer()}
        GROUP BY name`,
     )
-    .all() as { name: string; cover: string | null; artists: string; trackCount: number }[];
+    .all() as {
+    name: string;
+    cover: string | null;
+    artists: string;
+    trackCount: number;
+    years: string;
+  }[];
   return rows.map((row) => ({
     name: row.name,
     cover: row.cover ?? undefined,
+    years: (JSON.parse(row.years) as (number | null)[])
+      .filter((year): year is number => year !== null)
+      .sort((a, b) => a - b),
     artist: (JSON.parse(row.artists) as Artist[]).map((a) => a.name).join(" / "),
     trackCount: row.trackCount,
   }));
@@ -443,3 +471,13 @@ export const getTracksByIds = (ids: string[]): Track[] => {
     .all(...ids) as TrackRow[];
   return rows.map(rowToTrack);
 };
+
+/** Return only pending CUE rows so unchanged sheets are backfilled once, too. */
+export const getPendingYearPaths = (): Set<string> =>
+  new Set(
+    (
+      getDb()
+        .prepare("SELECT path FROM tracks WHERE cue_path IS NOT NULL AND year_scanned = 0")
+        .all() as { path: string }[]
+    ).map((row) => row.path),
+  );

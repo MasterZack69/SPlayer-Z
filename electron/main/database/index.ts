@@ -226,6 +226,7 @@ export {
   getAllTracks,
   getTrackCount,
   getFileRecords,
+  getPendingYearPaths,
   getCueTrackPathsByDirs,
   upsertTracks,
   deleteTracksByPaths,

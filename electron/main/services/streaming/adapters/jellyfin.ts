@@ -1,3 +1,4 @@
+import { validYear } from "@shared/utils/year";
 import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { StreamingPingResult } from "@shared/types/streaming";
 import type { StreamingRuntimeConfig } from "@shared/types/streaming";
@@ -214,6 +215,7 @@ const toTrack = (config: StreamingRuntimeConfig, item: JellyItem): Track => {
     serverRevision: config.mediaRevision ?? 0,
     favorite: Boolean(item.UserData?.IsFavorite),
     title: item.Name ?? "",
+    year: validYear(item.ProductionYear),
     artists:
       (item.ArtistItems?.length
         ? item.ArtistItems.map((artist) => ({

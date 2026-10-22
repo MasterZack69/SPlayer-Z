@@ -7,6 +7,8 @@ mod editor;
 mod folder_cover;
 mod lyrics;
 mod tag_fields;
+mod year;
+pub use year::parse_year;
 
 pub use cover::{
     cover_thumb_path, extract_cover_thumbnail, make_thumbnail_jpeg, read_attached_pic,
@@ -57,6 +59,7 @@ pub struct StreamInfo {
 
 /// 容器级别的 tag 信息
 pub struct Tags {
+    pub year: Option<u32>,
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
@@ -76,7 +79,7 @@ pub fn extract_stream_info(info: &SourceAudioInfo) -> StreamInfo {
     }
 }
 
-/// 从容器 metadata 提取常见 tag
+/// Extract common tags and calendar years from FFmpeg-normalized container metadata.
 pub fn extract_tags(dict: &HashMap<String, String>) -> Tags {
     let title = dict_get(dict, "title").map(ToString::to_string);
     let artist = dict_get(dict, "artist")
@@ -90,7 +93,22 @@ pub fn extract_tags(dict: &HashMap<String, String>) -> Tags {
         .or_else(|| dict_get(dict, "TCON"))
         .or_else(|| dict_get(dict, "style"))
         .map(ToString::to_string);
+    let year = [
+        "date",
+        "year",
+        "TDRL",
+        "TDRC",
+        "TYER",
+        "WM/Year",
+        "ICRD",
+        "©day",
+        "release_date",
+        "recording_date",
+    ]
+    .iter()
+    .find_map(|key| dict_get(dict, key).and_then(parse_year));
     Tags {
+        year,
         title,
         artist,
         album,

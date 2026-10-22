@@ -65,7 +65,9 @@ const items = computed<CoverItem[]>(() => {
             id: encodeURIComponent(item.name),
             title: item.name,
             cover: item.cover,
-            subtitle: item.artist || t("song.unknownArtist"),
+            subtitle: [item.artist || t("song.unknownArtist"), item.years?.join(" / ")]
+              .filter(Boolean)
+              .join(" · "),
             trackCount: item.trackCount,
           }));
   if (sortMode.value === "name") {

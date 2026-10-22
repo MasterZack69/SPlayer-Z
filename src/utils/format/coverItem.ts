@@ -1,3 +1,4 @@
+import { validYear } from "@shared/utils/year";
 import type { Album, Artist, Playlist } from "@shared/types/player";
 import type { CoverItem } from "@/types/artist";
 
@@ -8,8 +9,9 @@ import type { CoverItem } from "@/types/artist";
 export const albumToCoverItem = (album: Album): CoverItem => ({
   id: album.id ?? "",
   title: album.name,
+  years: validYear(album.year) ? [album.year!] : undefined,
   cover: album.cover,
-  subtitle: album.artist ?? "",
+  subtitle: [album.artist, validYear(album.year)].filter(Boolean).join(" · "),
   trackCount: album.trackCount ?? 0,
 });
 

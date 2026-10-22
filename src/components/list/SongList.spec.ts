@@ -115,19 +115,19 @@ describe("shared song-list columns", () => {
   it("shows Album, Genre, Actions, Duration, and Size by default", () => {
     const wrapper = mountList();
     const header = wrapper.get("[data-song-header]");
-    for (const label of ["Album", "Genre", "Actions", "Duration", "Size"])
+    for (const label of ["Album", "Genre", "Year", "Actions", "Duration", "Size"])
       expect(header.text()).toContain(label);
     expect(wrapper.get("[data-song-item]").text()).toContain("Pop");
-    expect(header.element.children).toHaveLength(7);
-    expect(wrapper.get("[data-song-item]").element.children).toHaveLength(7);
+    expect(header.element.children).toHaveLength(8);
+    expect(wrapper.get("[data-song-item]").element.children).toHaveLength(8);
     expect(header.attributes("style")).toBe(wrapper.get("[data-song-item]").attributes("style"));
     wrapper.unmount();
   });
   it("updates header and row tracks together when optional columns change", async () => {
     const wrapper = mountList();
     await wrapper.setProps({ showAlbum: false, showGenre: false, showSize: false });
-    expect(wrapper.get("[data-song-header]").element.children).toHaveLength(4);
-    expect(wrapper.get("[data-song-item]").element.children).toHaveLength(4);
+    expect(wrapper.get("[data-song-header]").element.children).toHaveLength(5);
+    expect(wrapper.get("[data-song-item]").element.children).toHaveLength(5);
     expect(wrapper.get("[data-song-header]").attributes("style")).toBe(
       wrapper.get("[data-song-item]").attributes("style"),
     );
@@ -218,5 +218,24 @@ describe("song-list sorting scopes", () => {
     await list.setProps({ enableSort: false });
     expect(titles(list)).toEqual(["Zulu", "Alpha"]);
     list.unmount();
+  });
+});
+
+describe("year sorting", () => {
+  it("sorts numerically and keeps unknown years last in both directions", async () => {
+    const wrapper = mountList({
+      enableSort: true,
+      items: [
+        { ...track, id: "unknown", title: "Unknown" },
+        { ...track, id: "new", title: "New", year: 2024 },
+        { ...track, id: "old", title: "Old", year: 1999 },
+      ],
+    });
+    await setSort(wrapper, "year");
+    expect(titles(wrapper)).toEqual(["Old", "New", "Unknown"]);
+    await setSort(wrapper, "year", "desc");
+    expect(titles(wrapper)).toEqual(["New", "Old", "Unknown"]);
+    expect(wrapper.get("[data-song-header]").element.children[4].textContent).toBe("Year");
+    wrapper.unmount();
   });
 });

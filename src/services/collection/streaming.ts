@@ -30,6 +30,7 @@ export const loadStreamingCollection = async (
       title: album?.name ?? fallbackName,
       cover: album?.cover ?? tracks[0]?.cover,
       creator: album?.artist,
+      year: album?.year,
       tracks,
       trackCount: tracks.length,
     });

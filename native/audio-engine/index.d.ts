@@ -155,6 +155,8 @@ export declare function cancelScan(): void
 
 /** 已有文件记录，用于增量扫描比对 */
 export interface FileRecord {
+  /** Re-read tags even when size and modification time are unchanged. */
+  forceScan?: boolean
   path: string
   mtime: number
   size: number
@@ -306,6 +308,8 @@ export interface JsScanEvent {
 
 /** 扫描到的曲目信息 */
 export interface JsScannedTrack {
+  /** Calendar year interpreted from the file date/year tags. */
+  year?: number
   path: string
   title?: string
   artist?: string

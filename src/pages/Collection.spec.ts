@@ -8,6 +8,7 @@ import en from "@/i18n/locales/en-US.json";
 const fixture = vi.hoisted(() => ({
   type: "album",
   description: undefined as string | undefined,
+  years: [] as number[],
 }));
 vi.mock("vue-router", () => ({
   useRoute: () => ({
@@ -31,7 +32,14 @@ vi.mock("@/services/collection", () => ({
       title: "Test Album",
       description: fixture.description,
       artists: [{ name: "Test Artist" }],
-      tracks: [],
+      tracks: fixture.years.map((year, i) => ({
+        id: String(i),
+        title: "Track",
+        source: "local",
+        artists: [],
+        duration: 1000,
+        year,
+      })),
     });
   },
 }));
@@ -80,6 +88,7 @@ const mountPage = async () => {
 
 beforeEach(() => {
   fixture.type = "album";
+  fixture.years = [];
   fixture.description = undefined;
 });
 
@@ -123,4 +132,11 @@ describe("collection descriptions", () => {
     expect(genre.text()).not.toContain(en.collection.noDescription);
     genre.unmount();
   });
+});
+
+it("shows every distinct album year with slash separators", async () => {
+  fixture.years = [2024, 1999, 2024];
+  const wrapper = await mountPage();
+  expect(wrapper.get("[data-album-years]").text()).toBe("1999 / 2024");
+  wrapper.unmount();
 });

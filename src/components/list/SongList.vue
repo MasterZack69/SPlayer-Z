@@ -10,6 +10,7 @@ import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useFavorite } from "@/composables/useFavorite";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
+import { getTrackYear } from "@shared/utils/year";
 import { matchesSearch } from "@/utils/search/match";
 import { formatTime } from "@/utils/time";
 import { formatFileSize } from "@/utils/format";
@@ -90,6 +91,7 @@ const columnStyle = computed(() => ({
     "minmax(0, 1.5fr)",
     ...(props.showAlbum ? ["minmax(0, 1fr)"] : []),
     ...(props.showGenre ? ["minmax(0, 0.7fr)"] : []),
+    "4rem",
     "3rem",
     ...(props.showDuration ? ["4rem"] : []),
     ...(props.showSize ? ["4.5rem"] : []),
@@ -194,6 +196,7 @@ const sortFieldLabelKeyMap: Record<SortField, string> = {
   title: "songList.sort.byTitle",
   artist: "songList.sort.byArtist",
   album: "songList.sort.byAlbum",
+  year: "year.byYear",
   path: "songList.sort.byPath",
   duration: "songList.sort.byDuration",
   size: "songList.sort.bySize",
@@ -220,6 +223,7 @@ const filteredItems = computed(() => {
       track.album?.name,
       ...track.artists.map((artist) => artist.name),
       ...(track.genres ?? []),
+      getTrackYear(track)?.toString(),
     ),
   );
 });
@@ -240,7 +244,13 @@ const sortedItems = computed(() => {
     if (field === "title") value = textCollator.compare(a.title, b.title);
     else if (field === "artist") value = textCollator.compare(toArtistText(a), toArtistText(b));
     else if (field === "album") value = textCollator.compare(toAlbumText(a), toAlbumText(b));
-    else if (field === "path") value = textCollator.compare(toPathText(a), toPathText(b));
+    else if (field === "year") {
+      const ay = getTrackYear(a);
+      const by = getTrackYear(b);
+      if (ay === undefined || by === undefined)
+        return ay === by ? textCollator.compare(a.title, b.title) : ay === undefined ? 1 : -1;
+      value = ay - by;
+    } else if (field === "path") value = textCollator.compare(toPathText(a), toPathText(b));
     else if (field === "duration") value = a.duration - b.duration;
     else if (field === "size") value = (a.fileSize ?? 0) - (b.fileSize ?? 0);
     else if (field === "mtime") value = (a.mtime ?? 0) - (b.mtime ?? 0);
@@ -528,6 +538,7 @@ defineExpose({
                           <SRadio value="title" :label="t('songList.sort.byTitle')" />
                           <SRadio value="artist" :label="t('songList.sort.byArtist')" />
                           <SRadio value="album" :label="t('songList.sort.byAlbum')" />
+                          <SRadio value="year" :label="t('year.byYear')" />
                           <SRadio value="path" :label="t('songList.sort.byPath')" />
                           <SRadio value="duration" :label="t('songList.sort.byDuration')" />
                           <SRadio value="size" :label="t('songList.sort.bySize')" />
@@ -558,6 +569,7 @@ defineExpose({
                   </div>
                   <div v-if="showAlbum" class="flex-1 min-w-0">{{ t("songList.album") }}</div>
                   <div v-if="showGenre" class="min-w-0 truncate">{{ t("songList.genre") }}</div>
+                  <div class="min-w-0 truncate">{{ t("year.singular") }}</div>
                   <div class="min-w-0 truncate text-center text-xs leading-6">
                     {{ t("songList.actions") }}
                   </div>
@@ -747,6 +759,9 @@ defineExpose({
                       </template>
                     </template>
                     <span v-else class="opacity-50">{{ t("genre.unknown") }}</span>
+                  </div>
+                  <div class="min-w-0 truncate text-sm tabular-nums text-on-surface-variant">
+                    {{ getTrackYear(item) ?? "—" }}
                   </div>
                   <!-- 红心：批量模式下隐藏，其余始终显示 -->
                   <div

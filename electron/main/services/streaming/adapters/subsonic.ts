@@ -1,3 +1,4 @@
+import { validYear } from "@shared/utils/year";
 import { createHash, randomBytes } from "node:crypto";
 import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { StreamingPingResult } from "@shared/types/streaming";
@@ -13,6 +14,7 @@ const CLIENT_NAME = "SPlayer-Z";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 interface SubsonicSong {
+  year?: number;
   starred?: string;
   id: string;
   title: string;
@@ -172,6 +174,7 @@ const toTrack = (config: StreamingRuntimeConfig, song: SubsonicSong): Track => {
     serverRevision: config.mediaRevision ?? 0,
     favorite: Boolean(song.starred),
     title: song.title || "",
+    year: validYear(song.year),
     artists,
     album: song.album ? { id: song.albumId, name: song.album, serverId: config.id } : undefined,
     duration: Math.round((song.duration ?? 0) * 1000),

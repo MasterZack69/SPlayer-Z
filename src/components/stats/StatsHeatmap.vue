@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import type { DailyPlayStats, HourlyPlayStats, LibraryStats } from "@shared/types/stats";
-import { isLosslessCodec } from "@/utils/quality";
-import StatsDonutChart from "./StatsDonutChart.vue";
-import IconLucideMusic from "~icons/lucide/music";
+import type { DailyPlayStats, HourlyPlayStats } from "@shared/types/stats";
 
 const props = defineProps<{
   /** 每日播放统计（近 90 天） */
   daily: DailyPlayStats[];
   /** 各小时累计播放统计 */
   hourly: HourlyPlayStats[];
-  /** 曲库统计概览（取格式分布） */
-  stats: LibraryStats | null;
   /** 数据是否仍在加载 */
   loading: boolean;
 }>();
@@ -29,14 +24,6 @@ interface HeatCell {
 interface ChartPoint {
   x: number;
   y: number;
-}
-
-interface CodecVisual {
-  id: string;
-  codec: string;
-  count: number;
-  percent: number;
-  opacity: number;
 }
 
 /**
@@ -172,45 +159,12 @@ const hourlyLinePath = computed(() => {
 });
 
 const hourlyAreaPath = computed(() => `${hourlyLinePath.value} L 240 124 L 0 124 Z`);
-
-const codecs = computed(() => (props.stats?.codecs ?? []).filter((item) => item.codec.trim()));
-const chartCodecs = computed(() => codecs.value.slice(0, 4));
-const totalCodecCount = computed(() =>
-  chartCodecs.value.reduce((sum, item) => sum + item.count, 0),
-);
-
-/** 圆环分段数据 */
-const codecVisuals = computed<CodecVisual[]>(() => {
-  return chartCodecs.value.map((item, index) => ({
-    ...item,
-    id: item.codec,
-    percent: totalCodecCount.value ? (item.count / totalCodecCount.value) * 100 : 0,
-    opacity: Math.max(0.24, 0.92 - index * 0.14),
-  }));
-});
-
-const losslessCount = computed(() =>
-  chartCodecs.value.reduce((sum, item) => sum + (isLosslessCodec(item.codec) ? item.count : 0), 0),
-);
-
-const losslessPercent = computed(() =>
-  totalCodecCount.value ? (losslessCount.value / totalCodecCount.value) * 100 : 0,
-);
-
-const codecPercent = (count: number): string => {
-  if (!totalCodecCount.value) return "0%";
-  return `${((count / totalCodecCount.value) * 100).toFixed(1)}%`;
-};
-
-const codecLabel = (codec: string): string => {
-  return codec ? codec.toUpperCase() : t("stats.unknown");
-};
 </script>
 
 <template>
-  <div class="grid grid-cols-[300px_minmax(0,1fr)] gap-5 xl:grid-cols-[300px_minmax(0,1fr)_400px]">
-    <!-- 近 90 天热力图 -->
-    <SCard radius="xl" class="flex h-52 min-w-0 flex-col gap-3">
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.1fr)]">
+    <!-- Listening activity and hours share their own row. -->
+    <SCard radius="xl" class="flex h-60 min-w-0 flex-col gap-3">
       <div class="flex items-baseline justify-between gap-3">
         <h3 class="text-base font-semibold text-on-surface">
           {{ t("stats.listeningActivity") }}
@@ -221,7 +175,7 @@ const codecLabel = (codec: string): string => {
       </div>
 
       <div class="mx-auto flex min-h-0 w-fit flex-1 items-center gap-2">
-        <div class="grid shrink-0 grid-rows-[1.25rem_repeat(7,13px)] gap-y-0.5">
+        <div class="grid shrink-0 grid-rows-[1.25rem_repeat(7,16px)] gap-y-0.5">
           <div />
           <div
             v-for="(label, dow) in rowLabels"
@@ -235,8 +189,8 @@ const codecLabel = (codec: string): string => {
         <div
           class="grid shrink-0 gap-0.5"
           :style="{
-            gridTemplateColumns: `repeat(${heatWeeks.length}, 13px)`,
-            gridTemplateRows: '1.25rem repeat(7, 13px)',
+            gridTemplateColumns: `repeat(${heatWeeks.length}, 16px)`,
+            gridTemplateRows: '1.25rem repeat(7, 16px)',
           }"
         >
           <div
@@ -278,7 +232,7 @@ const codecLabel = (codec: string): string => {
     </SCard>
 
     <!-- 播放时段分布 -->
-    <SCard radius="xl" class="flex h-52 min-w-0 flex-col gap-2">
+    <SCard radius="xl" class="flex h-60 min-w-0 flex-col gap-2">
       <div class="flex items-baseline justify-between gap-3">
         <h3 class="text-base font-semibold text-on-surface">
           {{ t("stats.listeningHours") }}
@@ -350,62 +304,6 @@ const codecLabel = (codec: string): string => {
           })
         }}
       </p>
-    </SCard>
-
-    <!-- 音质构成 -->
-    <SCard radius="xl" class="col-span-2 flex h-52 min-w-0 flex-col gap-3 xl:col-span-1">
-      <div class="flex items-baseline justify-between gap-3">
-        <h3 class="text-base font-semibold text-on-surface">
-          {{ t("stats.audioQuality") }}
-        </h3>
-        <span class="text-xs text-on-surface-variant/45 tabular-nums">
-          {{ loading ? "--" : t("stats.formatCount", { count: chartCodecs.length }) }}
-        </span>
-      </div>
-
-      <div
-        v-if="!loading && chartCodecs.length > 0"
-        class="mx-auto flex min-h-0 w-full max-w-[520px] flex-1 items-center gap-4"
-      >
-        <StatsDonutChart :segments="codecVisuals">
-          <span class="text-[10px] text-on-surface-variant/55">
-            {{ t("stats.losslessRatio") }}
-          </span>
-          <span class="mt-1 text-xl font-bold leading-none text-on-surface tabular-nums">
-            {{ losslessPercent.toFixed(1) }}%
-          </span>
-        </StatsDonutChart>
-
-        <div class="grid min-w-0 flex-1 grid-cols-2 gap-x-3 gap-y-3">
-          <div
-            v-for="codec in codecVisuals"
-            :key="codec.codec"
-            class="grid min-w-0 grid-cols-[0.5rem_minmax(0,1fr)] items-center gap-2"
-          >
-            <span class="size-2 rounded-full bg-primary" :style="{ opacity: codec.opacity }" />
-            <div class="min-w-0">
-              <div class="truncate text-xs font-medium text-on-surface">
-                {{ codecLabel(codec.codec) }}
-              </div>
-              <div class="truncate text-[10px] text-on-surface-variant/50 tabular-nums">
-                {{ codec.count }} {{ t("stats.trackUnit") }} · {{ codecPercent(codec.count) }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-else-if="loading" class="flex min-h-0 flex-1 items-center justify-center">
-        <SLoading class="size-6 text-primary/60" />
-      </div>
-
-      <div
-        v-else
-        class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-on-surface-variant/40"
-      >
-        <IconLucideMusic class="size-7" />
-        <span class="text-sm">{{ t("stats.noDataHint") }}</span>
-      </div>
     </SCard>
   </div>
 </template>

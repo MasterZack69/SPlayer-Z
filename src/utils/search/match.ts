@@ -21,6 +21,8 @@ export const PAGE_SEARCH_SCOPES: Record<string, string> = {
   "album-list": "albums",
   "genre-list": "genres",
   folders: "folders",
+  "year-list": "years",
+  year: "songs",
   "streaming-songs": "songs",
   "streaming-albums": "albums",
   "streaming-artists": "artists",

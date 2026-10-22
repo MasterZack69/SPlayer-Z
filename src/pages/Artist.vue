@@ -229,10 +229,14 @@ const tabs = computed(() => {
 const albumItems = computed<CoverItem[]>(() => {
   if (!artist.value?.albums.length) return [];
   return artist.value.albums
-    .filter((item) => matchesSearch(searchQuery.value, item.title))
+    .filter((item) =>
+      matchesSearch(searchQuery.value, item.title, ...(item.years ?? []).map(String)),
+    )
     .map((item) => ({
       ...item,
-      subtitle: t("common.totalSongs", { count: item.trackCount }),
+      subtitle: [item.years?.join(" / "), t("common.totalSongs", { count: item.trackCount })]
+        .filter(Boolean)
+        .join(" · "),
     }));
 });
 </script>
