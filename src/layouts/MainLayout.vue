@@ -36,8 +36,9 @@ const routeTransitionName = computed(() => {
   return coverTransitionActive.value || transition === "none" ? "" : `route-${transition}`;
 });
 
-/** 路由 key */
+/** Keep year selection within one mounted split view; other detail routes retain their identity. */
 const routeKey = computed(() => {
+  if (route.name === "year-list" || route.name === "year") return "years";
   const hasParam = route.matched.some((m) => m.path.includes(":"));
   return hasParam ? route.path : (route.matched[1]?.path ?? route.path);
 });

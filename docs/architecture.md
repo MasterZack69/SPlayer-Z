@@ -79,9 +79,12 @@ deleted-file detection. CUE tracks inherit the container year and are refreshed 
 Shared song lists include a Year column between Genre and Actions, support year filtering and
 scoped sorting, and place unknown years last in either sort direction. Album pages and local
 album cards show distinct known years in ascending order separated by `/`. The Years browser
-is a text-only list across the local and active-server indexes, with ascending or descending
-numeric sorting and Unknown Year last. Selecting a year opens its tracks under a centered
-year heading, song count, and combined duration.
+uses a split view across the local and active-server indexes. Its plain-text year wheel supports
+ascending or descending order, with Unknown Year last. Wheel and trackpad gestures ease around
+a curved face and snap to a year; clicking, dragging, and keyboard navigation select the same
+route-bound year without remounting the browser. The independent song pane shows its count and
+combined duration above the shared SongList. Reduced motion skips wheel and pane animations;
+hidden or unmounted wheels cancel pending motion.
 Year values in shared song lists open the matching year group; missing years open Unknown Year.
 Local songs without genre tags link to Unknown Genre. Global search includes Years and matches song/album years. Media-server years use the server's
 authoritative numeric metadata. No year is added to Now Playing.

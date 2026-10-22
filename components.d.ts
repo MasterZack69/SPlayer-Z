@@ -278,5 +278,6 @@ declare module 'vue' {
     TrackInfo: typeof import('./src/components/player/TrackInfo.vue')['default']
     UiZoomDialog: typeof import('./src/components/modals/UiZoomDialog.vue')['default']
     WindowControls: typeof import('./src/components/layout/WindowControls.vue')['default']
+    YearWheel: typeof import('./src/components/list/YearWheel.vue')['default']
   }
 }

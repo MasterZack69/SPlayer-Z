@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useLibraryStore } from "@/stores/library";
 import { useStreamingStore } from "@/stores/streaming";
+import YearWheel from "@/components/list/YearWheel.vue";
+import { useSettingsStore } from "@/stores/settings";
 import { usePageSearch } from "@/composables/usePageSearch";
 import { getTrackYear, trackYears } from "@shared/utils/year";
 import { matchesSearch } from "@/utils/search/match";
@@ -11,6 +13,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const library = useLibraryStore();
+const settings = useSettingsStore();
 const streaming = useStreamingStore();
 const filter = usePageSearch();
 const error = ref(false);
@@ -20,12 +23,7 @@ const sortOptions = computed<SSelectOption[]>(() => [
   { value: "desc", label: t("songList.sort.desc") },
 ]);
 const isDetail = computed(() => route.name === "year");
-const selected = computed(() =>
-  route.params.year === "unknown" ? undefined : Number(route.params.year),
-);
-const heading = computed(() =>
-  route.params.year === "unknown" ? t("year.unknown") : String(route.params.year),
-);
+
 const tracks = computed(() => [...library.tracks, ...streaming.songs]);
 const years = computed(() => {
   const ordered = trackYears(tracks.value);
@@ -33,11 +31,32 @@ const years = computed(() => {
   const entries = ordered.map((year) => ({ id: String(year), label: String(year) }));
   if (tracks.value.some((track) => getTrackYear(track) === undefined))
     entries.push({ id: "unknown", label: t("year.unknown") });
-  return entries.filter((entry) => matchesSearch(filter.value, entry.label));
+  return entries;
 });
-const songs = computed(() =>
-  tracks.value.filter((track) => getTrackYear(track) === selected.value),
+const visibleYears = computed(() =>
+  isDetail.value
+    ? years.value
+    : years.value.filter((entry) => matchesSearch(filter.value, entry.label)),
 );
+const selectedId = computed(() =>
+  isDetail.value ? String(route.params.year) : (visibleYears.value[0]?.id ?? ""),
+);
+const heading = computed(() =>
+  selectedId.value === "unknown" ? t("year.unknown") : selectedId.value,
+);
+const songs = computed(() => {
+  if (!selectedId.value) return [];
+  const year = selectedId.value === "unknown" ? undefined : Number(selectedId.value);
+  return tracks.value.filter((track) => getTrackYear(track) === year);
+});
+
+/** Update the selected year in place and keep browser history meaningful.
+ * @param id - Numeric year or the unknown-year identifier.
+ */
+const selectYear = (id: string): void => {
+  if (isDetail.value && selectedId.value === id) return;
+  void router.push({ name: "year", params: { year: id } });
+};
 
 const totalDuration = computed(() =>
   formatTime(songs.value.reduce((sum, track) => sum + track.duration, 0)),
@@ -55,64 +74,107 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="flex h-full min-h-0 flex-col gap-5 p-5">
-    <header v-if="isDetail" class="shrink-0 py-6 text-center">
-      <h1 class="text-7xl font-bold tabular-nums">{{ heading }}</h1>
-      <div
-        data-year-summary
-        class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-on-surface-variant/60"
-      >
-        <span class="flex items-center gap-1">
-          <IconLucideListMusic class="size-3.5 shrink-0" />
-          {{ t("common.totalSongs", { count: songs.length }) }}
-        </span>
-        <span class="flex items-center gap-1">
-          <IconLucideHourglass class="size-3.5 shrink-0" />
-          {{ t("collection.totalDuration", { time: totalDuration }) }}
-        </span>
-      </div>
-    </header>
-    <header v-else class="flex shrink-0 flex-wrap items-center justify-between gap-4">
-      <h1 class="text-3xl font-bold">{{ t("year.label") }}</h1>
-      <div
-        role="group"
-        :aria-label="t('songList.sort.mode')"
-        class="flex items-center gap-2 text-sm text-on-surface-variant/70"
-      >
-        <IconLucideArrowUpDown class="size-3.5 shrink-0" />
-        <span>{{ t("songList.sort.mode") }}</span>
-        <div class="w-40">
-          <SSelect v-model="sortOrder" :options="sortOptions" />
+  <section class="years-browser flex h-full min-h-0 flex-col gap-4 p-5">
+    <h1 class="shrink-0 text-3xl font-bold">{{ t("year.label") }}</h1>
+    <p v-if="error" role="alert" class="text-error">{{ t("common.error") }}</p>
+    <div class="years-panes min-h-0 flex-1">
+      <aside class="year-navigation flex min-h-0 flex-col" :aria-label="t('year.label')">
+        <div
+          role="group"
+          :aria-label="t('songList.sort.mode')"
+          class="flex shrink-0 flex-wrap items-center justify-center gap-2 text-sm text-on-surface-variant/70"
+        >
+          <IconLucideArrowUpDown class="size-3.5 shrink-0" />
+          <span>{{ t("songList.sort.mode") }}</span>
+          <div class="w-full max-w-40">
+            <SSelect v-model="sortOrder" :options="sortOptions" />
+          </div>
+        </div>
+        <YearWheel
+          :items="visibleYears"
+          :selected="selectedId"
+          :label="t('year.label')"
+          :reduced-motion="settings.reducedMotion"
+          class="min-h-0 flex-1"
+          @select="selectYear"
+        />
+        <p v-if="!visibleYears.length" class="text-center text-sm text-on-surface-variant/60">
+          {{ t("search.noResults") }}
+        </p>
+      </aside>
+      <div class="flex min-h-0 min-w-0 flex-col">
+        <header class="shrink-0 border-b border-solid border-on-surface/10 pb-4" data-year-summary>
+          <h2 class="sr-only">{{ heading }}</h2>
+          <div
+            class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-on-surface-variant/70"
+          >
+            <span class="flex items-center gap-1.5">
+              <IconLucideListMusic class="size-3.5 shrink-0" />
+              {{ t("common.totalSongs", { count: songs.length }) }}
+            </span>
+            <span class="flex items-center gap-1.5">
+              <IconLucideHourglass class="size-3.5 shrink-0" />
+              {{ t("collection.totalDuration", { time: totalDuration }) }}
+            </span>
+          </div>
+        </header>
+        <div
+          :key="selectedId"
+          class="year-song-pane min-h-0 flex-1 pt-3"
+          :class="{ 'motion-disabled': settings.reducedMotion }"
+        >
+          <SongList
+            :items="songs"
+            :search-query="isDetail ? filter : ''"
+            enable-sort
+            sort-key="years"
+            :playback-context="{
+              originType: 'page',
+              originId: `year:${selectedId}`,
+              originName: heading,
+            }"
+          />
         </div>
       </div>
-    </header>
-    <p v-if="error" role="alert" class="text-error">{{ t("common.error") }}</p>
-    <div
-      v-if="!isDetail"
-      class="scrollbar-hidden flex flex-1 min-h-0 flex-col items-start gap-4 overflow-y-auto"
-    >
-      <button
-        v-for="year in years"
-        :key="year.id"
-        class="appearance-none border-none bg-transparent p-0 text-left text-xl text-on-surface tabular-nums cursor-pointer hover:underline focus-visible:underline"
-        @click="router.push({ name: 'year', params: { year: year.id } })"
-      >
-        {{ year.label }}
-      </button>
-      <p v-if="!years.length" class="text-on-surface-variant/60">{{ t("search.noResults") }}</p>
-    </div>
-    <div v-else class="min-h-0 flex-1">
-      <SongList
-        :items="songs"
-        :search-query="filter"
-        enable-sort
-        sort-key="years"
-        :playback-context="{
-          originType: 'page',
-          originId: `year:${route.params.year}`,
-          originName: heading,
-        }"
-      />
     </div>
   </section>
 </template>
+
+<style scoped>
+.years-panes {
+  display: grid;
+  grid-template-columns: clamp(160px, 23%, 280px) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 48px);
+  overflow: hidden;
+}
+.year-song-pane {
+  animation: year-pane-in 180ms ease-out;
+}
+.year-song-pane.motion-disabled {
+  animation: none;
+}
+@keyframes year-pane-in {
+  from {
+    opacity: 0.65;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 640px) {
+  .years-browser {
+    padding: 12px;
+  }
+  .years-panes {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .year-song-pane {
+    animation: none;
+  }
+}
+</style>

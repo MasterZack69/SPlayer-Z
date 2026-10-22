@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Track } from "@shared/types/player";
 import en from "@/i18n/locales/en-US.json";
 const state = vi.hoisted(() => ({ library: null as unknown, streaming: null as unknown }));
+vi.mock("@/stores/settings", () => ({ useSettingsStore: () => ({ reducedMotion: true }) }));
 vi.mock("@/stores/library", () => ({ useLibraryStore: () => state.library }));
 vi.mock("@/stores/streaming", () => ({ useStreamingStore: () => state.streaming }));
 import Years from "./Years.vue";
@@ -60,7 +61,7 @@ const setup = async () => {
   return { wrapper, router };
 };
 describe("Years browser", () => {
-  it("shows only year text, then opens the centered year heading above matching songs", async () => {
+  it("keeps the text wheel beside the selected year songs across route changes", async () => {
     const { wrapper, router } = await setup();
     expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
       "2024",
@@ -68,18 +69,13 @@ describe("Years browser", () => {
       "Unknown year",
     ]);
     expect(wrapper.find("img").exists()).toBe(false);
-    expect(wrapper.get("button").classes()).toEqual(
-      expect.arrayContaining([
-        "appearance-none",
-        "border-none",
-        "bg-transparent",
-        "text-on-surface",
-      ]),
-    );
+    const wheel = wrapper.get("[data-year-wheel]").element;
+    expect(wrapper.getComponent({ name: "SongList" }).props("items")).toHaveLength(2);
     await wrapper.get("button").trigger("click");
     await flushPromises();
-    expect(wrapper.get("h1").text()).toBe("2024");
-    expect(wrapper.get("h1").element.parentElement?.classList.contains("text-center")).toBe(true);
+    expect(wrapper.get("h1").text()).toBe("Years");
+    expect(wrapper.get("h2").text()).toBe("2024");
+    expect(wrapper.get("[data-year-wheel]").element).toBe(wheel);
     expect(
       wrapper
         .getComponent({ name: "SongList" })
@@ -88,7 +84,7 @@ describe("Years browser", () => {
     ).toEqual(["newer", "remote"]);
     await router.push({ name: "year", params: { year: "1999" }, query: { filter: "old" } });
     await flushPromises();
-    expect(wrapper.get("h1").text()).toBe("1999");
+    expect(wrapper.get("h2").text()).toBe("1999");
     expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("old");
     wrapper.unmount();
   });
@@ -104,8 +100,7 @@ describe("Years browser", () => {
     await unknown.trigger("click");
     await flushPromises();
     expect(router.currentRoute.value.params.year).toBe("unknown");
-    expect(wrapper.get("h1").text()).toBe("Unknown year");
-    expect(wrapper.get("h1").element.parentElement?.classList.contains("text-center")).toBe(true);
+    expect(wrapper.get("h2").text()).toBe("Unknown year");
     expect(
       wrapper
         .getComponent({ name: "SongList" })
@@ -119,6 +114,8 @@ describe("Years browser", () => {
     await router.replace({ name: "year-list", query: { filter: "1999" } });
     await flushPromises();
     expect(wrapper.findAll("button").map((button) => button.text())).toEqual(["1999"]);
+    expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("");
+    expect(wrapper.get("h2").text()).toBe("1999");
     wrapper.unmount();
   });
 });
@@ -152,7 +149,7 @@ describe("year sorting and summaries", () => {
     ]);
     wrapper.unmount();
   });
-  it("centers count and duration below the heading, independent of the song filter", async () => {
+  it("shows the selected count and duration above the song pane, independent of its filter", async () => {
     const { wrapper, router } = await setup();
     const library = state.library as { tracks: Track[] };
     const streaming = state.streaming as { songs: Track[] };
@@ -160,9 +157,9 @@ describe("year sorting and summaries", () => {
     streaming.songs[0].duration = 90000;
     await router.push({ name: "year", params: { year: "2024" }, query: { filter: "newer" } });
     await flushPromises();
-    expect(wrapper.findComponent({ name: "SSelect" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "SSelect" }).exists()).toBe(true);
     const summary = wrapper.get("[data-year-summary]");
-    expect(summary.classes()).toContain("justify-center");
+    expect(summary.get("div").classes()).toContain("justify-center");
     expect(summary.text()).toContain("2 songs");
     expect(summary.text()).toContain("About 1:01:30");
     await router.push({ name: "year", params: { year: "unknown" } });
