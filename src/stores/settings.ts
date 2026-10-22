@@ -184,7 +184,6 @@ export const useSettingsStore = defineStore(
       playerBgFlowSpeed: 4,
       playerBgRenderScale: 0.5,
       playerBgFreezeOnPause: false,
-      playerBgBeat: false,
       coverLayout: "default",
       coverLyricRatio: 0.45,
       autoCenterCover: true,
@@ -214,7 +213,6 @@ export const useSettingsStore = defineStore(
     const preset = reactive<PresetSettings>({
       skipKeywordsSongs: false,
       skipTrackKeywords: [...DEFAULT_SKIP_TRACK_KEYWORDS],
-      hideVipTag: false,
       hideQualityTag: false,
       showSubtitle: true,
     });
@@ -232,7 +230,6 @@ export const useSettingsStore = defineStore(
       fontSize: 48,
       translationFontSize: 22,
       fontWeight: 700,
-      lyricBlendMode: "normal",
       fontFamily: "",
       fontFamilyLatin: "",
       fontFamilyJapanese: "",
@@ -351,8 +348,12 @@ export const useSettingsStore = defineStore(
         ) {
           player.transitionPreference = "standard";
         }
+        // Discard retired display options so saved values cannot restore their behavior.
+        delete (player as unknown as Record<string, unknown>).playerBgBeat;
+        delete (preset as unknown as Record<string, unknown>).hideVipTag;
         // Remove persisted controls belonging to the retired lyric renderer.
         for (const key of [
+          "lyricBlendMode",
           "engine",
           "alignment",
           "inactiveAlpha",

@@ -16,6 +16,8 @@ Use the actual executable path, for example `./result/bin/splayer-z` after a Nix
 
 ## Global shortcuts
 
+Global shortcuts are off by default; enable them explicitly in Hotkey Settings if needed. In-app shortcuts remain available.
+
 Native Wayland shortcuts depend on `xdg-desktop-portal` and a backend implementing GlobalShortcuts. Approve the permission prompt if you want those bindings. KDE exposes application shortcuts in system settings. Restart the app after changing bindings if the portal needs to register them again.
 
 ```bash

@@ -41,9 +41,6 @@ export type LayoutMode = "default" | "sidebar-full" | "floating";
 /** 路由切换动效 */
 export type RouteTransition = "none" | "fade" | "slide" | "zoom";
 
-/** 歌词混合模式 */
-export type LyricBlendMode = "normal" | "screen" | "plus-lighter";
-
 /** 音源排序：来源偏好为「智能选择」时，按此顺序依次尝试匹配 */
 export type LyricSourceOrder = Platform[];
 
@@ -136,8 +133,6 @@ export interface LyricSettings {
   translationFontSize: number;
   /** 歌词字重（100~900） */
   fontWeight: number;
-  /** 歌词混合模式 */
-  lyricBlendMode: LyricBlendMode;
   /** 歌词字体 */
   fontFamily: string;
   /** 拉丁文字歌词字体（为空时跟随歌词字体） */
@@ -208,8 +203,6 @@ export interface PlayerSettings {
   playerBgRenderScale: number;
   /** 暂停播放时冻结流体背景 */
   playerBgFreezeOnPause: boolean;
-  /** 流体背景随低频节拍脉动 */
-  playerBgBeat: boolean;
   /** 全屏播放器封面布局 */
   coverLayout: CoverLayout;
   /** 播放页封面/歌词分栏占比（0-1，封面侧宽度） */
@@ -300,8 +293,6 @@ export interface PresetSettings {
   skipKeywordsSongs: boolean;
   /** 跳过指定关键词列表 */
   skipTrackKeywords: string[];
-  /** 隐藏歌曲列表的 VIP 标签 */
-  hideVipTag: boolean;
   /** 隐藏歌曲列表的音质标签 */
   hideQualityTag: boolean;
   /** 显示歌曲副标题（别名） */

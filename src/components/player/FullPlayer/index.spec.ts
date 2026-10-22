@@ -47,7 +47,7 @@ vi.mock("@/stores/settings", () => ({
   useSettingsStore: () => ({
     reducedMotion: false,
     player: { coverLayout: "normal", coverLyricRatio: 0.5, enableSpectrum: true },
-    lyric: { fontSize: 40, translationFontSize: 20, fontWeight: 600 },
+    lyric: { fontSize: 40, translationFontSize: 20, fontWeight: 600, lyricBlendMode: "screen" },
   }),
 }));
 vi.mock("@/core/player", () => ({ isSeeking: () => false }));
@@ -166,6 +166,13 @@ afterEach(() => {
 });
 
 describe("Now Playing initialization", () => {
+  it("always uses normal lyric blending even if a legacy preference is present", async () => {
+    const { status } = mountPlayer();
+    status.isPlayerExpanded = true;
+    await nextTick();
+    expect(wrapper.get(".lyric-area").attributes("style")).toContain("mix-blend-mode: normal");
+  });
+
   it("starts the background during entry, before lyrics or idle spectrum work", async () => {
     const { status } = mountPlayer();
     status.isPlayerExpanded = true;

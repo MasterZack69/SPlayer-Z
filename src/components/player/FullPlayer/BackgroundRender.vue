@@ -8,9 +8,6 @@ import {
   PixiRenderer,
 } from "@applemusic-like-lyrics/core";
 import type { PlayerBgRenderer } from "@/types/settings";
-import { getFftFrame } from "@/services/playback";
-import { acquireFft, releaseFft } from "@/services/fftCapture";
-import { getBassPulse, toAmllLowFreqVolume } from "@/services/audioFeatures";
 
 const RENDERER_MAP: Record<PlayerBgRenderer, new (canvas: HTMLCanvasElement) => BaseRenderer> = {
   mesh: MeshGradientRenderer,
@@ -31,8 +28,6 @@ export interface BackgroundRenderProps {
   fps?: number;
   /** 渲染缩放比例，默认为 0.5 */
   renderScale?: number;
-  /** 是否随低频节拍脉动（默认 false，关闭则不采集 FFT） */
-  enableBeat?: boolean;
   /** 渲染引擎标识，默认为 'mesh' */
   renderEngine?: PlayerBgRenderer;
   /** 自定义渲染器类（若指定则优先于 renderEngine） */
@@ -45,7 +40,6 @@ const props = withDefaults(defineProps<BackgroundRenderProps>(), {
   hasLyric: true,
   fps: 30,
   renderScale: 0.5,
-  enableBeat: false,
   renderEngine: "mesh",
 });
 
@@ -119,82 +113,12 @@ const syncRendererMotion = () => {
   }
 };
 
-const BASS_ATTACK = 0.45;
-const BASS_DECAY = 0.14;
-
-// 低频平滑后脉冲
-let smoothedPulse = 0;
-let lastFftFrame: readonly [number[], number[]] = [[], []];
-
-/**
- * 从最新 FFT 帧数据计算低频音量能量值 [0.0 - 1.0]
- */
-const updateLowFreqVolume = () => {
-  const data = getFftFrame();
-  if (!data || data[0].length === 0) return;
-  if (data === lastFftFrame) return;
-  lastFftFrame = data;
-
-  const pulse = getBassPulse(data);
-  const smoothFactor = pulse > smoothedPulse ? BASS_ATTACK : BASS_DECAY;
-  smoothedPulse = smoothedPulse + smoothFactor * (pulse - smoothedPulse);
-
-  bgRenderRef.value?.setLowFreqVolume(toAmllLowFreqVolume(smoothedPulse));
-};
-
-const { resume: resumeFftLoop, pause: pauseFftLoop } = useRafFn(updateLowFreqVolume, {
-  immediate: false,
-});
-
-// 本地持有标记，保证 acquire / release 严格配对
-let fftAcquired = false;
-
-/**
- * 开始捕获 FFT 频谱数据
- */
-const startFftCapture = () => {
-  if (!fftAcquired) {
-    acquireFft();
-    fftAcquired = true;
-  }
-  resumeFftLoop();
-};
-
-/**
- * 停止捕获 FFT 频谱数据
- */
-const stopFftCapture = () => {
-  pauseFftLoop();
-  if (fftAcquired) {
-    releaseFft();
-    fftAcquired = false;
-  }
-};
-
-/**
- * 按播放状态与跳动开关同步 FFT 采集
- */
-const syncFftCapture = () => {
-  if (props.playing && props.enableBeat) {
-    startFftCapture();
-  } else {
-    stopFftCapture();
-    if (!props.enableBeat) {
-      smoothedPulse = 0;
-      lastFftFrame = [[], []];
-      bgRenderRef.value?.setLowFreqVolume(1.0);
-    }
-  }
-};
-
 const getRendererClass = () => {
   if (props.renderer) return props.renderer;
   return RENDERER_MAP[props.renderEngine ?? "mesh"] ?? MeshGradientRenderer;
 };
 
-/**
- * 初始化底层渲染器并挂载至 DOM
- */
+/** Mount the fluid renderer with a fixed, non-beat-driven intensity. */
 const initRenderer = () => {
   if (!wrapperRef.value) return;
 
@@ -208,13 +132,12 @@ const initRenderer = () => {
   wrapperRef.value.appendChild(el);
 
   updateRendererState();
-  syncFftCapture();
+  bgRenderRef.value?.setLowFreqVolume(1.0);
 };
 
-/** Dispose the renderer, pending readiness frames, and FFT subscriptions. */
+/** Dispose the renderer and cancel pending readiness frames. */
 const destroyRenderer = () => {
   cancelAlbumReady();
-  stopFftCapture();
 
   const renderer = bgRenderRef.value;
   if (renderer) {
@@ -257,13 +180,7 @@ watch(
   () => props.playing,
   () => {
     syncRendererMotion();
-    syncFftCapture();
   },
-);
-
-watch(
-  () => props.enableBeat,
-  () => syncFftCapture(),
 );
 
 watch(

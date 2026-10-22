@@ -298,13 +298,6 @@ const appearanceCategory: SettingCategory = {
               binding: { store: "settings", path: "player.playerBgFreezeOnPause" },
               defaultValue: false,
             },
-            {
-              key: "playerBgBeat",
-              type: "switch",
-              binding: { store: "settings", path: "player.playerBgBeat" },
-              visible: () => useSettingsStore().player.playerBgRenderer === "mesh",
-              defaultValue: false,
-            },
           ],
         },
         {

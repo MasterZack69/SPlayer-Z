@@ -684,24 +684,6 @@ defineExpose({
                         >
                           {{ getQualityLabel(item.quality) }}
                         </STag>
-                        <STag
-                          v-if="item.fee === 1 && !settings.preset.hideVipTag"
-                          type="error"
-                          variant="outline"
-                          size="tiny"
-                          class="shrink-0"
-                        >
-                          VIP
-                        </STag>
-                        <STag
-                          v-else-if="item.fee === 4 && !settings.preset.hideVipTag"
-                          type="error"
-                          variant="outline"
-                          size="tiny"
-                          class="shrink-0"
-                        >
-                          EP
-                        </STag>
                         <span class="truncate">
                           <template v-for="(artist, i) in item.artists" :key="artist.id ?? i">
                             <span

@@ -36,7 +36,7 @@ Server responses are authoritative for artist fields and favorites. Reports foll
 
 ## Lyrics and player surfaces
 
-Local sidecars and embedded data resolve under `src/services/lyric/`; configured servers may provide lyrics. `src/utils/lyric/` handles normalization and safe emphasis formatting. AMLL is the only full-player lyric engine.
+Local sidecars and embedded data resolve under `src/services/lyric/`; configured servers may provide lyrics. `src/utils/lyric/` handles normalization and safe emphasis formatting. AMLL is the only full-player lyric engine. Lyrics use Normal blending without a blend-mode selector. Fluid backgrounds animate independently of the beat and do not acquire FFT capture; the optional spectrum remains a separate consumer.
 
 Initialize the fluid background during player entry. Guard asynchronous cover completion against stale tracks and dispose renderers and animation frames when the surface closes. Do not use a blurred-cover preview as the first fluid frame.
 

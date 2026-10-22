@@ -15,12 +15,6 @@ const otherCategory: SettingCategory = {
           component: SkipKeywordsConfig,
         },
         {
-          key: "hideVipTag",
-          type: "switch",
-          binding: { store: "settings", path: "preset.hideVipTag" },
-          defaultValue: false,
-        },
-        {
           key: "hideQualityTag",
           type: "switch",
           binding: { store: "settings", path: "preset.hideQualityTag" },

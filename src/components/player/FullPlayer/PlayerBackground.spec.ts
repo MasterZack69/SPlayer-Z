@@ -24,7 +24,6 @@ const settings = reactive({
     playerBgFps: 30,
     playerBgFlowSpeed: 2,
     playerBgRenderScale: 0.5,
-    playerBgBeat: false,
   },
 });
 const media = reactive({ track: { cover: "cover.jpg" }, parsedLyric: [] });

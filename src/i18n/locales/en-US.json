@@ -838,10 +838,6 @@
       "empty": "No keywords configured",
       "duplicate": "Keyword already exists"
     },
-    "hideVipTag": {
-      "label": "Hide VIP Tag",
-      "description": "Don't show VIP tags in song list"
-    },
     "hideQualityTag": {
       "label": "Hide Quality Tag",
       "description": "Don't show quality tags in song list"
@@ -1171,13 +1167,6 @@
       "label": "Font Weight",
       "description": "Lyric text weight"
     },
-    "lyricBlendMode": {
-      "label": "Lyric Blend Mode",
-      "description": "Controls how lyrics blend with the background",
-      "normal": "Normal",
-      "screen": "Screen",
-      "plusLighter": "Plus Lighter"
-    },
     "followCoverColor": {
       "label": "Follow Cover Color",
       "description": "Lyric color follows the current cover art"
@@ -1255,10 +1244,6 @@
     "playerBgFreezeOnPause": {
       "label": "Freeze When Paused",
       "description": "Stop the fluid background animation while playback is paused"
-    },
-    "playerBgBeat": {
-      "label": "Beat Pulse",
-      "description": "Make the fluid background pulse with the low-frequency beat of the music"
     },
     "coverLayout": {
       "label": "Cover Layout",

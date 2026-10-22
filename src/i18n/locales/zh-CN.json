@@ -838,10 +838,6 @@
       "empty": "尚未配置任何关键词",
       "duplicate": "已存在该关键词"
     },
-    "hideVipTag": {
-      "label": "隐藏 VIP 标签",
-      "description": "歌曲列表中不显示 VIP 标签"
-    },
     "hideQualityTag": {
       "label": "隐藏音质标签",
       "description": "歌曲列表中不显示音质标签"
@@ -1171,13 +1167,6 @@
       "label": "歌词字重",
       "description": "歌词文字粗细"
     },
-    "lyricBlendMode": {
-      "label": "歌词混合模式",
-      "description": "控制歌词与背景的混合方式",
-      "normal": "Normal",
-      "screen": "Screen",
-      "plusLighter": "Plus Lighter"
-    },
     "followCoverColor": {
       "label": "跟随封面颜色",
       "description": "歌词颜色跟随当前封面主色调"
@@ -1255,10 +1244,6 @@
     "playerBgFreezeOnPause": {
       "label": "暂停时冻结",
       "description": "暂停播放时同时停止流体背景动画"
-    },
-    "playerBgBeat": {
-      "label": "背景跳动",
-      "description": "使流体背景随音乐低频节拍产生脉动效果"
     },
     "coverLayout": {
       "label": "封面布局",

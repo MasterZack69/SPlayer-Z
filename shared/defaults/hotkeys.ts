@@ -137,7 +137,7 @@ export const defaultHotkeyBindings: HotkeyBindingsMap = HOTKEY_ACTIONS.reduce((a
 
 /** 默认完整配置 */
 export const defaultHotkeyConfig: HotkeyConfig = {
-  globalEnabled: true,
+  globalEnabled: false,
   bindings: defaultHotkeyBindings,
 };
 

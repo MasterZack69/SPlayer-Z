@@ -123,19 +123,23 @@ describe("fluid texture readiness", () => {
     wrapper.unmount();
   });
 
-  it("cancels readiness frames and releases FFT when the player closes", async () => {
-    createRenderer.mockReturnValue(rendererFixture());
+  it("cancels readiness frames without capturing FFT when the player closes", async () => {
+    const renderer = rendererFixture();
+    createRenderer.mockReturnValue(renderer);
     const wrapper = mount(BackgroundRender, {
-      props: { album: "cover.jpg", playing: true, enableBeat: true },
+      props: { album: "cover.jpg", playing: true },
     });
     await flushPromises();
-    expect(acquireFft).toHaveBeenCalledOnce();
+    expect(renderer.setLowFreqVolume).toHaveBeenCalledWith(1.0);
+    await wrapper.setProps({ playing: false });
+    await wrapper.setProps({ playing: true });
+    expect(acquireFft).not.toHaveBeenCalled();
     wrapper.unmount();
     paint();
     paint();
     expect(wrapper.emitted("ready")).toBeUndefined();
     expect(frames.size).toBe(0);
-    expect(releaseFft).toHaveBeenCalledOnce();
+    expect(releaseFft).not.toHaveBeenCalled();
   });
 
   it("does not schedule readiness after an unmounted cover finishes loading", async () => {

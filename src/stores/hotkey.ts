@@ -11,7 +11,7 @@ import type {
  */
 export const useHotkeyStore = defineStore("hotkey", () => {
   const bindings = ref<HotkeyBindingsMap>({} as HotkeyBindingsMap);
-  const globalEnabled = ref(true);
+  const globalEnabled = ref(false);
   const conflicts = ref<HotkeyConflict[]>([]);
   const initialized = ref(false);
 

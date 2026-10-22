@@ -100,6 +100,18 @@ const mountList = (props: Record<string, unknown> = {}) =>
   });
 
 describe("shared song-list columns", () => {
+  it("never renders obsolete VIP or paid EP labels", () => {
+    const wrapper = mountList({
+      items: [
+        { ...track, id: "vip", fee: 1 },
+        { ...track, id: "ep", fee: 4 },
+      ],
+    });
+    expect(wrapper.text()).not.toContain("VIP");
+    expect(wrapper.text()).not.toContain("EP");
+    wrapper.unmount();
+  });
+
   it("shows Album, Genre, Actions, Duration, and Size by default", () => {
     const wrapper = mountList();
     const header = wrapper.get("[data-song-header]");
