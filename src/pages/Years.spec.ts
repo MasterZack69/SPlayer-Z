@@ -40,6 +40,14 @@ const setup = async () => {
     global: {
       plugins: [router, createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
       stubs: {
+        SSelect: {
+          name: "SSelect",
+          props: ["modelValue", "options"],
+          template: "<div data-year-sort />",
+        },
+        IconLucideListMusic: true,
+        IconLucideHourglass: true,
+        IconLucideArrowUpDown: true,
         SongList: {
           name: "SongList",
           props: ["items", "searchQuery", "sortKey"],
@@ -71,7 +79,7 @@ describe("Years browser", () => {
     await wrapper.get("button").trigger("click");
     await flushPromises();
     expect(wrapper.get("h1").text()).toBe("2024");
-    expect(wrapper.get("h1").classes()).toContain("text-center");
+    expect(wrapper.get("h1").element.parentElement?.classList.contains("text-center")).toBe(true);
     expect(
       wrapper
         .getComponent({ name: "SongList" })
@@ -97,7 +105,7 @@ describe("Years browser", () => {
     await flushPromises();
     expect(router.currentRoute.value.params.year).toBe("unknown");
     expect(wrapper.get("h1").text()).toBe("Unknown year");
-    expect(wrapper.get("h1").classes()).toContain("text-center");
+    expect(wrapper.get("h1").element.parentElement?.classList.contains("text-center")).toBe(true);
     expect(
       wrapper
         .getComponent({ name: "SongList" })
@@ -111,6 +119,60 @@ describe("Years browser", () => {
     await router.replace({ name: "year-list", query: { filter: "1999" } });
     await flushPromises();
     expect(wrapper.findAll("button").map((button) => button.text())).toEqual(["1999"]);
+    wrapper.unmount();
+  });
+});
+
+describe("year sorting and summaries", () => {
+  it("sorts numeric years in both directions and leaves unknown last", async () => {
+    const { wrapper, router } = await setup();
+    const control = wrapper.getComponent({ name: "SSelect" });
+    expect(control.props("modelValue")).toBe("desc");
+    expect(control.props("options")).toEqual([
+      { value: "asc", label: "Ascending" },
+      { value: "desc", label: "Descending" },
+    ]);
+    control.vm.$emit("update:modelValue", "asc");
+    await flushPromises();
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "1999",
+      "2024",
+      "Unknown year",
+    ]);
+    await router.replace({ name: "year-list", query: { filter: "1999" } });
+    await flushPromises();
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual(["1999"]);
+    await router.replace({ name: "year-list" });
+    control.vm.$emit("update:modelValue", "desc");
+    await flushPromises();
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "2024",
+      "1999",
+      "Unknown year",
+    ]);
+    wrapper.unmount();
+  });
+  it("centers count and duration below the heading, independent of the song filter", async () => {
+    const { wrapper, router } = await setup();
+    const library = state.library as { tracks: Track[] };
+    const streaming = state.streaming as { songs: Track[] };
+    library.tracks.find((track) => track.year === 2024)!.duration = 3600000;
+    streaming.songs[0].duration = 90000;
+    await router.push({ name: "year", params: { year: "2024" }, query: { filter: "newer" } });
+    await flushPromises();
+    expect(wrapper.findComponent({ name: "SSelect" }).exists()).toBe(false);
+    const summary = wrapper.get("[data-year-summary]");
+    expect(summary.classes()).toContain("justify-center");
+    expect(summary.text()).toContain("2 songs");
+    expect(summary.text()).toContain("About 1:01:30");
+    await router.push({ name: "year", params: { year: "unknown" } });
+    await flushPromises();
+    expect(wrapper.get("[data-year-summary]").text()).toContain("1 songs");
+    expect(wrapper.get("[data-year-summary]").text()).toContain("About 0:01");
+    await router.push({ name: "year", params: { year: "1900" } });
+    await flushPromises();
+    expect(wrapper.get("[data-year-summary]").text()).toContain("0 songs");
+    expect(wrapper.get("[data-year-summary]").text()).toContain("About 0:00");
     wrapper.unmount();
   });
 });

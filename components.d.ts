@@ -77,6 +77,7 @@ declare module 'vue' {
     HotkeyConfig: typeof import('./src/components/settings/custom/HotkeyConfig.vue')['default']
     IconLucideArrowRight: typeof import('~icons/lucide/arrow-right')['default']
     IconLucideArrowUp: typeof import('~icons/lucide/arrow-up')['default']
+    IconLucideArrowUpDown: typeof import('~icons/lucide/arrow-up-down')['default']
     IconLucideArrowUpRight: typeof import('~icons/lucide/arrow-up-right')['default']
     IconLucideCheck: typeof import('~icons/lucide/check')['default']
     IconLucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
