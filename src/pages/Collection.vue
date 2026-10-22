@@ -311,7 +311,7 @@ onBeforeUnmount(() => {
               <div class="overflow-hidden flex flex-col gap-2">
                 <!-- 简介 -->
                 <SButton
-                  v-if="collection?.description"
+                  v-if="type !== 'album' && collection?.description"
                   variant="text"
                   size="auto"
                   block
@@ -326,8 +326,11 @@ onBeforeUnmount(() => {
                     {{ collection.description }}
                   </span>
                 </SButton>
-                <!-- 流派按标签聚合，没有简介概念，不显示占位文案 -->
-                <p v-else-if="type !== 'genre'" class="text-sm text-on-surface-variant/70 truncate">
+                <!-- Album and genre pages do not show a missing-description placeholder. -->
+                <p
+                  v-else-if="type !== 'album' && type !== 'genre'"
+                  class="text-sm text-on-surface-variant/70 truncate"
+                >
                   {{ t(collection ? "collection.noDescription" : "common.loading") }}
                 </p>
                 <div
@@ -460,6 +463,7 @@ onBeforeUnmount(() => {
     </Transition>
     <!-- 简介全文 -->
     <SDialog
+      v-if="type !== 'album'"
       v-model:open="descriptionOpen"
       :title="t('collection.introduction', { type: typeLabel })"
       width="min(520px, calc(100vw - 40px))"
