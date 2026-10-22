@@ -1,8 +1,16 @@
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { type ShallowRef } from "vue";
 import type { Track } from "@shared/types/player";
 import en from "@/i18n/locales/en-US.json";
+const layout = vi.hoisted(() => ({ width: null as unknown as ShallowRef<number> }));
+vi.mock("@vueuse/core", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@vueuse/core")>();
+  const { shallowRef } = await import("vue");
+  layout.width = shallowRef(0);
+  return { ...original, useElementSize: () => ({ width: layout.width, height: shallowRef(188) }) };
+});
 import StatsYearChart from "./StatsYearChart.vue";
 /** Mount the chart with real year aggregation and no layout-dependent card wrapper. */
 const chart = (tracks: Track[]) =>
@@ -21,6 +29,11 @@ const song = (id: string, year?: number): Track => ({
   duration: 1000,
   year,
 });
+afterEach(() => {
+  layout.width.value = 0;
+  vi.restoreAllMocks();
+});
+
 describe("year chart", () => {
   it("renders true counts, chronological points, and missing-year coverage", () => {
     const wrapper = chart([song("a", 2024), song("b", 1999), song("c", 2024), song("d")]);
@@ -30,6 +43,29 @@ describe("year chart", () => {
     ]);
     expect(wrapper.text()).toContain("1 track without a year");
     expect(wrapper.findAll("tbody tr").map((row) => row.text())).toEqual(["19991", "20242"]);
+    wrapper.unmount();
+  });
+  it("starts at the newest years after layout and does not reset earlier browsing", async () => {
+    const wrapper = chart([song("old", 1900), song("new", 2024)]);
+    layout.width.value = 400;
+    await flushPromises();
+    const viewport = wrapper.get("[tabindex='0']").element as HTMLElement;
+    const initialEnd = Number(wrapper.get("svg").attributes("width")) - 400;
+    expect(viewport.scrollLeft).toBe(initialEnd);
+    await wrapper.setProps({ tracks: [song("old", 1900), song("new", 2026)] });
+    expect(viewport.scrollLeft).toBe(Number(wrapper.get("svg").attributes("width")) - 400);
+    viewport.scrollLeft = 120;
+    await wrapper.setProps({ tracks: [song("old", 1900), song("new", 2027)] });
+    expect(viewport.scrollLeft).toBe(120);
+    wrapper.unmount();
+  });
+  it("aligns asynchronous library data to the latest edge", async () => {
+    const wrapper = chart([]);
+    layout.width.value = 400;
+    await flushPromises();
+    await wrapper.setProps({ tracks: [song("old", 1990), song("new", 2026)] });
+    const viewport = wrapper.get("[tabindex='0']").element as HTMLElement;
+    expect(viewport.scrollLeft).toBe(Number(wrapper.get("svg").attributes("width")) - 400);
     wrapper.unmount();
   });
   it("keeps long histories scrollable and never invents points for absent years", () => {

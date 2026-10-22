@@ -413,7 +413,8 @@
       "folders": "Search this folder…",
       "songs": "Search server songs…",
       "playlists": "Search playlists…",
-      "years": "Search years…"
+      "years": "Search years…",
+      "yearSongs": "Search songs in this year…"
     }
   },
   "streaming": {

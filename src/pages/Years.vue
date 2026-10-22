@@ -5,7 +5,6 @@ import YearWheel from "@/components/list/YearWheel.vue";
 import { useSettingsStore } from "@/stores/settings";
 import { usePageSearch } from "@/composables/usePageSearch";
 import { getTrackYear, trackYears } from "@shared/utils/year";
-import { matchesSearch } from "@/utils/search/match";
 import { formatTime } from "@/utils/time";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
 
@@ -33,13 +32,8 @@ const years = computed(() => {
     entries.push({ id: "unknown", label: t("year.unknown") });
   return entries;
 });
-const visibleYears = computed(() =>
-  isDetail.value
-    ? years.value
-    : years.value.filter((entry) => matchesSearch(filter.value, entry.label)),
-);
 const selectedId = computed(() =>
-  isDetail.value ? String(route.params.year) : (visibleYears.value[0]?.id ?? ""),
+  isDetail.value ? String(route.params.year) : (years.value[0]?.id ?? ""),
 );
 const heading = computed(() =>
   selectedId.value === "unknown" ? t("year.unknown") : selectedId.value,
@@ -55,7 +49,7 @@ const songs = computed(() => {
  */
 const selectYear = (id: string): void => {
   if (isDetail.value && selectedId.value === id) return;
-  void router.push({ name: "year", params: { year: id } });
+  void router.push({ name: "year", params: { year: id }, query: route.query });
 };
 
 const totalDuration = computed(() =>
@@ -91,19 +85,19 @@ onMounted(load);
           </div>
         </div>
         <YearWheel
-          :items="visibleYears"
+          :items="years"
           :selected="selectedId"
           :label="t('year.label')"
           :reduced-motion="settings.reducedMotion"
           class="min-h-0 flex-1"
           @select="selectYear"
         />
-        <p v-if="!visibleYears.length" class="text-center text-sm text-on-surface-variant/60">
+        <p v-if="!years.length" class="text-center text-sm text-on-surface-variant/60">
           {{ t("search.noResults") }}
         </p>
       </aside>
       <div class="flex min-h-0 min-w-0 flex-col">
-        <header class="shrink-0 border-b border-solid border-on-surface/10 pb-4" data-year-summary>
+        <header class="shrink-0 pb-4" data-year-summary>
           <h2 class="sr-only">{{ heading }}</h2>
           <div
             class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-on-surface-variant/70"
@@ -125,7 +119,7 @@ onMounted(load);
         >
           <SongList
             :items="songs"
-            :search-query="isDetail ? filter : ''"
+            :search-query="filter"
             enable-sort
             sort-key="years"
             :playback-context="{

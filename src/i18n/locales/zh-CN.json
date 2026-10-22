@@ -413,7 +413,8 @@
       "folders": "搜索此文件夹…",
       "songs": "搜索服务器歌曲…",
       "playlists": "搜索歌单…",
-      "years": "搜索年份…"
+      "years": "搜索年份…",
+      "yearSongs": "搜索此年份的歌曲…"
     }
   },
   "streaming": {

@@ -16,6 +16,18 @@ const span = computed(() =>
   counts.value.length ? counts.value[counts.value.length - 1].year - counts.value[0].year : 0,
 );
 const width = computed(() => Math.max(viewportWidth.value, (span.value + 1) * 64, 128));
+let previousEnd = 0;
+
+/** Start at the latest years and follow that edge until the user browses earlier history. */
+const alignLatest = (): void => {
+  const element = viewport.value;
+  if (!element || !viewportWidth.value || !counts.value.length) return;
+  const end = Math.max(0, width.value - viewportWidth.value);
+  if (element.scrollLeft >= previousEnd - 2) element.scrollLeft = end;
+  previousEnd = end;
+};
+watch([width, viewportWidth, () => counts.value.length], alignLatest, { flush: "post" });
+
 const maximum = computed(() => Math.max(1, ...counts.value.map((entry) => entry.count)));
 const points = computed(() =>
   counts.value.map((entry) => ({

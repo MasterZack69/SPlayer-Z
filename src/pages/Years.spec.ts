@@ -109,13 +109,31 @@ describe("Years browser", () => {
     ).toEqual(["unknown", "remote-missing"]);
     wrapper.unmount();
   });
-  it("filters the text year list using the contextual top search", async () => {
+  it("filters only songs in the selected year and leaves the year wheel unchanged", async () => {
     const { wrapper, router } = await setup();
-    await router.replace({ name: "year-list", query: { filter: "1999" } });
+    await router.replace({ name: "year-list", query: { filter: "newer" } });
     await flushPromises();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual(["1999"]);
-    expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("");
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "2024",
+      "1999",
+      "Unknown year",
+    ]);
+    expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("newer");
+    expect(wrapper.get("h2").text()).toBe("2024");
+    await wrapper.get('[data-year="1999"]').trigger("click");
+    await flushPromises();
     expect(wrapper.get("h2").text()).toBe("1999");
+    expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("newer");
+    expect(router.currentRoute.value.query.filter).toBe("newer");
+    await router.replace({ query: {} });
+    await flushPromises();
+    expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("");
+    expect(
+      wrapper
+        .getComponent({ name: "SongList" })
+        .props("items")
+        .map((track: Track) => track.id),
+    ).toEqual(["older"]);
     wrapper.unmount();
   });
 });
@@ -138,7 +156,11 @@ describe("year sorting and summaries", () => {
     ]);
     await router.replace({ name: "year-list", query: { filter: "1999" } });
     await flushPromises();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual(["1999"]);
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "1999",
+      "2024",
+      "Unknown year",
+    ]);
     await router.replace({ name: "year-list" });
     control.vm.$emit("update:modelValue", "desc");
     await flushPromises();
@@ -159,6 +181,9 @@ describe("year sorting and summaries", () => {
     await flushPromises();
     expect(wrapper.findComponent({ name: "SSelect" }).exists()).toBe(true);
     const summary = wrapper.get("[data-year-summary]");
+    expect(
+      summary.classes().some((name) => name.startsWith("border") || name.startsWith("bg-")),
+    ).toBe(false);
     expect(summary.get("div").classes()).toContain("justify-center");
     expect(summary.text()).toContain("2 songs");
     expect(summary.text()).toContain("About 1:01:30");

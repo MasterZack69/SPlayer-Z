@@ -120,6 +120,18 @@ describe("navigation search", () => {
       wrapper.unmount();
     },
   );
+  it.each(["year-list", "year"])(
+    "uses song search on %s without changing the selected year",
+    async (name) => {
+      const { wrapper, router } = await setup(`/${name}`);
+      expect(wrapper.get("input").attributes("placeholder")).toBe("Search songs in this year…");
+      await wrapper.get("input").setValue("newer");
+      await flushPromises();
+      expect(router.currentRoute.value.name).toBe(name);
+      expect(router.currentRoute.value.query.filter).toBe("newer");
+      wrapper.unmount();
+    },
+  );
   it("restores query text through back/forward navigation and resets it when changing pages", async () => {
     const { wrapper, router } = await setup("/search?q=First");
     await router.push("/search?q=Second");

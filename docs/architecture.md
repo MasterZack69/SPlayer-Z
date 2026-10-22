@@ -83,7 +83,8 @@ uses a split view across the local and active-server indexes. Its plain-text yea
 ascending or descending order, with Unknown Year last. Wheel and trackpad gestures ease around
 a curved face and snap to a year; clicking, dragging, and keyboard navigation select the same
 route-bound year without remounting the browser. The independent song pane shows its count and
-combined duration above the shared SongList. Reduced motion skips wheel and pane animations;
+combined duration without a surrounding border above the shared SongList. The top search filters
+only songs in the selected year, never the year wheel. Reduced motion skips wheel and pane animations;
 hidden or unmounted wheels cancel pending motion.
 Year values in shared song lists open the matching year group; missing years open Unknown Year.
 Local songs without genre tags link to Unknown Genre. Global search includes Years and matches song/album years. Media-server years use the server's
@@ -92,7 +93,8 @@ authoritative numeric metadata. No year is added to Now Playing.
 Home keeps the overview row, then shows Songs by Year alongside Audio Formats. Listening
 Activity and Listening Hours share the following row. The year chart counts local tracks with
 known years, excludes hidden CUE containers, labels missing-year coverage, and scrolls horizontally
-for long year histories, with mouse-wheel, trackpad, and keyboard navigation. The graph fits
+for long year histories, with mouse-wheel, trackpad, and keyboard navigation. It starts at the
+latest years by default while preserving intentional browsing of older years. The graph fits
 its viewport vertically and hides scrollbar chrome; listening statistics and top lists retain
 their existing semantics.
 
