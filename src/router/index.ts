@@ -62,6 +62,11 @@ const router = createRouter({
           name: "genre-list",
           component: () => import("@/pages/LocalList.vue"),
         },
+        {
+          path: "genres/local/unknown",
+          name: "unknown-genre",
+          component: () => import("@/pages/LocalList.vue"),
+        },
         { path: "years/local", name: "year-list", component: () => import("@/pages/Years.vue") },
         { path: "years/local/:year", name: "year", component: () => import("@/pages/Years.vue") },
         {

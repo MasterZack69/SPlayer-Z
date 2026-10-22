@@ -20,6 +20,7 @@ export const PAGE_SEARCH_SCOPES: Record<string, string> = {
   "artist-list": "artists",
   "album-list": "albums",
   "genre-list": "genres",
+  "unknown-genre": "songs",
   folders: "folders",
   "year-list": "years",
   year: "songs",

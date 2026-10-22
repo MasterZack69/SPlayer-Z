@@ -8,6 +8,7 @@ import type { CoverItem } from "@/types/artist";
 import type { Track } from "@shared/types/player";
 
 const mocks = vi.hoisted(() => ({
+  libraryTracks: [] as Track[],
   getArtistList: vi.fn(),
   getAlbumList: vi.fn(),
   getGenreList: vi.fn(),
@@ -21,7 +22,12 @@ const mocks = vi.hoisted(() => ({
   navigateToArtist: vi.fn(),
 }));
 vi.mock("@/stores/library", () => ({
-  useLibraryStore: () => ({ ...mocks, artistAvatars: ref({}) }),
+  useLibraryStore: () => ({
+    ...mocks,
+    tracks: mocks.libraryTracks,
+    initialized: true,
+    artistAvatars: ref({}),
+  }),
 }));
 vi.mock("@/core/player", () => ({ playFrom: mocks.playFrom }));
 vi.mock("@/utils/navigate", () => ({
@@ -82,13 +88,21 @@ const CoverList = defineComponent({
 const setup = async (mode: "genre" | "album" | "artist" = "genre") => {
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: "/list", name: `${mode}-list`, component: { render: () => null } }],
+    routes: [
+      { path: "/list", name: `${mode}-list`, component: { render: () => null } },
+      { path: "/genres/local/unknown", name: "unknown-genre", component: { render: () => null } },
+    ],
   });
   await router.push("/list");
   const wrapper = mount(LocalList, {
     global: {
       plugins: [router, createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
-      stubs: { CoverList, SSelect: true, SButton: true },
+      stubs: {
+        CoverList,
+        SSelect: true,
+        SButton: true,
+        SongList: { name: "SongList", props: ["items", "searchQuery"], template: "<div />" },
+      },
     },
   });
   await flushPromises();
@@ -97,6 +111,7 @@ const setup = async (mode: "genre" | "album" | "artist" = "genre") => {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.libraryTracks = [];
   for (const load of [mocks.getGenreList, mocks.getAlbumList, mocks.getArtistList]) {
     load.mockResolvedValue([{ name, artist: "Artist", trackCount: tracks.length }]);
   }
@@ -153,6 +168,44 @@ describe("local collection cover playback", () => {
     resolve({ tracks });
     await flushPromises();
     expect(mocks.playFrom).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+});
+
+describe("unknown genre", () => {
+  it("keeps missing metadata separate from a real genre named Unknown genre", async () => {
+    mocks.libraryTracks = [
+      ...tracks,
+      { ...tracks[0], id: "blank", genres: ["  "] },
+      { ...tracks[0], id: "named", genres: ["Unknown genre"] },
+      { ...tracks[0], id: "tagged", genres: ["", "Pop"] },
+    ];
+    mocks.getGenreList.mockResolvedValue([{ name: "Unknown genre", trackCount: 1 }]);
+    const wrapper = await setup();
+    const cards = wrapper.getComponent(CoverList).props("items") as CoverItem[];
+    expect(cards.map((card) => card.title)).toEqual(["Unknown genre", "Unknown genre"]);
+    expect(new Set(cards.map((card) => card.id)).size).toBe(2);
+    await wrapper.findAll("[data-play]")[1].trigger("click");
+    await flushPromises();
+    expect(mocks.playFrom.mock.calls[0][0].map((track: Track) => track.id)).toEqual([
+      "genre-song",
+      "second-song",
+      "blank",
+    ]);
+    expect(mocks.getGenreCollection).not.toHaveBeenCalled();
+    wrapper.getComponent(CoverList).vm.$emit("click", cards[1]);
+    await flushPromises();
+    expect(wrapper.vm.$router.currentRoute.value.name).toBe("unknown-genre");
+    expect(wrapper.get("h1").text()).toBe("Unknown genre");
+    expect(
+      wrapper
+        .getComponent({ name: "SongList" })
+        .props("items")
+        .map((track: Track) => track.id),
+    ).toEqual(["genre-song", "second-song", "blank"]);
+    await wrapper.vm.$router.replace({ name: "unknown-genre", query: { filter: "song" } });
+    await flushPromises();
+    expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("song");
     wrapper.unmount();
   });
 });

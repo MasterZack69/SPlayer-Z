@@ -87,3 +87,9 @@ Home keeps the overview row, then shows Songs by Year alongside Audio Formats. L
 Activity and Listening Hours share the following row. The year chart counts local tracks with
 known years, excludes hidden CUE containers, labels missing-year coverage, and scrolls horizontally
 for long year histories; listening statistics and top lists retain their existing semantics.
+
+Genre and year browsers include localized unknown entries when tracks lack that metadata.
+Unknown Genre contains local tracks without a nonblank genre. Unknown Year contains local and
+active-server tracks without a valid track or album year. These are virtual groups, not tags
+written to files; a real genre named "Unknown genre" stays separate. Year statistics continue
+to count only known numeric years.

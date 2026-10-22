@@ -54,7 +54,11 @@ const setup = async () => {
 describe("Years browser", () => {
   it("shows only year text, then opens the centered year heading above matching songs", async () => {
     const { wrapper, router } = await setup();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual(["2024", "1999"]);
+    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+      "2024",
+      "1999",
+      "Unknown year",
+    ]);
     expect(wrapper.find("img").exists()).toBe(false);
     await wrapper.get("button").trigger("click");
     await flushPromises();
@@ -70,6 +74,28 @@ describe("Years browser", () => {
     await flushPromises();
     expect(wrapper.get("h1").text()).toBe("1999");
     expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("old");
+    wrapper.unmount();
+  });
+  it("opens unknown years without grouping valid album-only server years as missing", async () => {
+    const { wrapper, router } = await setup();
+    const streaming = state.streaming as { songs: Track[] };
+    streaming.songs.push(
+      { ...song("remote-missing", 0), source: "streaming" },
+      { ...song("album-year"), source: "streaming", album: { name: "Album", year: 2024 } },
+    );
+    await flushPromises();
+    const unknown = wrapper.findAll("button").find((button) => button.text() === "Unknown year")!;
+    await unknown.trigger("click");
+    await flushPromises();
+    expect(router.currentRoute.value.params.year).toBe("unknown");
+    expect(wrapper.get("h1").text()).toBe("Unknown year");
+    expect(wrapper.get("h1").classes()).toContain("text-center");
+    expect(
+      wrapper
+        .getComponent({ name: "SongList" })
+        .props("items")
+        .map((track: Track) => track.id),
+    ).toEqual(["unknown", "remote-missing"]);
     wrapper.unmount();
   });
   it("filters the text year list using the contextual top search", async () => {
