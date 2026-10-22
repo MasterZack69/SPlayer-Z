@@ -12,7 +12,11 @@ beforeEach(() => {
   localStorage.clear();
   setActivePinia(createPinia());
 });
-vi.mock("vue-router", () => ({ useRoute: () => ({ name: "library" }) }));
+const navigation = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("vue-router", () => ({
+  useRoute: () => ({ name: "library" }),
+  useRouter: () => navigation,
+}));
 vi.mock("@/stores/media", () => ({ useMediaStore: () => ({ track: null }) }));
 vi.mock("@/stores/settings", () => ({
   useSettingsStore: () => ({ preset: {}, player: {} }),
@@ -236,6 +240,43 @@ describe("year sorting", () => {
     await setSort(wrapper, "year", "desc");
     expect(titles(wrapper)).toEqual(["New", "Old", "Unknown"]);
     expect(wrapper.get("[data-song-header]").element.children[4].textContent).toBe("Year");
+    wrapper.unmount();
+  });
+});
+
+describe("song-list year links", () => {
+  it("opens local, album-only server, and unknown years without starting playback", async () => {
+    const wrapper = mountList({
+      items: [
+        { ...track, id: "local", year: 2024 },
+        { ...track, id: "remote", source: "streaming", album: { name: "Album", year: 1999 } },
+        { ...track, id: "unknown" },
+      ],
+    });
+    const links = wrapper.findAll("[data-year-link]");
+    for (const [i, year] of [2024, 1999, "unknown"].entries()) {
+      await links[i].trigger("click");
+      expect(navigation.push).toHaveBeenLastCalledWith({ name: "year", params: { year } });
+      await links[i].trigger("dblclick");
+    }
+    const player = await import("@/core/player");
+    expect(player.playNow).not.toHaveBeenCalled();
+    expect(player.playFrom).not.toHaveBeenCalled();
+    expect(links[2].attributes("aria-label")).toBe("Unknown year");
+    wrapper.unmount();
+  });
+});
+
+describe("unknown-genre song links", () => {
+  it("opens the unknown genre entry without triggering row playback", async () => {
+    const wrapper = mountList({ items: [{ ...track, genres: [] }] });
+    const link = wrapper.get("[data-unknown-genre-link]");
+    await link.trigger("click");
+    expect(navigation.push).toHaveBeenLastCalledWith({ name: "unknown-genre" });
+    await link.trigger("dblclick");
+    const player = await import("@/core/player");
+    expect(player.playNow).not.toHaveBeenCalled();
+    expect(player.playFrom).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 });

@@ -80,13 +80,16 @@ Shared song lists include a Year column between Genre and Actions, support year 
 scoped sorting, and place unknown years last in either sort direction. Album pages and local
 album cards show distinct known years in ascending order separated by `/`. The Years browser
 is a text-only list across the local and active-server indexes; selecting a year opens its tracks.
-Global search includes Years and matches song/album years. Media-server years use the server's
+Year values in shared song lists open the matching year group; missing years open Unknown Year.
+Local songs without genre tags link to Unknown Genre. Global search includes Years and matches song/album years. Media-server years use the server's
 authoritative numeric metadata. No year is added to Now Playing.
 
 Home keeps the overview row, then shows Songs by Year alongside Audio Formats. Listening
 Activity and Listening Hours share the following row. The year chart counts local tracks with
 known years, excludes hidden CUE containers, labels missing-year coverage, and scrolls horizontally
-for long year histories; listening statistics and top lists retain their existing semantics.
+for long year histories, with mouse-wheel, trackpad, and keyboard navigation. The graph fits
+its viewport vertically and hides scrollbar chrome; listening statistics and top lists retain
+their existing semantics.
 
 Genre and year browsers include localized unknown entries when tracks lack that metadata.
 Unknown Genre contains local tracks without a nonblank genre. Unknown Year contains local and

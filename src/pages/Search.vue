@@ -177,7 +177,7 @@ onMounted(load);
             <button
               v-for="item in results.years.slice(0, 6)"
               :key="item.id"
-              class="hover:underline focus-visible:underline"
+              class="appearance-none border-none bg-transparent p-0 text-left text-on-surface cursor-pointer hover:underline focus-visible:underline"
               @click="openEntity(item)"
             >
               {{ item.title }}
@@ -198,12 +198,12 @@ onMounted(load);
       <div v-else class="flex-1 min-h-0">
         <div
           v-if="category === 'years'"
-          class="flex flex-col items-start gap-3 overflow-y-auto h-full"
+          class="scrollbar-hidden flex flex-col items-start gap-3 overflow-y-auto h-full"
         >
           <button
             v-for="item in entityResults"
             :key="item.id"
-            class="hover:underline focus-visible:underline"
+            class="appearance-none border-none bg-transparent p-0 text-left text-on-surface cursor-pointer hover:underline focus-visible:underline"
             @click="openEntity(item)"
           >
             {{ item.title }}

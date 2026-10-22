@@ -100,6 +100,7 @@ const columnStyle = computed(() => ({
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const media = useMediaStore();
 const status = useStatusStore();
 const settings = useSettingsStore();
@@ -758,10 +759,40 @@ defineExpose({
                         </span>
                       </template>
                     </template>
-                    <span v-else class="opacity-50">{{ t("genre.unknown") }}</span>
+                    <button
+                      v-else
+                      type="button"
+                      data-unknown-genre-link
+                      :disabled="!isGenreLinkable(item)"
+                      class="appearance-none border-none bg-transparent p-0 text-left text-inherit"
+                      :class="
+                        isGenreLinkable(item)
+                          ? 'cursor-pointer hover:underline focus-visible:underline'
+                          : 'opacity-50'
+                      "
+                      @click.stop="router.push({ name: 'unknown-genre' })"
+                      @dblclick.stop
+                    >
+                      {{ t("genre.unknown") }}
+                    </button>
                   </div>
                   <div class="min-w-0 truncate text-sm tabular-nums text-on-surface-variant">
-                    {{ getTrackYear(item) ?? "—" }}
+                    <button
+                      type="button"
+                      data-year-link
+                      class="appearance-none border-none bg-transparent p-0 text-left text-inherit cursor-pointer hover:underline focus-visible:underline"
+                      :aria-label="getTrackYear(item)?.toString() ?? t('year.unknown')"
+                      :title="getTrackYear(item)?.toString() ?? t('year.unknown')"
+                      @click.stop="
+                        router.push({
+                          name: 'year',
+                          params: { year: getTrackYear(item) ?? 'unknown' },
+                        })
+                      "
+                      @dblclick.stop
+                    >
+                      {{ getTrackYear(item) ?? "—" }}
+                    </button>
                   </div>
                   <!-- 红心：批量模式下隐藏，其余始终显示 -->
                   <div

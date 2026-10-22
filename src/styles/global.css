@@ -121,6 +121,17 @@ html[data-appearance-style="image"] [role="alertdialog"] .bg-field {
   background: rgb(var(--s-on-surface) / 0.5);
 }
 
+/* Hide scroll chrome only on surfaces that opt in; native scrolling remains available. */
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity var(--fade-duration, 0.3s) ease;

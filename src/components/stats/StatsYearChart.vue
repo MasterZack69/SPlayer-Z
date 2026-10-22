@@ -5,7 +5,9 @@ import { countTrackYears } from "@shared/utils/year";
 const props = defineProps<{ tracks: Track[] }>();
 const { t } = useI18n();
 const viewport = useTemplateRef<HTMLElement>("viewport");
-const { width: viewportWidth } = useElementSize(viewport);
+const { width: viewportWidth, height: viewportHeight } = useElementSize(viewport);
+const height = computed(() => viewportHeight.value || 188);
+const baseline = computed(() => height.value - 34);
 const counts = computed(() => countTrackYears(props.tracks));
 const unknown = computed(
   () => props.tracks.length - counts.value.reduce((sum, entry) => sum + entry.count, 0),
@@ -21,7 +23,7 @@ const points = computed(() =>
     x: span.value
       ? 32 + ((entry.year - counts.value[0].year) * (width.value - 64)) / span.value
       : width.value / 2,
-    y: 154 - (entry.count / maximum.value) * 112,
+    y: baseline.value - (entry.count / maximum.value) * Math.max(0, height.value - 76),
   })),
 );
 const line = computed(() =>
@@ -34,6 +36,22 @@ const line = computed(() =>
     })
     .join(" "),
 );
+/**
+ * Let ordinary mouse wheels move a wide year timeline without trapping page scroll at its ends.
+ * @param event - Native wheel input; trackpad horizontal scrolling and zoom remain native.
+ */
+const handleWheel = (event: WheelEvent): void => {
+  const element = viewport.value;
+  if (!element || event.ctrlKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+  const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1;
+  const next = Math.max(
+    0,
+    Math.min(element.scrollWidth - element.clientWidth, element.scrollLeft + event.deltaY * unit),
+  );
+  if (next === element.scrollLeft) return;
+  event.preventDefault();
+  element.scrollLeft = next;
+};
 </script>
 
 <template>
@@ -47,20 +65,21 @@ const line = computed(() =>
     <div
       ref="viewport"
       tabindex="0"
-      class="min-h-0 min-w-0 flex-1 overflow-x-auto rounded focus-visible:ring-1 focus-visible:ring-primary/40"
+      class="scrollbar-hidden min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden rounded focus-visible:ring-1 focus-visible:ring-primary/40"
       :aria-label="t('year.distribution')"
+      @wheel="handleWheel"
     >
       <svg
         v-if="points.length"
         :width="width"
-        height="188"
+        :height="height"
         role="img"
         :aria-label="t('year.distribution')"
-        class="text-primary"
+        class="block text-primary"
       >
         <path
           v-if="points.length > 1"
-          :d="`${line} L ${points[points.length - 1].x} 154 L ${points[0].x} 154 Z`"
+          :d="`${line} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`"
           class="fill-primary/5"
         />
         <path :d="line" fill="none" stroke="currentColor" stroke-width="2.5" />
@@ -78,7 +97,7 @@ const line = computed(() =>
           </text>
           <text
             :x="point.x"
-            y="182"
+            :y="height - 8"
             text-anchor="middle"
             class="fill-on-surface-variant text-xs font-semibold tabular-nums"
           >

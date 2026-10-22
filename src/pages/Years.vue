@@ -50,11 +50,14 @@ onMounted(load);
     </h1>
     <h1 v-else class="text-3xl font-bold">{{ t("year.label") }}</h1>
     <p v-if="error" role="alert" class="text-error">{{ t("common.error") }}</p>
-    <div v-if="!isDetail" class="flex flex-1 min-h-0 flex-col items-start gap-4 overflow-y-auto">
+    <div
+      v-if="!isDetail"
+      class="scrollbar-hidden flex flex-1 min-h-0 flex-col items-start gap-4 overflow-y-auto"
+    >
       <button
         v-for="year in years"
         :key="year.id"
-        class="text-xl tabular-nums hover:underline focus-visible:underline"
+        class="appearance-none border-none bg-transparent p-0 text-left text-xl text-on-surface tabular-nums cursor-pointer hover:underline focus-visible:underline"
         @click="router.push({ name: 'year', params: { year: year.id } })"
       >
         {{ year.label }}

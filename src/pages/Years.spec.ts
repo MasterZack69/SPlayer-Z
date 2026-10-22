@@ -60,6 +60,14 @@ describe("Years browser", () => {
       "Unknown year",
     ]);
     expect(wrapper.find("img").exists()).toBe(false);
+    expect(wrapper.get("button").classes()).toEqual(
+      expect.arrayContaining([
+        "appearance-none",
+        "border-none",
+        "bg-transparent",
+        "text-on-surface",
+      ]),
+    );
     await wrapper.get("button").trigger("click");
     await flushPromises();
     expect(wrapper.get("h1").text()).toBe("2024");

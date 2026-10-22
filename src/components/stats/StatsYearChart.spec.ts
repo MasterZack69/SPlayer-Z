@@ -37,9 +37,38 @@ describe("year chart", () => {
     expect(wrapper.findAll("circle")).toHaveLength(100);
     expect(Number(wrapper.get("svg").attributes("width"))).toBe(6400);
     expect(wrapper.get("[tabindex='0']").classes()).toContain("overflow-x-auto");
+    expect(wrapper.get("[tabindex='0']").classes()).toContain("overflow-y-hidden");
+    expect(wrapper.get("[tabindex='0']").classes()).toContain("scrollbar-hidden");
+    expect(wrapper.get("svg").classes()).toContain("block");
     wrapper.unmount();
     const empty = chart([song("unknown")]);
     expect(empty.find("svg").exists()).toBe(false);
     empty.unmount();
+  });
+});
+
+describe("year-chart wheel navigation", () => {
+  it("scrolls horizontally with a mouse wheel and releases page scroll at the ends", () => {
+    const wrapper = chart([song("old", 1900), song("new", 2024)]);
+    const viewport = wrapper.get("[tabindex='0']").element as HTMLElement;
+    Object.defineProperties(viewport, {
+      clientWidth: { value: 400 },
+      scrollWidth: { value: 1200 },
+    });
+    const wheel = (deltaY: number, ctrlKey = false) => {
+      const event = new WheelEvent("wheel", { deltaY, ctrlKey, cancelable: true, bubbles: true });
+      Object.defineProperty(event, "ctrlKey", { value: ctrlKey });
+      viewport.dispatchEvent(event);
+      return event;
+    };
+    expect(wheel(80).defaultPrevented).toBe(true);
+    expect(viewport.scrollLeft).toBe(80);
+    viewport.scrollLeft = 800;
+    expect(wheel(80).defaultPrevented).toBe(false);
+    expect(viewport.scrollLeft).toBe(800);
+    viewport.scrollLeft = 0;
+    expect(wheel(-80).defaultPrevented).toBe(false);
+    expect(wheel(80, true).defaultPrevented).toBe(false);
+    wrapper.unmount();
   });
 });
