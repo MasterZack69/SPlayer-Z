@@ -33,7 +33,7 @@ let suppressClick = false;
  */
 const clamp = (value: number): number => Math.max(0, Math.min(props.items.length - 1, value));
 
-/** Paint only the visible cylinder face without reactive updates on every frame. */
+/** Paint the visible cylinder face around one horizontal center, without per-frame reactive updates. */
 const paint = (): void => {
   buttons.forEach((button, index) => {
     const distance = index - position;
@@ -48,7 +48,7 @@ const paint = (): void => {
     }
     const angle = distance * 0.31;
     const depth = Math.cos(angle);
-    button.style.transform = `translate(-50%, -50%) translate3d(${(1 - depth) * 22}px, ${Math.sin(angle) * 300}px, ${(depth - 1) * 160}px) rotateX(${-distance * 12}deg) scale(${1 - Math.min(Math.abs(distance), 3.7) * 0.085})`;
+    button.style.transform = `translate(-50%, -50%) translate3d(0px, ${Math.sin(angle) * 300}px, ${(depth - 1) * 160}px) rotateX(${-distance * 12}deg) scale(${1 - Math.min(Math.abs(distance), 3.7) * 0.085})`;
     button.style.opacity = String(Math.max(0.12, 1 - Math.abs(distance) * 0.25));
   });
 };

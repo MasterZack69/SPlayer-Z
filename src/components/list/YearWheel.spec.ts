@@ -41,6 +41,22 @@ afterEach(() => {
 });
 
 describe("year wheel motion", () => {
+  it("centers every visible year on the same axis with mirrored upper and lower geometry", () => {
+    const wrapper = setup(true);
+    const transforms = wrapper.findAll("button").filter((button) => !button.element.hidden);
+    for (const button of transforms) {
+      expect(button.element.style.transform).toContain("translate3d(0px,");
+    }
+    const upper = (
+      wrapper.get('[data-year="2022"]').element as HTMLButtonElement
+    ).style.transform.match(/translate3d\(([^,]+), ([^,]+), ([^)]+)\)/)!;
+    const lower = (
+      wrapper.get('[data-year="2018"]').element as HTMLButtonElement
+    ).style.transform.match(/translate3d\(([^,]+), ([^,]+), ([^)]+)\)/)!;
+    expect(parseFloat(upper[2])).toBeCloseTo(-parseFloat(lower[2]));
+    expect(parseFloat(upper[3])).toBeCloseTo(parseFloat(lower[3]));
+    wrapper.unmount();
+  });
   it("eases fractional trackpad movement and commits only after the gesture settles", async () => {
     const wrapper = setup();
     const selected = wrapper.get('[data-year="2020"]').element as HTMLButtonElement;
