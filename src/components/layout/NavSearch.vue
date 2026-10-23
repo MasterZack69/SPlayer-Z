@@ -20,15 +20,17 @@ watch(
 );
 
 /**
- * Update page filters immediately and clear global results when the input is cleared.
+ * Update scoped filters or global results as the user types, with one history entry per search.
  * @param value - Current input text, including an empty value from the clear button.
  */
 const updateKeyword = (value: string): void => {
   keyword.value = value;
   if (scope.value) {
     void router.replace({ query: { ...route.query, filter: value || undefined } });
-  } else if (route.name === "search" && !value.trim()) {
-    void router.replace({ name: "search", query: {} });
+  } else if (route.name === "search") {
+    void router.replace({ name: "search", query: value.trim() ? { q: value } : {} });
+  } else if (value.trim()) {
+    void router.push({ name: "search", query: { q: value } });
   }
 };
 

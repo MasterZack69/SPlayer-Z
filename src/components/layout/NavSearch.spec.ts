@@ -73,14 +73,52 @@ const setup = async (path = "/") => {
 };
 
 describe("navigation search", () => {
-  it("submits global search from Home without selecting Home as the result route", async () => {
+  it("opens global results from Home as soon as the user types, without Enter", async () => {
     const { wrapper, router } = await setup();
     expect(wrapper.get("input").attributes("placeholder")).toBe("Search all music…");
     await wrapper.get("input").setValue(" Night ");
+    await flushPromises();
+    expect(router.currentRoute.value).toMatchObject({ name: "search", query: { q: " Night " } });
+    wrapper.unmount();
+  });
+  it("updates global results on every edit and preserves spaces in multiword queries", async () => {
+    const { wrapper, router } = await setup();
+    const input = wrapper.get("input");
+    for (const value of ["Night", "Night ", "Night Song", "Night", "N"]) {
+      await input.setValue(value);
+      await flushPromises();
+      expect(router.currentRoute.value).toMatchObject({ name: "search", query: { q: value } });
+      expect((input.element as HTMLInputElement).value).toBe(value);
+    }
+    router.back();
+    await flushPromises();
     expect(router.currentRoute.value.name).toBe("home");
+    expect((input.element as HTMLInputElement).value).toBe("");
+    router.forward();
+    await flushPromises();
+    expect((input.element as HTMLInputElement).value).toBe("N");
+    wrapper.unmount();
+  });
+  it("ignores blank Home input and clears global results when the last character is deleted", async () => {
+    const { wrapper, router } = await setup();
+    await wrapper.get("input").setValue("   ");
+    await flushPromises();
+    expect(router.currentRoute.value.name).toBe("home");
+    await wrapper.get("input").setValue("N");
+    await flushPromises();
+    await wrapper.get("input").setValue("");
+    await flushPromises();
+    expect(router.currentRoute.value).toMatchObject({ name: "search", query: {} });
+    wrapper.unmount();
+  });
+  it("updates an existing global search and resets stale category and genre filters", async () => {
+    const { wrapper, router } = await setup("/search?q=Old&category=albums&genre=Pop");
+    await wrapper.get("input").setValue("New");
+    await flushPromises();
+    expect(router.currentRoute.value.query).toEqual({ q: "New" });
     await wrapper.get("form").trigger("submit");
     await flushPromises();
-    expect(router.currentRoute.value).toMatchObject({ name: "search", query: { q: "Night" } });
+    expect(router.currentRoute.value.query).toEqual({ q: "New" });
     wrapper.unmount();
   });
   it("clears the query and category immediately when X is clicked", async () => {
