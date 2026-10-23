@@ -48,7 +48,7 @@ const paint = (): void => {
     }
     const angle = distance * 0.31;
     const depth = Math.cos(angle);
-    button.style.transform = `translate(-50%, -50%) translate3d(${(1 - depth) * 18}px, ${Math.sin(angle) * 205}px, ${(depth - 1) * 160}px) rotateX(${-distance * 12}deg) scale(${1 - Math.min(Math.abs(distance), 3.7) * 0.09})`;
+    button.style.transform = `translate(-50%, -50%) translate3d(${(1 - depth) * 22}px, ${Math.sin(angle) * 300}px, ${(depth - 1) * 160}px) rotateX(${-distance * 12}deg) scale(${1 - Math.min(Math.abs(distance), 3.7) * 0.085})`;
     button.style.opacity = String(Math.max(0.12, 1 - Math.abs(distance) * 0.25));
   });
 };
@@ -179,10 +179,10 @@ const onPointerMove = (event: PointerEvent): void => {
   }
   event.preventDefault();
   const elapsed = event.timeStamp - previousTime;
-  if (elapsed > 0) velocity = (previousY - event.clientY) / 64 / elapsed;
+  if (elapsed > 0) velocity = (previousY - event.clientY) / 91 / elapsed;
   previousY = event.clientY;
   previousTime = event.timeStamp;
-  position = target = clamp(startPosition + (startY - event.clientY) / 64);
+  position = target = clamp(startPosition + (startY - event.clientY) / 91);
   paint();
 };
 
@@ -334,7 +334,7 @@ onBeforeUnmount(() => {
   background: transparent;
   color: rgb(var(--s-on-surface));
   font: inherit;
-  font-size: clamp(28px, 4vw, 52px);
+  font-size: clamp(36px, 5.2vw, 76px);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
@@ -351,7 +351,7 @@ onBeforeUnmount(() => {
   text-underline-offset: 6px;
 }
 .year-wheel-unknown {
-  font-size: clamp(15px, 2vw, 24px);
+  font-size: clamp(18px, 2.3vw, 32px);
   text-wrap: balance;
 }
 .year-wheel-entry[hidden] {

@@ -89,7 +89,7 @@ onMounted(load);
           :selected="selectedId"
           :label="t('year.label')"
           :reduced-motion="settings.reducedMotion"
-          class="min-h-0 flex-1"
+          class="year-wheel-lift min-h-0 flex-1"
           @select="selectYear"
         />
         <p v-if="!years.length" class="text-center text-sm text-on-surface-variant/60">
@@ -137,9 +137,12 @@ onMounted(load);
 <style scoped>
 .years-panes {
   display: grid;
-  grid-template-columns: clamp(160px, 23%, 280px) minmax(0, 1fr);
-  gap: clamp(20px, 3vw, 48px);
+  grid-template-columns: clamp(180px, 22%, 260px) minmax(0, 1fr);
+  gap: 20px;
   overflow: hidden;
+}
+.year-wheel-lift {
+  transform: translateY(-24px);
 }
 .year-song-pane {
   animation: year-pane-in 180ms ease-out;
@@ -164,6 +167,9 @@ onMounted(load);
   .years-panes {
     grid-template-columns: 104px minmax(0, 1fr);
     gap: 12px;
+  }
+  .year-wheel-lift {
+    transform: translateY(-16px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
