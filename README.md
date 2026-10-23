@@ -1,6 +1,6 @@
 # SPlayer-Z
 
-A cut-down fork of SPlayer-Next primarily focused on local music and user-owned media servers, but also has some minor additions such as Genre and Year metadata support.
+A cut-down fork of SPlayer-Next primarily focused on local music and user-owned media servers.
 
 ## Supported music sources
 
