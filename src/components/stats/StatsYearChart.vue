@@ -28,6 +28,12 @@ const alignLatest = (): void => {
 };
 watch([width, viewportWidth, () => counts.value.length], alignLatest, { flush: "post" });
 
+onActivated(() => {
+  // Cached pages may lose their scroll offset without triggering a size change.
+  previousEnd = 0;
+  void nextTick(alignLatest);
+});
+
 const maximum = computed(() => Math.max(1, ...counts.value.map((entry) => entry.count)));
 const points = computed(() =>
   counts.value.map((entry) => ({

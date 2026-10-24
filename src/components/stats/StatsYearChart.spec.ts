@@ -1,7 +1,7 @@
 import { mount, flushPromises } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type ShallowRef } from "vue";
+import { defineComponent, h, KeepAlive, shallowRef, type ShallowRef } from "vue";
 import type { Track } from "@shared/types/player";
 import en from "@/i18n/locales/en-US.json";
 const layout = vi.hoisted(() => ({ width: null as unknown as ShallowRef<number> }));
@@ -59,6 +59,47 @@ describe("year chart", () => {
     expect(viewport.scrollLeft).toBe(120);
     wrapper.unmount();
   });
+  it.each([true, false])(
+    "returns to the latest years after cached navigation (hidden resize: %s)",
+    async (hiddenResize) => {
+      const visible = shallowRef(true);
+      const tracks = [song("old", 1900), song("new", 2026)];
+      const wrapper = mount(
+        defineComponent({
+          setup: () => () =>
+            h(KeepAlive, null, {
+              default: () => (visible.value ? h(StatsYearChart, { tracks }) : h("div")),
+            }),
+        }),
+        {
+          global: {
+            plugins: [createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
+            stubs: { SCard: { template: "<section><slot /></section>" } },
+          },
+        },
+      );
+      layout.width.value = 400;
+      await flushPromises();
+      const viewport = wrapper.get("[tabindex='0']").element as HTMLElement;
+      const end = Number(wrapper.get("svg").attributes("width")) - 400;
+      expect(viewport.scrollLeft).toBe(end);
+      visible.value = false;
+      await flushPromises();
+      if (hiddenResize) {
+        layout.width.value = 0;
+        await flushPromises();
+      }
+      // Browsers can clamp scroll offsets when cached content loses its layout box.
+      viewport.scrollLeft = 0;
+      visible.value = true;
+      await flushPromises();
+      layout.width.value = 400;
+      await flushPromises();
+      expect(wrapper.get("[tabindex='0']").element).toBe(viewport);
+      expect(viewport.scrollLeft).toBe(end);
+      wrapper.unmount();
+    },
+  );
   it("aligns asynchronous library data to the latest edge", async () => {
     const wrapper = chart([]);
     layout.width.value = 400;
