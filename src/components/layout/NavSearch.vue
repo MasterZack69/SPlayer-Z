@@ -46,7 +46,11 @@ const search = (value = keyword.value): void => {
 </script>
 
 <template>
-  <form class="app-no-drag min-w-0 w-60" role="search" @submit.prevent="search()">
+  <form
+    class="app-no-drag min-w-0 w-60 lt-compact:w-44 lt-md:flex-1"
+    role="search"
+    @submit.prevent="search()"
+  >
     <NavSearchInput
       :model-value="keyword"
       :placeholder="placeholder"

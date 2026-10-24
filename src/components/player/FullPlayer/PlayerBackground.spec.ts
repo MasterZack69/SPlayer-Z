@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { reactive, nextTick } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import PlayerBackground from "./PlayerBackground.vue";
@@ -30,6 +30,7 @@ const media = reactive({ track: { cover: "cover.jpg" }, parsedLyric: [] });
 const status = reactive({ isPlayerExpanded: true, isPlaying: true });
 
 beforeEach(() => {
+  status.isPlayerExpanded = true;
   settings.player.playerBgType = "animation";
   settings.player.playerBgRenderer = "mesh";
   media.track.cover = "cover.jpg";
@@ -77,5 +78,41 @@ describe("Now Playing background selection", () => {
     expect(wrapper.find(".bg-fluid-wrap").classes()).not.toContain("ready");
     expect(wrapper.find(".bg-blur-wrap").exists()).toBe(false);
     wrapper.unmount();
+  });
+});
+
+describe("collapsed blur covers", () => {
+  it("preloads the current cover while collapsed and cancels stale loads", async () => {
+    const loads: Array<() => void> = [];
+    vi.stubGlobal(
+      "Image",
+      class {
+        src = "";
+        decode() {
+          return new Promise<void>((resolve) => loads.push(resolve));
+        }
+      },
+    );
+    let wrapper: ReturnType<typeof mount> | undefined;
+    try {
+      settings.player.playerBgType = "blur";
+      status.isPlayerExpanded = false;
+      wrapper = mount(PlayerBackground, { props: { visible: false, active: false } });
+      media.track.cover = "first.jpg";
+      await nextTick();
+      const staleLoad = loads.at(-1)!;
+      media.track.cover = "latest.jpg";
+      await nextTick();
+      staleLoad();
+      loads.at(-1)!();
+      await flushPromises();
+      status.isPlayerExpanded = true;
+      await wrapper.setProps({ visible: true, active: true });
+      expect(wrapper.html()).toContain("latest.jpg");
+      expect(wrapper.html()).not.toContain("first.jpg");
+    } finally {
+      wrapper?.unmount();
+      vi.unstubAllGlobals();
+    }
   });
 });

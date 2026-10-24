@@ -12,11 +12,7 @@ import { useProgressLyric } from "@/composables/useProgressLyric";
 import Lyrics from "@/components/player/Lyrics/index.vue";
 import { useWindowControls } from "@/composables/useWindowControls";
 import * as player from "@/core/player";
-import {
-  playerTransition,
-  playerTransitionActive,
-  setPlayerExpanded,
-} from "@/services/playerTransition";
+import { playerTransitionActive, setPlayerExpanded } from "@/services/playerTransition";
 import IconFavorite from "~icons/material-symbols/favorite-rounded";
 import IconFavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
 import IconLucideListPlus from "~icons/lucide/list-plus";
@@ -122,41 +118,21 @@ const onBeforeEnter = (): void => {
   enterPrepared = false;
 };
 
-/** Prepare content after an ordinary entry; shared snapshots prepare it separately. */
+/** Prepare lyrics after entry without competing with the shared cover animation. */
 const onAfterEnter = (): void => {
-  if (!playerTransitionActive.value) preparePlayerContent();
+  if (isPlayerExpanded.value && !playerTransitionActive.value) preparePlayerContent();
 };
 
-watch(
-  playerTransition,
-  (active, previous, onCleanup) => {
-    if (!active) {
-      if (previous && isPlayerExpanded.value) {
-        preparePlayerContent();
-        if (lyricReady.value) scheduleVisualizers();
-      }
-      return;
-    }
-    let cancelled = false;
-    let idle = 0;
-    onCleanup(() => {
-      cancelled = true;
-      cancelIdleCallback(idle);
-    });
-    // Initialize lyrics after snapshot capture to avoid blocking the first transition frame.
-    void active.ready.then(
-      () => {
-        if (cancelled || !isPlayerExpanded.value) return;
-        idle = requestIdleCallback(() => {
-          idle = 0;
-          if (isPlayerExpanded.value) preparePlayerContent();
-        });
-      },
-      () => {},
-    );
-  },
-  { immediate: true },
-);
+watch(playerTransitionActive, (active, previous, onCleanup) => {
+  if (active || !previous || !isPlayerExpanded.value) return;
+  const idle = requestIdleCallback(
+    () => {
+      if (!playerTransitionActive.value && isPlayerExpanded.value) preparePlayerContent();
+    },
+    { timeout: 300 },
+  );
+  onCleanup(() => cancelIdleCallback(idle));
+});
 
 /** Cancel deferred spectrum work and freeze lyrics before closing. */
 const onBeforeLeave = (): void => {

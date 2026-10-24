@@ -1,5 +1,12 @@
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import path from "node:path";
 import process from "node:process";
+
+const napiCliEntry = path.join(
+  path.dirname(createRequire(import.meta.url).resolve("@napi-rs/cli/package.json")),
+  "dist/cli.js",
+);
 
 import { assertSupportedPlatform } from "../shared/utils/platform";
 
@@ -75,7 +82,7 @@ for (const mod of modules) {
   const buildType = options.isDev ? "debug" : "release";
   console.log(`[BuildNative] Building ${mod} (${buildType})`);
 
-  const result = spawnSync("napi", ["build", ...napiArgs], {
+  const result = spawnSync(process.execPath, [napiCliEntry, "build", ...napiArgs], {
     stdio: "inherit",
     shell: false,
     cwd,

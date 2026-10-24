@@ -1,4 +1,8 @@
 html[data-reduced-motion] {
+  .s-slider-track {
+    transition: none;
+  }
+
   :is(.transition, .transition-all, .transition-transform, [class*="transition-["]) {
     /* Keep opacity transitions; apply position and scale changes immediately. */
     transition-property: opacity;

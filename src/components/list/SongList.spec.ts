@@ -1,4 +1,4 @@
-import { defineComponent, h, ref, type PropType } from "vue";
+import { defineComponent, h, ref, reactive, type PropType } from "vue";
 import { shallowMount } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,8 +10,10 @@ import { createPinia, setActivePinia } from "pinia";
 import { useStatusStore } from "@/stores/status";
 beforeEach(() => {
   localStorage.clear();
+  appearance.songListStyle = "comfortable";
   setActivePinia(createPinia());
 });
+const appearance = reactive({ songListStyle: "comfortable" });
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("vue-router", () => ({
   useRoute: () => ({ name: "library" }),
@@ -19,7 +21,7 @@ vi.mock("vue-router", () => ({
 }));
 vi.mock("@/stores/media", () => ({ useMediaStore: () => ({ track: null }) }));
 vi.mock("@/stores/settings", () => ({
-  useSettingsStore: () => ({ preset: {}, player: {} }),
+  useSettingsStore: () => ({ preset: {}, player: {}, appearance }),
 }));
 vi.mock("@/core/player", () => ({ playNow: vi.fn(), playFrom: vi.fn() }));
 vi.mock("@/utils/navigate", () => ({
@@ -104,6 +106,18 @@ const mountList = (props: Record<string, unknown> = {}) =>
   });
 
 describe("shared song-list columns", () => {
+  it("switches density without losing shared year/header alignment", async () => {
+    const wrapper = mountList();
+    expect(wrapper.get("[data-song-item]").classes()).toContain("h-19");
+    appearance.songListStyle = "compact";
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get("[data-song-item]").classes()).toContain("h-14");
+    expect(wrapper.get("[data-song-header]").attributes("style")).toBe(
+      wrapper.get("[data-song-item]").attributes("style"),
+    );
+    expect(wrapper.get("[data-song-item]").element.children).toHaveLength(8);
+    wrapper.unmount();
+  });
   it("never renders obsolete VIP or paid EP labels", () => {
     const wrapper = mountList({
       items: [

@@ -18,11 +18,14 @@ import type {
   HotkeyBinding,
   HotkeyConfig,
   HotkeyConflict,
+  HotkeyProbeResult,
 } from "@shared/types/hotkey";
 import { defaultHotkeyConfig, HOTKEY_ACTIONS } from "@shared/defaults/hotkeys";
-import { normalizeAccelerator } from "@shared/utils/accelerator";
+import { isSupportedAccelerator, normalizeAccelerator } from "@shared/utils/accelerator";
 
 let conflicts: HotkeyConflict[] = [];
+/** Release registered shortcuts while recording so the renderer receives the keys */
+let suspended = false;
 
 /** 取当前完整配置（store 兜底默认） */
 const readConfig = (): HotkeyConfig => {
@@ -55,6 +58,7 @@ const unregisterAll = (): void => {
  * globalEnabled = false 时只 unregisterAll 不注册新的
  */
 const applyAll = (): void => {
+  if (suspended) return;
   unregisterAll();
   const config = readConfig();
   if (!config.globalEnabled) {
@@ -69,7 +73,7 @@ const applyAll = (): void => {
     if (!accel) continue;
 
     const norm = normalizeAccelerator(accel);
-    if (!norm) {
+    if (!norm || !isSupportedAccelerator(norm)) {
       conflicts.push({ id, scope: "global", reason: "invalid" });
       continue;
     }
@@ -112,6 +116,7 @@ export const initGlobalHotkey = (): void => {
 
 /** 退出清理 */
 export const cleanupGlobalHotkey = (): void => {
+  suspended = false;
   unregisterAll();
 };
 
@@ -159,23 +164,44 @@ export const setGlobalEnabled = (enabled: boolean): HotkeyConfig => {
 /**
  * 探测某 accelerator 是否能在系统层注册成功
  * 用于录入新 global 时给 UI 实时反馈
+ * @param accelerator - Accelerator to probe
+ * @returns ok if available; invalid if unsupported; occupied if another application owns it
  */
-export const probeAccelerator = (accelerator: string): boolean => {
+export const probeAccelerator = (accelerator: string): HotkeyProbeResult => {
   const norm = normalizeAccelerator(accelerator);
-  if (!norm) return false;
+  if (!norm || !isSupportedAccelerator(norm)) return "invalid";
   const wasRegistered = globalShortcut.isRegistered(norm);
   if (wasRegistered) {
     globalShortcut.unregister(norm);
   }
-  let ok = false;
+  let result: HotkeyProbeResult = "invalid";
   try {
-    ok = globalShortcut.register(norm, () => {});
-    if (ok) globalShortcut.unregister(norm);
+    if (globalShortcut.register(norm, () => {})) {
+      globalShortcut.unregister(norm);
+      result = "ok";
+    } else {
+      result = "occupied";
+    }
   } catch {
-    ok = false;
+    result = "invalid";
   }
   if (wasRegistered) {
     applyAll();
   }
-  return ok;
+  return result;
+};
+
+/**
+ * Suspend or resume global shortcuts during recording
+ * Release system registrations so existing bindings can also be recorded
+ * @param recording - Whether a binding is being recorded
+ */
+export const setRecording = (recording: boolean): void => {
+  if (recording === suspended) return;
+  suspended = recording;
+  if (suspended) {
+    globalShortcut.unregisterAll();
+    return;
+  }
+  applyAll();
 };

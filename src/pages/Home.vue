@@ -89,12 +89,26 @@ const trackNo = (index: number): string => String(index + 1).padStart(2, "0");
             </STag>
             <h2 class="truncate text-xl font-bold text-on-surface">{{ hero?.title }}</h2>
             <p class="truncate text-sm text-on-surface-variant/70">{{ hero?.subtitle }}</p>
-            <div class="mt-0.5 flex items-center gap-2">
-              <SButton type="primary" round :disabled="heroLoading" @click="playHero">
+            <div class="mt-0.5 flex flex-wrap items-center gap-2">
+              <SButton
+                type="primary"
+                round
+                size="small"
+                class="shrink-0 whitespace-nowrap"
+                :disabled="heroLoading"
+                @click="playHero"
+              >
                 <template #icon><IconLucidePlay /></template>
                 {{ t("home.hero.play") }}
               </SButton>
-              <SButton variant="secondary" round :disabled="heroLoading" @click="addHeroToQueue">
+              <SButton
+                variant="secondary"
+                round
+                size="small"
+                class="shrink-0 whitespace-nowrap"
+                :disabled="heroLoading"
+                @click="addHeroToQueue"
+              >
                 <template #icon><IconLucidePlus /></template>
                 {{ t("home.hero.addQueue") }}
               </SButton>

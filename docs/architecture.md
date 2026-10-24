@@ -104,3 +104,29 @@ Unknown Genre contains local tracks without a nonblank genre. Unknown Year conta
 active-server tracks without a valid track or album year. These are virtual groups, not tags
 written to files; a real genre named "Unknown genre" stays separate. Year statistics continue
 to count only known numeric years.
+
+### Responsive playback interface
+
+The sidebar automatically collapses below 1200 px without changing its saved preference.
+Below 1024 px, the player bar uses compact controls; the minimum main-window size is
+900 × 600 px. Shared song lists offer Comfortable (default) and Compact density under
+Appearance. Both densities retain the same column grid, year links, sorting, and virtualization.
+The seek bar glows while the audio engine transitions between tracks and returns to its normal
+appearance afterward.
+
+Cover transitions use an isolated shared-element overlay. Expensive lyric content is prepared
+after entry settles; fluid-background initialization remains eager and independently guarded
+against stale cover loads. Lyric poster export uses the configured language-specific fonts and
+waits for them before measuring text.
+
+Electron persists the named main window's bounds and display mode when Remember Window State
+is enabled. Windows use isolated zoom so auxiliary windows do not inherit main-window zoom.
+Secure-storage operations are asynchronous. Media-server credentials require a real Linux
+keyring; the `basic_text` backend is rejected. When the keyring requests rotation, ciphertext
+is refreshed without overwriting a concurrent password edit.
+
+Global shortcuts remain disabled by default. Recording a global binding temporarily releases
+registered shortcuts and restores the current configuration on completion, cancellation, or
+renderer shutdown. In-app actions are suppressed while recording; only volume and seek actions
+repeat when a key is held. Invalid accelerators and system-occupied shortcuts are reported
+separately, including numpad bindings.

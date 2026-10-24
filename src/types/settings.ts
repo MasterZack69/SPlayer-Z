@@ -38,6 +38,9 @@ export type LyricSourcePreference = Platform | "auto" | "self";
 /** 布局模式 */
 export type LayoutMode = "default" | "sidebar-full" | "floating";
 
+/** Song-list density */
+export type SongListStyle = "comfortable" | "compact";
+
 /** 路由切换动效 */
 export type RouteTransition = "none" | "fade" | "slide" | "zoom";
 
@@ -262,6 +265,8 @@ export interface PlayerSettings {
 
 /** 外观设置 */
 export interface AppearanceSettings {
+  /** Song row density; comfortable preserves the original layout. */
+  songListStyle: SongListStyle;
   /** 布局模式 */
   layoutMode: LayoutMode;
   /** 路由切换动效 */

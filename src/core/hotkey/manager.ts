@@ -12,6 +12,7 @@ import { useHotkeyStore } from "@/stores/hotkey";
 
 import { parseAccelerator, matchParsed, type ParsedAccelerator } from "@shared/utils/accelerator";
 import type { HotkeyActionId } from "@shared/types/hotkey";
+import { hotkeyRecording } from "./recording";
 import { buildRegistry, dispatch } from "./registry";
 
 /**
@@ -50,12 +51,25 @@ let installed = false;
 let offGlobalTrigger: (() => void) | null = null;
 let stopWatchBindings: (() => void) | null = null;
 
+/** Actions that support keyboard repeat */
+const REPEATABLE_ACTIONS = new Set<HotkeyActionId>([
+  "player.volumeUp",
+  "player.volumeDown",
+  "player.seekForward",
+  "player.seekBack",
+]);
+
 /** 全局 keydown 处理 */
 const onKeyDown = (event: KeyboardEvent): void => {
-  if (event.isComposing) return;
+  if (event.isComposing || hotkeyRecording.value) return;
   if (isInputFocused(event)) return;
   for (const entry of compiled) {
     if (matchParsed(event, entry.parsed)) {
+      // Allow repeat only for continuous adjustments, not playback toggles or track changes
+      if (event.repeat && !REPEATABLE_ACTIONS.has(entry.id)) {
+        event.preventDefault();
+        return;
+      }
       if (dispatch(entry.id)) event.preventDefault();
       return;
     }
@@ -73,7 +87,9 @@ export const installHotkeyManager = (): void => {
   recompile();
   stopWatchBindings = watch(() => useHotkeyStore().bindings, recompile, { deep: true });
   window.addEventListener("keydown", onKeyDown, { capture: true });
-  offGlobalTrigger = window.api.hotkey.onTrigger((id) => dispatch(id));
+  offGlobalTrigger = window.api.hotkey.onTrigger((id) => {
+    if (!hotkeyRecording.value) dispatch(id);
+  });
 };
 
 /** 卸载（仅测试 / HMR 用） */

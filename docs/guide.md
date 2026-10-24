@@ -57,3 +57,11 @@ Enable **Settings → Player → Keep Screen Awake During Playback** to prevent 
 Local PCM preloading and crossfade remain available without a song cache. Streaming tracks play directly from your server; they are not downloaded into an automatic song cache. Only cover, artist-artwork, and background caches are managed under **Local & Cache**.
 
 About identifies MasterZack69 as maintainer and acknowledges upstream SPlayer-Next contributors. Application updates are installed manually, not checked for in the background.
+
+## Song-list density
+
+Choose **Appearance → Song List Style → Compact** for smaller song rows and covers.
+Comfortable remains the default. Both styles keep the same columns, sorting, year links,
+and playback actions. Narrow windows automatically collapse the sidebar and simplify
+the player bar without changing your saved sidebar preference. During track transitions,
+the seek bar glows briefly to indicate that playback is switching tracks.

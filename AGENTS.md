@@ -10,7 +10,7 @@ Support only x86_64 Linux and ARM64 Linux. Do not add Windows, macOS, 32-bit, or
 
 ## Commands and environment
 
-Use the Node/pnpm versions in `package.json`. Use bash syntax for Linux shell examples and do not assume fixed filesystem paths.
+Use Node 24+ and the pnpm 12 version pinned in `package.json`; keep TypeScript on the existing 5.9 series. Use bash syntax for Linux shell examples and do not assume fixed filesystem paths.
 
 ```bash
 pnpm install

@@ -4,6 +4,7 @@ import type {
   HotkeyBindingsMap,
   HotkeyConfig,
   HotkeyConflict,
+  HotkeyProbeResult,
 } from "@shared/types/hotkey";
 
 /**
@@ -49,13 +50,13 @@ export const useHotkeyStore = defineStore("hotkey", () => {
     applyConfig(await window.api.hotkey.reset(id));
   };
 
-  /** 切换全局快捷键总开关 */
+  /** Enable or disable global shortcuts */
   const setGlobalEnabled = async (enabled: boolean): Promise<void> => {
     applyConfig(await window.api.hotkey.setGlobalEnabled(enabled));
   };
 
   /** 探测某 accelerator 在系统层是否可注册 */
-  const probe = async (accelerator: string): Promise<boolean> => {
+  const probe = async (accelerator: string): Promise<HotkeyProbeResult> => {
     return window.api.hotkey.probe(accelerator);
   };
 

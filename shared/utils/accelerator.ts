@@ -28,6 +28,109 @@ const MODIFIER_TOKENS = new Set([
   "cmdorctrl",
 ]);
 
+const NAMED_KEY_TOKENS = new Set([
+  "space",
+  "spacebar",
+  "tab",
+  "capslock",
+  "numlock",
+  "scrolllock",
+  "backspace",
+  "delete",
+  "del",
+  "insert",
+  "return",
+  "enter",
+  "up",
+  "down",
+  "left",
+  "right",
+  "home",
+  "end",
+  "pageup",
+  "pagedown",
+  "escape",
+  "esc",
+  "volumeup",
+  "volumedown",
+  "volumemute",
+  "medianexttrack",
+  "mediaprevioustrack",
+  "mediastop",
+  "mediaplaypause",
+  "printscreen",
+  "plus",
+]);
+
+/** Punctuation tokens supported by Electron */
+const PUNCTUATION_TOKENS = new Set([
+  ")",
+  "!",
+  "@",
+  "#",
+  "$",
+  "%",
+  "^",
+  "&",
+  "*",
+  "(",
+  ":",
+  ";",
+  "+",
+  "=",
+  "<",
+  ",",
+  "_",
+  "-",
+  ">",
+  ".",
+  "?",
+  "/",
+  "~",
+  "`",
+  "{",
+  "]",
+  "[",
+  "|",
+  "\\",
+  "}",
+  '"',
+  "'",
+]);
+
+/** Numpad accelerator tokens to event codes */
+const NUMPAD_TO_CODE: Record<string, string> = {
+  num0: "Numpad0",
+  num1: "Numpad1",
+  num2: "Numpad2",
+  num3: "Numpad3",
+  num4: "Numpad4",
+  num5: "Numpad5",
+  num6: "Numpad6",
+  num7: "Numpad7",
+  num8: "Numpad8",
+  num9: "Numpad9",
+  numdec: "NumpadDecimal",
+  numadd: "NumpadAdd",
+  numsub: "NumpadSubtract",
+  nummult: "NumpadMultiply",
+  numdiv: "NumpadDivide",
+};
+
+/** Event codes to numpad accelerator tokens */
+const CODE_TO_NUMPAD: Record<string, string> = Object.fromEntries(
+  Object.entries(NUMPAD_TO_CODE).map(([token, code]) => [code, token]),
+);
+
+/** Display labels for numpad operators */
+const NUMPAD_LABELS: Record<string, string> = {
+  numdec: "Num.",
+  numadd: "Num+",
+  numsub: "Num-",
+  nummult: "Num*",
+  numdiv: "Num/",
+};
+
 /**
  * Convert the final non-modifier token into KeyboardEvent.code.
  * Electron uses key names such as "A" and "Right" rather than physical codes.
@@ -39,6 +142,8 @@ const keyToCode = (token: string): string => {
   if (/^[A-Za-z]$/.test(t)) return `Key${t.toUpperCase()}`;
   // Digits.
   if (/^[0-9]$/.test(t)) return `Digit${t}`;
+  const numpad = NUMPAD_TO_CODE[t.toLowerCase()];
+  if (numpad) return numpad;
   // Arrow keys.
   const arrow: Record<string, string> = {
     left: "ArrowLeft",
@@ -153,29 +258,67 @@ export const normalizeAccelerator = (accel: string): string => {
     .split("+")
     .map((t) => t.trim())
     .filter(Boolean);
-  const mods = { cmdOrCtrl: false, cmd: false, ctrl: false, alt: false, shift: false };
+  const mods = {
+    cmdOrCtrl: false,
+    cmd: false,
+    super: false,
+    ctrl: false,
+    alt: false,
+    shift: false,
+  };
   let key = "";
   for (const t of tokens) {
     const lower = t.toLowerCase();
     if (lower === "commandorcontrol" || lower === "cmdorctrl") mods.cmdOrCtrl = true;
-    else if (lower === "cmd" || lower === "command" || lower === "meta" || lower === "super")
-      mods.cmd = true;
+    else if (lower === "cmd" || lower === "command") mods.cmd = true;
+    else if (lower === "meta" || lower === "super") mods.super = true;
     else if (lower === "ctrl" || lower === "control") mods.ctrl = true;
     else if (lower === "alt" || lower === "option") mods.alt = true;
     else if (lower === "shift") mods.shift = true;
-    else key = t;
+    else {
+      if (key) return "";
+      key = t;
+    }
   }
   if (!key) return "";
   // Uppercase letter keys.
   if (/^[a-z]$/.test(key)) key = key.toUpperCase();
   const parts: string[] = [];
   if (mods.cmdOrCtrl) parts.push("CommandOrControl");
-  if (mods.cmd) parts.push("Super");
+  if (mods.cmd || mods.super) parts.push("Super");
   if (mods.ctrl) parts.push("Ctrl");
   if (mods.alt) parts.push("Alt");
   if (mods.shift) parts.push("Shift");
   parts.push(key);
   return parts.join("+");
+};
+
+/** Validate one key and its modifiers against Electron accelerator tokens.
+ * @param accel - Accelerator to validate.
+ */
+export const isSupportedAccelerator = (accel: string): boolean => {
+  if (!accel) return false;
+  const tokens = accel
+    .split("+")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  if (tokens.length === 0) return false;
+
+  let key = "";
+  for (const token of tokens) {
+    if (MODIFIER_TOKENS.has(token.toLowerCase())) continue;
+    if (key) return false;
+    key = token;
+  }
+  if (!key) return false;
+
+  const lower = key.toLowerCase();
+  if (/^[a-z0-9]$/.test(lower)) return true;
+  if (/^f([1-9]|1[0-9]|2[0-4])$/.test(lower)) return true;
+  if (/^num[0-9]$/.test(lower)) return true;
+  if (["numdec", "numadd", "numsub", "nummult", "numdiv"].includes(lower)) return true;
+  if (NAMED_KEY_TOKENS.has(lower)) return true;
+  return PUNCTUATION_TOKENS.has(key);
 };
 
 /** Compare a parsed accelerator without reparsing on the hot path. */
@@ -184,7 +327,7 @@ export const matchParsed = (event: KeyboardEvent, parsed: ParsedAccelerator): bo
   if (event.metaKey !== parsed.meta) return false;
   if (event.altKey !== parsed.alt) return false;
   if (event.shiftKey !== parsed.shift) return false;
-  return event.code === parsed.code;
+  return event.code === parsed.code || (parsed.code === "Enter" && event.code === "NumpadEnter");
 };
 
 /**
@@ -217,6 +360,10 @@ export const formatAccelerator = (accel: string | null): string => {
       out.push("Enter");
     } else if (lower === "space" || lower === "spacebar") {
       out.push("Space");
+    } else if (/^num[0-9]$/.test(lower)) {
+      out.push(`Num${lower.slice(3)}`);
+    } else if (lower in NUMPAD_LABELS) {
+      out.push(NUMPAD_LABELS[lower]);
     } else if (/^[a-z]$/.test(lower)) {
       out.push(lower.toUpperCase());
     } else {
@@ -252,6 +399,9 @@ export const eventToAccelerator = (event: KeyboardEvent): string | null => {
     if (code.startsWith("Digit")) return code.slice(5);
     if (code.startsWith("Arrow")) return code.slice(5); // ArrowLeft → Left
     if (code.startsWith("F") && /^F[0-9]+$/.test(code)) return code; // F1
+    const numpad = CODE_TO_NUMPAD[code];
+    if (numpad) return numpad;
+    if (code === "NumpadEnter") return "Return";
     const map: Record<string, string> = {
       Space: "Space",
       Enter: "Return",

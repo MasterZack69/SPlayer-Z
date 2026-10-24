@@ -303,6 +303,43 @@ const batch = useMultiSelect(sortedItems, {
 });
 const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 
+/** Whether compact song rows are enabled */
+const isCompactList = computed(() => settings.appearance.songListStyle === "compact");
+
+/**
+ * Build song-row classes
+ * @param item - Track data
+ * @returns Row container classes
+ */
+const trackRowClass = (item: Track): string[] => {
+  const selected = batch.active.value && batch.selectedIds.value.has(item.id);
+  const playing = playingId.value === item.id;
+
+  if (isCompactList.value) {
+    return [
+      "group h-14 rounded-lg cursor-pointer transition-colors duration-150",
+      batch.active.value
+        ? selected
+          ? "bg-primary/10"
+          : "hover:bg-on-surface/5"
+        : playing
+          ? "bg-primary/14"
+          : "hover:bg-on-surface/6 active:bg-on-surface/10",
+    ];
+  }
+
+  return [
+    "group h-19 rounded-xl cursor-pointer border-2 border-solid transition-[background-color,border-color] duration-200",
+    batch.active.value
+      ? selected
+        ? "bg-primary/10 border-primary/30"
+        : "bg-surface-panel border-primary/12 hover:border-primary/20 hover:bg-on-surface/5"
+      : playing
+        ? "bg-primary/16 border-primary/40"
+        : "bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12",
+  ];
+};
+
 /** 添加到歌单相关 */
 const {
   open: pickerOpen,
@@ -344,7 +381,7 @@ const onListContextMenu = (event: MouseEvent): void => {
 
 /**
  * 双击歌曲项播放
- * @param item - 歌曲数据
+ * @param item - Track data
  * @param index - 列表索引
  */
 const onTrackDblClick = (item: Track, index: number): void => {
@@ -393,7 +430,7 @@ defineExpose({
           <SVirtualList
             ref="virtualListRef"
             :items="sortedItems"
-            :item-height="88"
+            :item-height="isCompactList ? 56 : 88"
             :padding-bottom="isFloatingPlayerBar ? PLAYER_BAR_GAP : 80"
             :get-item-key="(item: Track) => item.id"
             item-fixed
@@ -585,20 +622,12 @@ defineExpose({
             </template>
             <!-- 列表项 -->
             <template #default="{ item, index }: { item: Track; index: number }">
-              <div class="px-3 pb-3">
+              <div :class="isCompactList ? 'px-3' : 'px-3 pb-3'">
                 <div
                   data-song-item
                   :style="columnStyle"
-                  class="song-list-columns group h-19 rounded-xl cursor-pointer border-2 border-solid transition-[background-color,border-color] duration-200"
-                  :class="
-                    batch.active.value
-                      ? batch.selectedIds.value.has(item.id)
-                        ? 'bg-primary/10 border-primary/30'
-                        : 'bg-surface-panel border-primary/12 hover:border-primary/20 hover:bg-on-surface/5'
-                      : playingId === item.id
-                        ? 'bg-primary/16 border-primary/40'
-                        : 'bg-surface-panel border-primary/12 hover:border-primary/30 hover:bg-on-surface/8 active:bg-on-surface/12'
-                  "
+                  class="song-list-columns"
+                  :class="trackRowClass(item)"
                   @click="batch.active.value ? batch.toggle(item.id) : undefined"
                   @dblclick="onTrackDblClick(item, index)"
                   @contextmenu="contextTrack = item"
@@ -655,13 +684,22 @@ defineExpose({
                   </div>
                   <!-- 信息 -->
                   <div class="flex-1 min-w-0 flex items-center gap-3">
-                    <SImg :src="item.cover" class="size-12 rounded-lg shrink-0" />
+                    <SImg
+                      :src="item.cover"
+                      :class="[
+                        'shrink-0',
+                        isCompactList ? 'size-9 rounded-md' : 'size-12 rounded-lg',
+                      ]"
+                    />
                     <div class="flex-1 min-w-0">
                       <div class="flex items-baseline gap-1.5 min-w-0">
                         <span
-                          class="text-base font-medium truncate"
+                          class="font-medium truncate"
+                          :class="[
+                            isCompactList ? 'text-sm' : 'text-base',
+                            playingId === item.id ? 'text-primary' : '',
+                          ]"
                           :title="item.title"
-                          :class="playingId === item.id ? 'text-primary' : ''"
                         >
                           {{ item.title }}
                         </span>
@@ -683,7 +721,11 @@ defineExpose({
                         </span>
                       </div>
                       <div
-                        class="text-sm mt-1 truncate flex items-center gap-1"
+                        class="truncate flex items-center gap-1"
+                        :style="{
+                          fontSize: isCompactList ? '12px' : '14px',
+                          marginTop: isCompactList ? '2px' : '4px',
+                        }"
                         :class="
                           playingId === item.id ? 'text-primary/70' : 'text-on-surface-variant'
                         "

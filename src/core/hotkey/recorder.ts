@@ -14,6 +14,7 @@
  * - 失焦：自动取消
  */
 
+import { hotkeyRecording } from "./recording";
 import { eventToAccelerator } from "@shared/utils/accelerator";
 
 interface UseHotkeyRecorderOptions {
@@ -26,6 +27,8 @@ interface UseHotkeyRecorderOptions {
   onCancel?: () => void;
   /** 清除回调（Backspace） */
   onClear?: () => void;
+  /** Recording state changes */
+  onRecordingChange?: (recording: boolean) => void;
 }
 
 /** 录入态当前显示文案（实时反馈用户已按下的 modifier） */
@@ -39,7 +42,7 @@ const buildLivePreview = (event: KeyboardEvent): string => {
 };
 
 export const useHotkeyRecorder = (options: UseHotkeyRecorderOptions) => {
-  const { requireModifier = false, onConfirm, onCancel, onClear } = options;
+  const { requireModifier = false, onConfirm, onCancel, onClear, onRecordingChange } = options;
 
   const isRecording = ref(false);
   const current = ref<string>("");
@@ -55,6 +58,17 @@ export const useHotkeyRecorder = (options: UseHotkeyRecorderOptions) => {
       current.value = "";
       cleanup();
       onClear?.();
+      return;
+    }
+
+    if (
+      event.code === "Escape" &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.shiftKey
+    ) {
+      cancel();
       return;
     }
 
@@ -88,14 +102,18 @@ export const useHotkeyRecorder = (options: UseHotkeyRecorderOptions) => {
   const cleanup = (): void => {
     window.removeEventListener("keydown", handleKeyDown, { capture: true });
     window.removeEventListener("blur", handleBlur);
+    hotkeyRecording.value = false;
+    onRecordingChange?.(false);
   };
 
   const start = (): void => {
     if (isRecording.value) return;
     isRecording.value = true;
+    hotkeyRecording.value = true;
     current.value = "";
     window.addEventListener("keydown", handleKeyDown, { capture: true });
     window.addEventListener("blur", handleBlur);
+    onRecordingChange?.(true);
   };
 
   const cancel = (): void => {
@@ -105,6 +123,8 @@ export const useHotkeyRecorder = (options: UseHotkeyRecorderOptions) => {
     cleanup();
     onCancel?.();
   };
+
+  onScopeDispose(cancel);
 
   return {
     isRecording,

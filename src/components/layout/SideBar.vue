@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useResponsiveLayout } from "@/composables/useResponsiveLayout";
 import type { SMenuItem } from "@/components/ui/SMenu.vue";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
@@ -24,6 +25,7 @@ const { appearance, system: systemSettings } = useSettingsStore();
 const status = useStatusStore();
 const playlistStore = usePlaylistStore();
 const settingsDialog = useSettingsDialog();
+const { sidebarCollapsed } = useResponsiveLayout();
 
 const sourceOptions = computed<SSelectOption[]>(() => [
   { value: "local", label: t("collection.localPlaylist") },
@@ -254,21 +256,19 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col h-full">
-    <SideBarLogo :collapsed="appearance.sidebarCollapsed" />
+    <SideBarLogo :collapsed="sidebarCollapsed" />
     <SContextMenu :items="contextMenuItems" @select="onContextMenuSelect">
       <div
         class="flex-1 min-h-0 pb-3 overflow-y-auto transition-[padding] duration-300"
         :class="
-          appearance.sidebarCollapsed
-            ? 'px-2 [&::-webkit-scrollbar]:hidden'
-            : 'px-3 [scrollbar-gutter:stable]'
+          sidebarCollapsed ? 'px-2 [&::-webkit-scrollbar]:hidden' : 'px-3 [scrollbar-gutter:stable]'
         "
         @contextmenu.capture="onMenuContextMenu"
       >
         <SMenu
           :items="menuItems"
           :model-value="activeKey"
-          :collapsed="appearance.sidebarCollapsed"
+          :collapsed="sidebarCollapsed"
           @select="onSelect"
         />
       </div>

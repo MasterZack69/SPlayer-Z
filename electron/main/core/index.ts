@@ -98,7 +98,7 @@ export const initApp = (): void => {
     const coldAudioFiles = extractAudioFiles(process.argv);
     if (coldAudioFiles.length > 0) captureAudioFiles(coldAudioFiles);
     // Initialize Last.fm.
-    initLastfm();
+    void initLastfm();
 
     // Register global shortcuts.
     initGlobalHotkey();

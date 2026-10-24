@@ -16,7 +16,7 @@
           pkgs = import nixpkgs { inherit system; };
           inherit (pkgs) lib;
 
-          electron = pkgs.electron_43;
+          electron = pkgs.electron_44;
 
           packageJson = builtins.fromJSON (builtins.readFile ./package.json);
 
@@ -28,7 +28,7 @@
 
             pnpmDeps = pkgs.fetchPnpmDeps {
               inherit (finalAttrs) pname version src;
-              hash = "sha256-S/cv8pbUkA7kSi+KRHPEvn1D91OB85h9LjaGsHmbXwE=";
+              hash = "sha256-wpvOpVXLT6yh0eMA3pCB8PoTcbcwCk/Wt4Fjw3/L4As=";
               fetcherVersion = 4;
             };
 
@@ -39,7 +39,7 @@
             nativeBuildInputs = [
               pkgs.pnpmConfigHook
               pkgs.pnpm
-              pkgs.nodejs
+              pkgs.nodejs_24
               pkgs.rustPlatform.cargoSetupHook
               pkgs.rustPlatform.bindgenHook
               pkgs.cargo
@@ -251,7 +251,7 @@
               pkgs.rustfmt
               pkgs.rustPlatform.bindgenHook
               pkgs.pkg-config
-              pkgs.nodejs
+              pkgs.nodejs_24
               pkgs.pnpm
             ];
 

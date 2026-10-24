@@ -47,7 +47,7 @@ watch([() => media.track?.cover, () => status.isPlayerExpanded, bgType], ([newCo
     preloadImg.src = "";
     preloadImg = null;
   }
-  if (!expanded || bgType.value !== "blur") return;
+  if (bgType.value !== "blur") return;
   const targetCover = newCover || DEFAULT_COVER;
   // 相同不切换
   if (blurLayers[currentLayerIndex].src === targetCover) return;
@@ -55,6 +55,10 @@ watch([() => media.track?.cover, () => status.isPlayerExpanded, bgType], ([newCo
   const switchLayer = (src: string) => {
     if (token !== switchToken) return;
     preloadImg = null;
+    if (!expanded || !status.isPlayerExpanded) {
+      blurLayers[currentLayerIndex].src = src;
+      return;
+    }
     blurLayers[nextIndex].src = src;
     nextTick(() => {
       if (token !== switchToken) return;

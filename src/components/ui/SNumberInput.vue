@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<SNumberInputProps>(), {
 });
 
 const emit = defineEmits<{
-  "update:modelValue": [value: number];
+  "update:modelValue": [value: number | null];
   focus: [];
   blur: [];
 }>();
@@ -66,16 +66,22 @@ watch(
   },
 );
 
-const onUpdate = (value: number): void => {
+/**
+ * Synchronize NumberField values, normalizing empty input to null
+ * @param value - NumberField output value
+ */
+const onUpdate = (value: number | undefined): void => {
+  const next = value ?? null;
   if (props.updateOn === "blur") {
-    draftValue.value = value;
+    draftValue.value = next;
     return;
   }
-  emit("update:modelValue", value);
+  emit("update:modelValue", next);
 };
 
+/** Commit on blur or Enter, allowing an empty value */
 const commitValue = (): void => {
-  if (draftValue.value != null && draftValue.value !== props.modelValue) {
+  if (draftValue.value !== props.modelValue) {
     emit("update:modelValue", draftValue.value);
   }
 };

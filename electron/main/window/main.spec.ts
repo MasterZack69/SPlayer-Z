@@ -91,13 +91,28 @@ describe("主窗口启动交接", () => {
     expect(mocks.order).toEqual(["main-show"]);
   });
 
-  it("显示加载层前恢复最大化状态", async () => {
+  it("delegates bounds and display-mode restoration to Electron", async () => {
     const service = await import("./main");
-    mocks.settings["windowStates.main"] = { maximized: true };
+    mocks.settings["windowStates.main"] = { width: 1100, height: 720 };
     service.createMainWindow();
+    expect(mocks.createWindow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "main-window",
+        windowStatePersistence: true,
+        width: 1100,
+        height: 720,
+      }),
+    );
     mocks.main.emit("ready-to-show");
     await service.showReadyMainWindow();
-    expect(mocks.order).toEqual(["maximize", "main-show"]);
+    expect(mocks.main.maximize).not.toHaveBeenCalled();
+  });
+
+  it("does not restore state when remembering the window is disabled", async () => {
+    mocks.settings["system.rememberWindowState"] = false;
+    const service = await import("./main");
+    service.createMainWindow();
+    expect(mocks.createWindow.mock.calls[0][0]).not.toHaveProperty("windowStatePersistence");
   });
 
   it("重复就绪通知只交接一次，交接后允许托盘重新显示窗口", async () => {

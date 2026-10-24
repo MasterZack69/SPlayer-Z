@@ -464,7 +464,7 @@ const api = {
   streaming: {
     /**
      * 获取服务端收藏状态
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @param trackId - 服务端歌曲 ID
      * @returns 收藏状态
      */
@@ -472,7 +472,7 @@ const api = {
       ipcRenderer.invoke("streaming:getFavorite", serverId, trackId),
     /**
      * 更新服务端收藏状态
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @param trackId - 服务端歌曲 ID
      * @param favorite - 目标收藏状态
      * @returns 服务端确认的状态
@@ -507,7 +507,7 @@ const api = {
     addServer: (input: StreamingServerInput) => ipcRenderer.invoke("streaming:addServer", input),
     /**
      * 更新服务器
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @param input - 服务器表单
      * @returns 更新后的服务器视图
      */
@@ -515,13 +515,13 @@ const api = {
       ipcRenderer.invoke("streaming:updateServer", serverId, input),
     /**
      * 删除服务器
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @returns 删除完成
      */
     removeServer: (serverId: string) => ipcRenderer.invoke("streaming:removeServer", serverId),
     /**
      * 保存激活服务器
-     * @param serverId - 激活服务器 ID
+     * @param serverId - Server ID to activate
      * @returns 保存完成
      */
     setActiveServer: (serverId: string | null) =>
@@ -529,20 +529,20 @@ const api = {
     /**
      * 测试服务器连接
      * @param input - 服务器表单
-     * @param serverId - 编辑服务器 ID
+     * @param serverId - Server ID to edit
      * @returns 连通性结果
      */
     testConnection: (input: StreamingServerInput, serverId?: string) =>
       ipcRenderer.invoke("streaming:testConnection", input, serverId),
     /**
      * 连接服务器
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @returns 连接结果
      */
     connect: (serverId: string) => ipcRenderer.invoke("streaming:connect", serverId),
     /**
      * 断开服务器会话
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @returns 断开完成
      */
     disconnect: (serverId: string) => ipcRenderer.invoke("streaming:disconnect", serverId),
@@ -551,7 +551,7 @@ const api = {
       ipcRenderer.invoke("streaming:sync", serverId, force),
     /**
      * 订阅媒体库更新
-     * @param callback - 收到更新的服务器 ID
+     * @param callback - Updated server ID
      * @returns 取消订阅函数
      */
     onLibraryUpdated: (callback: (serverId: string) => void) => {
@@ -570,7 +570,7 @@ const api = {
       ipcRenderer.invoke("streaming:getArtistSongs", serverId, artistId),
     /**
      * 请求主进程读取歌词
-     * @param serverId - 服务器 ID
+     * @param serverId - Server ID
      * @param trackId - 服务端歌曲 ID
      * @param hint - 旧 Subsonic 歌词端点使用的歌曲信息
      * @returns 原始歌词文本
@@ -653,6 +653,7 @@ const api = {
     reset: (id?: HotkeyActionId) => ipcRenderer.invoke("hotkey:reset", id),
     setGlobalEnabled: (enabled: boolean) => ipcRenderer.invoke("hotkey:setGlobalEnabled", enabled),
     probe: (accelerator: string) => ipcRenderer.invoke("hotkey:probe", accelerator),
+    setRecording: (recording: boolean) => ipcRenderer.invoke("hotkey:setRecording", recording),
     getConflicts: () => ipcRenderer.invoke("hotkey:getConflicts"),
     onTrigger: (callback: (id: HotkeyActionId) => void) =>
       subscribe<HotkeyActionId>("hotkey:trigger", callback),

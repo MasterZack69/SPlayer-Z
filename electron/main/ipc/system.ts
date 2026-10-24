@@ -1,4 +1,4 @@
-import { app, clipboard, ipcMain, shell } from "electron";
+import { app, clipboard, ClipboardItem, ipcMain, shell } from "electron";
 import { stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, basename } from "node:path";
@@ -53,7 +53,7 @@ export const registerSystemIpc = (): void => {
       }
 
       const url = pathToFileURL(filePath).href;
-      clipboard.writeBuffer("text/uri-list", Buffer.from(`${url}\r\n`));
+      await clipboard.write([new ClipboardItem({ "text/uri-list": `${url}\r\n` })]);
 
       return true;
     } catch (error) {
