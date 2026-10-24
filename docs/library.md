@@ -22,6 +22,7 @@ The exception list lives in `electron/main/utils/metadata.ts`, with regression c
 
 Genre browsing groups known equivalent tags such as **Rap/Hip Hop**, **Rap/Hip-Hop**, and
 **Hip Hop/Rap** under **Hip-Hop/Rap**. Matching is case-insensitive and ignores outer whitespace.
+**Alternativo** likewise groups under **Alternative**, while **Alternative Rock** remains distinct.
 Cards, genre collections, global search, and genre statistics use the same grouping; a song with
 multiple equivalent tags counts only once in its genre. Existing genre links still work.
 

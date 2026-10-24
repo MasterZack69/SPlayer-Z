@@ -34,20 +34,36 @@ describe("genre alias queries", () => {
     expect(genres[0]).toEqual({ name: "Hip-Hop/Rap", trackCount: 4, cover: "cover-a" });
     expect(getLibraryStats().genreCount).toBe(3);
   });
-  it.each([...Object.keys(GENRE_ALIASES), " RAP/HIP-HOP "])(
-    "opens the complete collection from %s while retaining source tags",
-    (name) => {
+  it.each([
+    ...Object.keys(GENRE_ALIASES).filter((alias) => GENRE_ALIASES[alias] === "Hip-Hop/Rap"),
+    " RAP/HIP-HOP ",
+  ])("opens the complete collection from %s while retaining source tags", (name) => {
+    const tracks = getGenreTracks(name);
+    expect(tracks.map((track) => track.id).sort()).toEqual(["a", "b", "c", "cue"]);
+    expect(tracks.find((track) => track.id === "a")?.genres).toEqual([
+      "Rap/Hip Hop",
+      "Hip-Hop/Rap",
+    ]);
+    expect(state.db!.prepare("SELECT genres FROM tracks WHERE id = 'b'").get()?.genres).toBe(
+      '[" hip hop/rap "]',
+    );
+  });
+  it("groups Alternativo with Alternative without merging Alternative Rock", () => {
+    const insert = state.db!.prepare("INSERT INTO tracks (id, path, genres) VALUES (?, ?, ?)");
+    insert.run("alt-a", "/alt-a.flac", '["Alternative"]');
+    insert.run("alt-b", "/alt-b.flac", '["Alternativo", "Alternative"]');
+    insert.run("alt-rock", "/alt-rock.flac", '["Alternative Rock"]');
+    expect(getGenreList().find((genre) => genre.name === "Alternative")?.trackCount).toBe(2);
+    for (const name of ["Alternative", "Alternativo", " ALTERNATIVO "]) {
       const tracks = getGenreTracks(name);
-      expect(tracks.map((track) => track.id).sort()).toEqual(["a", "b", "c", "cue"]);
-      expect(tracks.find((track) => track.id === "a")?.genres).toEqual([
-        "Rap/Hip Hop",
-        "Hip-Hop/Rap",
+      expect(tracks.map((track) => track.id).sort()).toEqual(["alt-a", "alt-b"]);
+      expect(tracks.find((track) => track.id === "alt-b")?.genres).toEqual([
+        "Alternativo",
+        "Alternative",
       ]);
-      expect(state.db!.prepare("SELECT genres FROM tracks WHERE id = 'b'").get()?.genres).toBe(
-        '[" hip hop/rap "]',
-      );
-    },
-  );
+    }
+    expect(getGenreTracks("Alternative Rock").map((track) => track.id)).toEqual(["alt-rock"]);
+  });
   it("keeps unrelated genres and empty metadata separate", () => {
     expect(getGenreTracks("Rap").map((track) => track.id)).toEqual(["rap"]);
     expect(getGenreTracks("Pop/Rock").map((track) => track.id)).toEqual(["rock"]);

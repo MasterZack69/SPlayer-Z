@@ -107,6 +107,29 @@ describe("global search index", () => {
     }
     expect(first.genres).toEqual(["Rap/Hip Hop", "Hip-Hop/Rap"]);
   });
+  it("finds Alternative through its translated alias without merging Alternative Rock", () => {
+    const first = { ...track, id: "alt-a", genres: ["Alternative"] };
+    const second = { ...track, id: "alt-b", genres: ["Alternativo"] };
+    const rock = { ...track, id: "alt-rock", genres: ["Alternative Rock"] };
+    const index = buildSearchIndex(
+      fixture({
+        tracks: [first, second, rock],
+        server: { songs: [], albums: [], artists: [], playlists: [] },
+      }),
+    );
+    expect(index.genres.find((genre) => genre.title === "Alternative")?.trackCount).toBe(2);
+    expect(index.genres).toHaveLength(2);
+    for (const query of ["Alternative", "Alternativo"]) {
+      expect(searchIndex(index, query, query).songs.map((song) => song.id)).toEqual([
+        "alt-a",
+        "alt-b",
+      ]);
+    }
+    expect(searchIndex(index, "Alternativo").songs).toEqual(
+      searchIndex(index, "Alternative").songs,
+    );
+    expect(second.genres).toEqual(["Alternativo"]);
+  });
   it("clears every category for blank queries", () => {
     const index = buildSearchIndex(fixture());
     expect(Object.values(searchIndex(index, "  ")).every((items) => items.length === 0)).toBe(true);

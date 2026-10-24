@@ -1,5 +1,7 @@
 /** Explicit browsing aliases; source metadata remains unchanged. */
 export const GENRE_ALIASES: Readonly<Record<string, string>> = {
+  alternative: "Alternative",
+  alternativo: "Alternative",
   "hip-hop/rap": "Hip-Hop/Rap",
   "hip hop/rap": "Hip-Hop/Rap",
   "hiphop/rap": "Hip-Hop/Rap",
