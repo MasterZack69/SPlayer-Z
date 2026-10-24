@@ -3,6 +3,12 @@ import type { Track, Artist, Album, AudioQuality } from "@shared/types/player";
 import type { AlbumSummary, ArtistSummary, GenreSummary } from "@shared/types/library";
 import type { LibraryStats } from "@shared/types/stats";
 import { getDb } from "./index";
+import { GENRE_ALIASES, normalizeGenre } from "@shared/utils/genre";
+
+/** Apply shared browsing aliases in SQL without rewriting stored genre tags. */
+const genreNameSql = `CASE LOWER(TRIM(g.value)) ${Object.entries(GENRE_ALIASES)
+  .map(([alias, name]) => `WHEN '${alias}' THEN '${name}'`)
+  .join(" ")} ELSE TRIM(g.value) END`;
 
 /** 数据库行类型 */
 interface TrackRow {
@@ -330,19 +336,19 @@ export const getArtistList = (): ArtistSummary[] => {
   }));
 };
 
-/** 流派列表 */
+/** Group local genres by browsing label, counting each track only once. */
 export const getGenreList = (): GenreSummary[] => {
   const rows = getDb()
     .prepare(
       `SELECT
-         MIN(g.value) AS name,
+         MIN(${genreNameSql}) AS name,
          COUNT(DISTINCT t.id) AS trackCount,
          MAX(CASE WHEN t.cover IS NOT NULL THEN t.cover END) AS cover
        FROM tracks t, json_each(COALESCE(NULLIF(t.genres, ''), '[]')) g
        WHERE g.value IS NOT NULL
          AND TRIM(g.value) != ''
          AND ${excludeCueContainer("t.path")}
-       GROUP BY LOWER(g.value)
+       GROUP BY LOWER(${genreNameSql})
        ORDER BY trackCount DESC, name`,
     )
     .all() as { name: string; trackCount: number; cover: string | null }[];
@@ -353,15 +359,19 @@ export const getGenreList = (): GenreSummary[] => {
   }));
 };
 
-/** 按流派名获取全部曲目 */
+/**
+ * Retrieve local tracks under a canonical genre or any supported alias.
+ * @param genreName - Genre tag or browsing label.
+ * @returns Distinct matching tracks with their original genre metadata.
+ */
 export const getGenreTracks = (genreName: string): Track[] => {
   const rows = getDb()
     .prepare(
       `SELECT DISTINCT t.* FROM tracks t, json_each(COALESCE(NULLIF(t.genres, ''), '[]')) g
-       WHERE LOWER(g.value) = LOWER(?)
+       WHERE LOWER(${genreNameSql}) = LOWER(?)
          AND ${excludeCueContainer("t.path")}`,
     )
-    .all(genreName) as TrackRow[];
+    .all(normalizeGenre(genreName)) as TrackRow[];
   return rows.map(rowToTrack);
 };
 
@@ -421,7 +431,7 @@ export const getLibraryStats = (): LibraryStats => {
 
   const genreRow = d
     .prepare(
-      `SELECT COUNT(DISTINCT LOWER(g.value)) AS count
+      `SELECT COUNT(DISTINCT LOWER(${genreNameSql})) AS count
        FROM tracks t, json_each(COALESCE(NULLIF(t.genres, ''), '[]')) g
        WHERE g.value IS NOT NULL
          AND TRIM(g.value) != ''

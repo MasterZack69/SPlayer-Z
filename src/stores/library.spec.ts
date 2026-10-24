@@ -17,6 +17,7 @@ const api = {
   getTracks: vi.fn(),
   getScanDirs: vi.fn(),
   getArtists: vi.fn(),
+  getGenreTracks: vi.fn(),
   prefetchArtistAvatars: vi.fn(),
   scan: vi.fn(),
   cancelScan: vi.fn(),
@@ -151,5 +152,23 @@ describe("application-owned library indexing", () => {
     await flushPromises();
     expect(api.scan).toHaveBeenCalledOnce();
     expect(store.scanning).toBe(false);
+  });
+});
+
+describe("genre alias collections", () => {
+  it("uses the canonical title for old links without modifying track metadata", async () => {
+    const track = {
+      id: "a",
+      title: "Song",
+      source: "local",
+      artists: [],
+      duration: 1000,
+      genres: ["Rap/Hip Hop"],
+    } as Track;
+    api.getGenreTracks.mockResolvedValue({ success: true, data: [track] });
+    const collection = await useLibraryStore().getGenreCollection("Rap/Hip Hop");
+    expect(api.getGenreTracks).toHaveBeenCalledWith("Hip-Hop/Rap");
+    expect(collection?.title).toBe("Hip-Hop/Rap");
+    expect(collection?.tracks[0].genres).toEqual(["Rap/Hip Hop"]);
   });
 });

@@ -86,6 +86,27 @@ describe("global search index", () => {
     expect(index.albums.find((album) => album.source === "local")?.trackCount).toBe(2);
     expect(index.genres.find((genre) => genre.title === "Pop")?.trackCount).toBe(3);
   });
+  it("groups genre aliases, searches either spelling, and preserves original metadata", () => {
+    const first = { ...track, id: "first", genres: ["Rap/Hip Hop", "Hip-Hop/Rap"] };
+    const second = { ...track, id: "second", genres: ["Hip Hop/Rap"] };
+    const index = buildSearchIndex(
+      fixture({
+        tracks: [first, second],
+        server: { songs: [], albums: [], artists: [], playlists: [] },
+      }),
+    );
+    expect(index.genres).toHaveLength(1);
+    expect(index.genres[0]).toMatchObject({ title: "Hip-Hop/Rap", trackCount: 2 });
+    for (const query of ["Rap/Hip Hop", "Hip-Hop/Rap", "rap/hip-hop"]) {
+      expect(searchIndex(index, query).genres).toHaveLength(1);
+      expect(searchIndex(index, query).songs.map((song) => song.id)).toEqual(["first", "second"]);
+      expect(searchIndex(index, query, query).songs.map((song) => song.id)).toEqual([
+        "first",
+        "second",
+      ]);
+    }
+    expect(first.genres).toEqual(["Rap/Hip Hop", "Hip-Hop/Rap"]);
+  });
   it("clears every category for blank queries", () => {
     const index = buildSearchIndex(fixture());
     expect(Object.values(searchIndex(index, "  ")).every((items) => items.length === 0)).toBe(true);

@@ -2,6 +2,7 @@ import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { PlaylistSummary } from "@shared/types/playlist";
 import type { FolderNode } from "@/types/folder";
 import type { CoverItem } from "@/types/artist";
+import { normalizeGenre } from "@shared/utils/genre";
 import { getTrackYear } from "@shared/utils/year";
 import { matchesSearch } from "./match";
 
@@ -127,7 +128,7 @@ export const buildSearchIndex = (library: SearchLibrary): SearchIndex => {
         },
         true,
       );
-    for (const genre of new Set(track.genres?.map((name) => name.trim()).filter(Boolean)))
+    for (const genre of new Set(track.genres?.map(normalizeGenre).filter(Boolean)))
       add(
         {
           category: "genres",
@@ -231,7 +232,8 @@ export const searchIndex = (index: SearchIndex, query: string, genre?: string): 
       ? index.songs.filter((track) =>
           genre
             ? track.genres?.some(
-                (value) => value.trim().toLocaleLowerCase() === genre.toLocaleLowerCase(),
+                (value) =>
+                  normalizeGenre(value).toLowerCase() === normalizeGenre(genre).toLowerCase(),
               )
             : matchesSearch(
                 query,
@@ -240,6 +242,9 @@ export const searchIndex = (index: SearchIndex, query: string, genre?: string): 
                 getTrackYear(track)?.toString(),
                 ...track.artists.map((a) => a.name),
                 ...(track.genres ?? []),
+              ) ||
+              track.genres?.some((value) =>
+                matchesSearch(normalizeGenre(query), normalizeGenre(value)),
               ),
         )
       : [],
@@ -249,7 +254,7 @@ export const searchIndex = (index: SearchIndex, query: string, genre?: string): 
         active
           ? index[category].filter((entity) =>
               matchesSearch(
-                query,
+                category === "genres" ? normalizeGenre(query) : query,
                 entity.title,
                 entity.subtitle,
                 ...(entity.years ?? []).map(String),

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { normalizeGenre } from "@shared/utils/genre";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "LocalList" });
 
@@ -94,7 +95,11 @@ const items = computed<CoverItem[]>(() => {
     list.sort((a, b) => b.trackCount - a.trackCount || a.title.localeCompare(b.title));
   }
   return list.filter((item) =>
-    matchesSearch(searchQuery.value, item.title, mode === "album" ? item.subtitle : undefined),
+    matchesSearch(
+      mode === "genre" ? normalizeGenre(searchQuery.value) : searchQuery.value,
+      item.title,
+      mode === "album" ? item.subtitle : undefined,
+    ),
   );
 });
 

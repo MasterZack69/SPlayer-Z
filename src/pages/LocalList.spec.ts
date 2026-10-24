@@ -172,6 +172,30 @@ describe("local collection cover playback", () => {
   });
 });
 
+describe("canonical genre browsing", () => {
+  it("finds the merged card using an original alias and plays its full collection", async () => {
+    mocks.getGenreList.mockResolvedValue([{ name: "Hip-Hop/Rap", trackCount: 2 }]);
+    const wrapper = await setup();
+    await wrapper.vm.$router.replace({ name: "genre-list", query: { filter: "Rap/Hip Hop" } });
+    await flushPromises();
+    expect(wrapper.findAll("[data-play]")).toHaveLength(1);
+    expect(wrapper.get("[data-play]").text()).toBe("Hip-Hop/Rap");
+    await wrapper.get("[data-play]").trigger("click");
+    await flushPromises();
+    expect(mocks.getGenreCollection).toHaveBeenCalledWith("Hip-Hop/Rap");
+    expect(mocks.playFrom).toHaveBeenCalledWith(tracks, {
+      startIndex: 0,
+      context: {
+        provider: "local",
+        originId: "Hip-Hop/Rap",
+        originType: "genre",
+        originName: "Hip-Hop/Rap",
+      },
+    });
+    wrapper.unmount();
+  });
+});
+
 describe("unknown genre", () => {
   it("keeps missing metadata separate from a real genre named Unknown genre", async () => {
     mocks.libraryTracks = [

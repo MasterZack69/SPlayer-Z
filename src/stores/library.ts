@@ -1,3 +1,4 @@
+import { normalizeGenre } from "@shared/utils/genre";
 import { getTrackYear } from "@shared/utils/year";
 import localforage from "localforage";
 import type { Track, Artist } from "@shared/types/player";
@@ -346,17 +347,22 @@ export const useLibraryStore = defineStore("library", () => {
     return res.success && res.data ? res.data : [];
   };
 
-  /** 流派详情 */
+  /**
+   * Load a genre collection using canonical browsing labels and unmodified track tags.
+   * @param genreName - Requested genre label or alias.
+   * @returns Matching local collection, or null when no tracks exist.
+   */
   const getGenreCollection = async (genreName: string): Promise<Collection | null> => {
-    const name = genreName.trim();
+    const name = normalizeGenre(genreName);
     if (!name) return null;
     const res = await window.api.library.getGenreTracks(name);
     if (!res.success || !res.data?.length) return null;
     const genreTracks = res.data;
-    // 以曲目上记录的写法为准，避免大小写不一致导致标题变形
+    // Preserve source capitalization for genres outside the explicit alias list.
     const displayName =
       genreTracks
         .flatMap((track) => track.genres ?? [])
+        .map(normalizeGenre)
         .find((item) => item.toLowerCase() === name.toLowerCase()) ?? name;
     return {
       id: encodeURIComponent(displayName),

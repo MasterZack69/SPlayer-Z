@@ -18,6 +18,17 @@ Local metadata parsing recognizes common separators between artists. Names conta
 
 The exception list lives in `electron/main/utils/metadata.ts`, with regression cases in `metadata.test.ts`. Add a narrowly scoped exception and tests for standalone names and mixed credits; do not disable splitting for every ampersand. Media-server artist values are authoritative and are not split again by the client.
 
+## Genre aliases
+
+Genre browsing groups known equivalent tags such as **Rap/Hip Hop**, **Rap/Hip-Hop**, and
+**Hip Hop/Rap** under **Hip-Hop/Rap**. Matching is case-insensitive and ignores outer whitespace.
+Cards, genre collections, global search, and genre statistics use the same grouping; a song with
+multiple equivalent tags counts only once in its genre. Existing genre links still work.
+
+This is a browsing alias, not a tag edit: original metadata stays unchanged in the index and
+music files. Unrelated compound genres remain separate. The explicit alias list lives in
+`shared/utils/genre.ts`; no rescan is needed for existing libraries.
+
 ## Covers
 
 Local covers come from audio metadata. FLAC cover extraction includes a bounded PICTURE-block fallback for files whose picture metadata cannot be handled by the normal decoder path, including malformed MIME metadata. Server covers are fetched through an authenticated main-process proxy. Local artist-avatar lookup can also query MusicBrainz and TheAudioDB and cache the returned artwork; it is separate from audio playback and does require network access.
