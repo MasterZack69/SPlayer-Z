@@ -2,6 +2,7 @@
 import { useLibraryStore } from "@/stores/library";
 import { useStreamingStore } from "@/stores/streaming";
 import YearWheel from "@/components/list/YearWheel.vue";
+import { useYearBrowserStore } from "@/stores/yearBrowser";
 import { useSettingsStore } from "@/stores/settings";
 import { usePageSearch } from "@/composables/usePageSearch";
 import { getTrackYear, trackYears } from "@shared/utils/year";
@@ -16,7 +17,8 @@ const settings = useSettingsStore();
 const streaming = useStreamingStore();
 const filter = usePageSearch();
 const error = ref(false);
-const sortOrder = ref<"asc" | "desc">("desc");
+const browser = useYearBrowserStore();
+const { sortOrder } = storeToRefs(browser);
 const sortOptions = computed<SSelectOption[]>(() => [
   { value: "asc", label: t("songList.sort.asc") },
   { value: "desc", label: t("songList.sort.desc") },
@@ -32,8 +34,18 @@ const years = computed(() => {
     entries.push({ id: "unknown", label: t("year.unknown") });
   return entries;
 });
-const selectedId = computed(() =>
-  isDetail.value ? String(route.params.year) : (years.value[0]?.id ?? ""),
+const selectedId = computed(() => {
+  if (isDetail.value) return String(route.params.year);
+  return years.value.some((entry) => entry.id === browser.selectedId)
+    ? browser.selectedId
+    : (years.value[0]?.id ?? "");
+});
+watch(
+  selectedId,
+  (id) => {
+    if (id) browser.selectedId = id;
+  },
+  { immediate: true },
 );
 const heading = computed(() =>
   selectedId.value === "unknown" ? t("year.unknown") : selectedId.value,

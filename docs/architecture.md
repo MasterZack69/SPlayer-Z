@@ -80,7 +80,9 @@ deleted-file detection. CUE tracks inherit the container year and are refreshed 
 Shared song lists include a Year column between Genre and Actions, support year filtering and
 scoped sorting, and place unknown years last in either sort direction. Album pages and local
 album cards show distinct known years in ascending order separated by `/`. The Years browser
-uses a split view across the local and active-server indexes. Its plain-text year wheel supports
+uses a split view across the local and active-server indexes. The selected year (including Unknown Year)
+and sort order are retained in memory across navigation for the current app session only;
+closing the app resets them. Explicit year links still select their requested year. Its plain-text year wheel supports
 ascending or descending order, with Unknown Year last. Wheel and trackpad gestures ease around
 a curved face and snap to a year; clicking, dragging, and keyboard navigation select the same
 route-bound year without remounting the browser. The independent song pane shows its count and

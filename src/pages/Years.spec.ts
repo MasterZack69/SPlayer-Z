@@ -1,6 +1,7 @@
 import { defineComponent, h, reactive } from "vue";
 import { mount, flushPromises } from "@vue/test-utils";
-import { createMemoryHistory, createRouter } from "vue-router";
+import { createPinia, type Pinia } from "pinia";
+import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import { createI18n } from "vue-i18n";
 import { describe, expect, it, vi } from "vitest";
 import type { Track } from "@shared/types/player";
@@ -18,8 +19,12 @@ const song = (id: string, year?: number): Track => ({
   duration: 1000,
   year,
 });
-/** Render text year navigation and inspect the real list contract across route reuse. */
-const setup = async () => {
+/**
+ * Render routed year navigation with an isolated or reused app-session store.
+ * @param pinia - App session to reuse across page remounts.
+ * @returns Mounted route view and navigation controls.
+ */
+const setup = async (pinia: Pinia = createPinia()) => {
   state.library = reactive({
     initialized: true,
     tracks: [song("older", 1999), song("newer", 2024), song("unknown")],
@@ -34,12 +39,17 @@ const setup = async () => {
     routes: [
       { path: "/years/local", name: "year-list", component: Years },
       { path: "/years/local/:year", name: "year", component: Years },
+      { path: "/albums/local", name: "album-list", component: { render: () => h("div") } },
     ],
   });
   await router.push("/years/local");
-  const wrapper = mount(defineComponent({ setup: () => () => h(Years) }), {
+  const wrapper = mount(defineComponent({ setup: () => () => h(RouterView) }), {
     global: {
-      plugins: [router, createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
+      plugins: [
+        pinia,
+        router,
+        createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } }),
+      ],
       stubs: {
         SSelect: {
           name: "SSelect",
@@ -58,7 +68,7 @@ const setup = async () => {
     },
   });
   await flushPromises();
-  return { wrapper, router };
+  return { wrapper, router, pinia };
 };
 describe("Years browser", () => {
   it("keeps the text wheel beside the selected year songs across route changes", async () => {
@@ -196,5 +206,49 @@ describe("year sorting and summaries", () => {
     expect(wrapper.get("[data-year-summary]").text()).toContain("0 songs");
     expect(wrapper.get("[data-year-summary]").text()).toContain("About 0:00");
     wrapper.unmount();
+  });
+});
+
+describe("year wheel session state", () => {
+  it("restores selection and ordering after leaving and remounting Years", async () => {
+    const { wrapper, router } = await setup();
+    await wrapper.get('[data-year="1999"]').trigger("click");
+    await flushPromises();
+    wrapper.getComponent({ name: "SSelect" }).vm.$emit("update:modelValue", "asc");
+    await flushPromises();
+    await router.push({ name: "album-list" });
+    await flushPromises();
+    expect(wrapper.find("[data-year-wheel]").exists()).toBe(false);
+    await router.push({ name: "year-list" });
+    await flushPromises();
+    expect(wrapper.get("h2").text()).toBe("1999");
+    expect(wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("asc");
+    expect(
+      wrapper
+        .getComponent({ name: "SongList" })
+        .props("items")
+        .map((track: Track) => track.id),
+    ).toEqual(["older"]);
+    await router.push({ name: "album-list" });
+    await router.push({ name: "year", params: { year: "2024" } });
+    await flushPromises();
+    expect(wrapper.get("h2").text()).toBe("2024");
+    wrapper.unmount();
+  });
+  it("retains Unknown Year across remounts but resets in a fresh app session", async () => {
+    const first = await setup();
+    await first.router.push({ name: "year", params: { year: "unknown" } });
+    await flushPromises();
+    first.wrapper.getComponent({ name: "SSelect" }).vm.$emit("update:modelValue", "asc");
+    await flushPromises();
+    first.wrapper.unmount();
+    const remounted = await setup(first.pinia);
+    expect(remounted.wrapper.get("h2").text()).toBe("Unknown year");
+    expect(remounted.wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("asc");
+    remounted.wrapper.unmount();
+    const restarted = await setup();
+    expect(restarted.wrapper.get("h2").text()).toBe("2024");
+    expect(restarted.wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("desc");
+    restarted.wrapper.unmount();
   });
 });
