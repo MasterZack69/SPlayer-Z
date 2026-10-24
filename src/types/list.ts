@@ -32,3 +32,9 @@ export type SongListSortKey =
   | "artist"
   | "history"
   | `collection.${CollectionType}`;
+
+/** Finite collection-browser categories with independent persisted sorting. */
+export type BrowseSortKey = "artist" | "album" | "genre";
+
+/** Ordering modes exposed by collection browsers. */
+export type BrowseSortMode = "default" | "name" | "trackCount";

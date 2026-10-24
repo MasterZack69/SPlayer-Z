@@ -1,9 +1,10 @@
 import { defineComponent, h, reactive } from "vue";
 import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, type Pinia } from "pinia";
+import persistedState from "pinia-plugin-persistedstate";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import { createI18n } from "vue-i18n";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Track } from "@shared/types/player";
 import en from "@/i18n/locales/en-US.json";
 const state = vi.hoisted(() => ({ library: null as unknown, streaming: null as unknown }));
@@ -70,6 +71,8 @@ const setup = async (pinia: Pinia = createPinia()) => {
   await flushPromises();
   return { wrapper, router, pinia };
 };
+beforeEach(() => localStorage.clear());
+
 describe("Years browser", () => {
   it("keeps the text wheel beside the selected year songs across route changes", async () => {
     const { wrapper, router } = await setup();
@@ -235,8 +238,8 @@ describe("year wheel session state", () => {
     expect(wrapper.get("h2").text()).toBe("2024");
     wrapper.unmount();
   });
-  it("retains Unknown Year across remounts but resets in a fresh app session", async () => {
-    const first = await setup();
+  it("retains Unknown Year across remounts and only resets selection in a fresh app session", async () => {
+    const first = await setup(createPinia().use(persistedState));
     await first.router.push({ name: "year", params: { year: "unknown" } });
     await flushPromises();
     first.wrapper.getComponent({ name: "SSelect" }).vm.$emit("update:modelValue", "asc");
@@ -246,9 +249,9 @@ describe("year wheel session state", () => {
     expect(remounted.wrapper.get("h2").text()).toBe("Unknown year");
     expect(remounted.wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("asc");
     remounted.wrapper.unmount();
-    const restarted = await setup();
-    expect(restarted.wrapper.get("h2").text()).toBe("2024");
-    expect(restarted.wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("desc");
+    const restarted = await setup(createPinia().use(persistedState));
+    expect(restarted.wrapper.get("h2").text()).toBe("1999");
+    expect(restarted.wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("asc");
     restarted.wrapper.unmount();
   });
 });

@@ -12,6 +12,14 @@ Song-list pages use the shared `SongList` component rather than maintaining inde
 
 The top search field filters the current page. Library does not have a second, competing search field. Search on Home is global instead; see [Search](search.md).
 
+## Saved sorting
+
+Sort choices survive app restarts until changed by the user. Artist, album, and genre browsers
+keep independent modes; the year wheel keeps its own ascending/descending preference. Song tables
+retain their field and direction independently by page category. Restoring a preference never
+reorders the playback queue. The year wheel's selected year remains session-only, separate from
+its permanently saved sort direction.
+
 ## Artist names
 
 Local metadata parsing recognizes common separators between artists. Names containing those characters need explicit exceptions when the entire name represents one artist. **Royal & the Serpent** is preserved as one artist, including when it appears alongside other credits.

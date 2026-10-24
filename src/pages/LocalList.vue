@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBrowseSortStore } from "@/stores/browseSort";
+import type { BrowseSortKey, BrowseSortMode } from "@/types/list";
 import { normalizeGenre } from "@shared/utils/genre";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "LocalList" });
@@ -19,16 +21,13 @@ import IconLucideDisc3 from "~icons/lucide/disc-3";
 import IconLucideGuitar from "~icons/lucide/guitar";
 import IconLucideArrowUpDown from "~icons/lucide/arrow-up-down";
 
-type Mode = "artist" | "album" | "genre";
-type SortMode = "default" | "name" | "trackCount";
-
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const libraryStore = useLibraryStore();
 const { artistAvatars } = storeToRefs(libraryStore);
 
-const mode: Mode =
+const mode: BrowseSortKey =
   route.name === "album-list"
     ? "album"
     : ["genre-list", "unknown-genre"].includes(String(route.name))
@@ -42,7 +41,13 @@ const unknownGenreTracks = computed(() =>
 );
 const unknownGenreId = "missing:genre";
 
-const sortMode = ref<SortMode>("default");
+const browseSort = useBrowseSortStore();
+const sortMode = computed<BrowseSortMode>({
+  get: () => browseSort.collectionModes[mode],
+  set: (value) => {
+    browseSort.collectionModes[mode] = value;
+  },
+});
 
 const sortOptions = computed<SSelectOption[]>(() => [
   { value: "default", label: t("songList.sort.default") },

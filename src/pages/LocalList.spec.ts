@@ -1,3 +1,4 @@
+import { createPinia, type Pinia } from "pinia";
 import { defineComponent, h, ref } from "vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -83,9 +84,13 @@ const CoverList = defineComponent({
 /**
  * Mount a local collection list with isolated data and navigation.
  * @param mode - Collection category to exercise.
+ * @param pinia - App session containing the sorting preferences.
  * @returns Mounted collection list.
  */
-const setup = async (mode: "genre" | "album" | "artist" = "genre") => {
+const setup = async (
+  mode: "genre" | "album" | "artist" = "genre",
+  pinia: Pinia = createPinia(),
+) => {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -96,10 +101,14 @@ const setup = async (mode: "genre" | "album" | "artist" = "genre") => {
   await router.push("/list");
   const wrapper = mount(LocalList, {
     global: {
-      plugins: [router, createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
+      plugins: [
+        pinia,
+        router,
+        createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } }),
+      ],
       stubs: {
         CoverList,
-        SSelect: true,
+        SSelect: { name: "SSelect", props: ["modelValue", "options"], template: "<div />" },
         SButton: true,
         SongList: { name: "SongList", props: ["items", "searchQuery"], template: "<div />" },
       },
@@ -231,5 +240,26 @@ describe("unknown genre", () => {
     await flushPromises();
     expect(wrapper.getComponent({ name: "SongList" }).props("searchQuery")).toBe("song");
     wrapper.unmount();
+  });
+});
+
+describe("independent collection sorting", () => {
+  it("retains each browser mode without changing the other categories", async () => {
+    const pinia = createPinia();
+    const genre = await setup("genre", pinia);
+    genre.getComponent({ name: "SSelect" }).vm.$emit("update:modelValue", "trackCount");
+    await flushPromises();
+    genre.unmount();
+    const album = await setup("album", pinia);
+    expect(album.getComponent({ name: "SSelect" }).props("modelValue")).toBe("default");
+    album.getComponent({ name: "SSelect" }).vm.$emit("update:modelValue", "name");
+    await flushPromises();
+    album.unmount();
+    const returned = await setup("genre", pinia);
+    expect(returned.getComponent({ name: "SSelect" }).props("modelValue")).toBe("trackCount");
+    returned.unmount();
+    const artist = await setup("artist", pinia);
+    expect(artist.getComponent({ name: "SSelect" }).props("modelValue")).toBe("default");
+    artist.unmount();
   });
 });

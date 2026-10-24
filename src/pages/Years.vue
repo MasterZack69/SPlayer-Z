@@ -2,6 +2,7 @@
 import { useLibraryStore } from "@/stores/library";
 import { useStreamingStore } from "@/stores/streaming";
 import YearWheel from "@/components/list/YearWheel.vue";
+import { useBrowseSortStore } from "@/stores/browseSort";
 import { useYearBrowserStore } from "@/stores/yearBrowser";
 import { useSettingsStore } from "@/stores/settings";
 import { usePageSearch } from "@/composables/usePageSearch";
@@ -18,7 +19,7 @@ const streaming = useStreamingStore();
 const filter = usePageSearch();
 const error = ref(false);
 const browser = useYearBrowserStore();
-const { sortOrder } = storeToRefs(browser);
+const { yearOrder: sortOrder } = storeToRefs(useBrowseSortStore());
 const sortOptions = computed<SSelectOption[]>(() => [
   { value: "asc", label: t("songList.sort.asc") },
   { value: "desc", label: t("songList.sort.desc") },
@@ -84,11 +85,11 @@ onMounted(load);
     <h1 class="shrink-0 text-3xl font-bold">{{ t("year.label") }}</h1>
     <p v-if="error" role="alert" class="text-error">{{ t("common.error") }}</p>
     <div class="years-panes min-h-0 flex-1">
-      <aside class="year-navigation flex min-h-0 flex-col" :aria-label="t('year.label')">
+      <aside class="year-navigation flex min-h-0 flex-col gap-4" :aria-label="t('year.label')">
         <div
           role="group"
           :aria-label="t('songList.sort.mode')"
-          class="flex shrink-0 flex-wrap items-center justify-center gap-2 text-sm text-on-surface-variant/70"
+          class="year-sort-control relative z-10 flex shrink-0 flex-wrap items-center justify-center gap-2 text-sm text-on-surface-variant/70"
         >
           <IconLucideArrowUpDown class="size-3.5 shrink-0" />
           <span>{{ t("songList.sort.mode") }}</span>
@@ -101,7 +102,7 @@ onMounted(load);
           :selected="selectedId"
           :label="t('year.label')"
           :reduced-motion="settings.reducedMotion"
-          class="year-wheel-lift min-h-0 flex-1"
+          class="min-h-0 flex-1"
           @select="selectYear"
         />
         <p v-if="!years.length" class="text-center text-sm text-on-surface-variant/60">
@@ -153,8 +154,8 @@ onMounted(load);
   gap: 20px;
   overflow: hidden;
 }
-.year-wheel-lift {
-  transform: translateY(-24px);
+.year-sort-control :deep([role="combobox"]) {
+  min-height: 44px;
 }
 .year-song-pane {
   animation: year-pane-in 180ms ease-out;
@@ -179,9 +180,6 @@ onMounted(load);
   .years-panes {
     grid-template-columns: 104px minmax(0, 1fr);
     gap: 12px;
-  }
-  .year-wheel-lift {
-    transform: translateY(-16px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
