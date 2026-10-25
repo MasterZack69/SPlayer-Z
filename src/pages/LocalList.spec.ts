@@ -4,6 +4,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { createI18n } from "vue-i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSettingsStore } from "@/stores/settings";
 import en from "@/i18n/locales/en-US.json";
 import type { CoverItem } from "@/types/artist";
 import type { Track } from "@shared/types/player";
@@ -262,4 +263,26 @@ describe("independent collection sorting", () => {
     expect(artist.getComponent({ name: "SSelect" }).props("modelValue")).toBe("default");
     artist.unmount();
   });
+});
+
+it("refreshes genre cards and Unknown Genre when the Music preference changes", async () => {
+  mocks.libraryTracks = [
+    { ...tracks[0], id: "only-music", genres: ["mUsIc"] },
+    { ...tracks[0], id: "mixed", genres: ["Music", "Podcast"] },
+  ];
+  mocks.getGenreList.mockResolvedValue([{ name: "Podcast", trackCount: 1 }]);
+  const wrapper = await setup("genre");
+  let items = wrapper.getComponent(CoverList).props("items") as CoverItem[];
+  expect(items.map((item) => item.title)).toEqual(["Podcast", "Unknown genre"]);
+  expect(items.find((item) => item.title === "Unknown genre")?.trackCount).toBe(1);
+  mocks.getGenreList.mockResolvedValue([
+    { name: "Podcast", trackCount: 1 },
+    { name: "Music", trackCount: 2 },
+  ]);
+  useSettingsStore().preset.ignoreMusicGenre = false;
+  await flushPromises();
+  items = wrapper.getComponent(CoverList).props("items") as CoverItem[];
+  expect(items.map((item) => item.title)).toEqual(["Podcast", "Music"]);
+  expect(mocks.getGenreList).toHaveBeenCalledTimes(2);
+  wrapper.unmount();
 });

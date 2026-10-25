@@ -12,7 +12,7 @@ import {
 import { getLibraryStats } from "@main/database";
 import type { PlayEventInput, FavoriteEventInput } from "@shared/types/stats";
 
-/** 播放统计 IPC */
+/** Register listening-history operations and preference-aware library statistics. */
 export const registerStatsIpc = (): void => {
   ipcMain.on("stats:recordPlay", (_event, payload: PlayEventInput) => {
     insertPlayEvent(payload);
@@ -22,7 +22,9 @@ export const registerStatsIpc = (): void => {
   });
   ipcMain.handle("stats:getStatsSummary", () => getStatsSummary());
   ipcMain.handle("stats:getTopTracks", (_event, limit: number) => getTopTracks(limit));
-  ipcMain.handle("stats:getLibraryStats", () => getLibraryStats());
+  ipcMain.handle("stats:getLibraryStats", (_event, ignoreMusicGenre?: boolean) =>
+    getLibraryStats(ignoreMusicGenre),
+  );
   ipcMain.handle("stats:getPlayHistoryDaily", (_event, days: number) => getPlayHistoryDaily(days));
   ipcMain.handle("stats:getPlayHistoryHourly", () => getPlayHistoryHourly());
   ipcMain.handle("stats:getTopAlbums", (_event, limit: number) => getTopAlbums(limit));

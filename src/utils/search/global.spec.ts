@@ -152,3 +152,33 @@ describe("global search index", () => {
     expect(matchesSearch("absent", "Night Album")).toBe(false);
   });
 });
+
+describe("Music genre search preference", () => {
+  it("omits the Music genre but still finds Music in titles, with reversible opt-out", () => {
+    const library = fixture({
+      tracks: [
+        {
+          ...track,
+          id: "generic",
+          title: "Untitled",
+          album: undefined,
+          artists: [],
+          genres: ["Music"],
+        },
+        { ...track, id: "titled", title: "Music for Airports", genres: ["Ambient"] },
+        { ...track, id: "podcast", title: "Episode", genres: ["Podcast"] },
+      ],
+      server: { songs: [], albums: [], artists: [], playlists: [] },
+    });
+    const hidden = buildSearchIndex(library);
+    expect(hidden.genres.some((genre) => genre.title === "Music")).toBe(false);
+    expect(searchIndex(hidden, "Music").songs.map((song) => song.id)).toEqual(["titled"]);
+    expect(searchIndex(hidden, "Music", "Music").songs).toEqual([]);
+    expect(searchIndex(hidden, "Podcast").songs.map((song) => song.id)).toEqual(["podcast"]);
+    const shown = buildSearchIndex(library, false);
+    expect(shown.genres.find((genre) => genre.title === "Music")?.trackCount).toBe(1);
+    expect(searchIndex(shown, "Music", "Music", false).songs.map((song) => song.id)).toEqual([
+      "generic",
+    ]);
+  });
+});

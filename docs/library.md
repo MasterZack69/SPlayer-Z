@@ -12,6 +12,17 @@ Song-list pages use the shared `SongList` component rather than maintaining inde
 
 The top search field filters the current page. Library does not have a second, competing search field. Search on Home is global instead; see [Search](search.md).
 
+## Generic Music genre
+
+**Other → Miscellaneous → Ignore “Music” Genre** is enabled by default. It hides the exact
+`Music` label (case-insensitive, ignoring surrounding spaces) from song lists, Now Playing, genre browsing,
+genre search, and genre statistics. `Electronic Music`, `Podcast`, and other distinct labels
+remain unchanged. A track with only `Music` appears under Unknown Genre while this is enabled.
+
+Turn the switch off to restore `Music` when the distinction is useful, such as a mixed music
+and podcast library. Changes apply without rescanning. The preference is saved between launches;
+original tags remain untouched in the index, tag editor, and music files.
+
 ## Saved sorting
 
 Sort choices survive app restarts until changed by the user. Artist, album, and genre browsers

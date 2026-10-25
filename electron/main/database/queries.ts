@@ -336,8 +336,11 @@ export const getArtistList = (): ArtistSummary[] => {
   }));
 };
 
-/** Group local genres by browsing label, counting each track only once. */
-export const getGenreList = (): GenreSummary[] => {
+/**
+ * Group local genres by browsing label, counting each track only once.
+ * @param ignoreMusicGenre - Exclude the exact generic Music label.
+ */
+export const getGenreList = (ignoreMusicGenre = true): GenreSummary[] => {
   const rows = getDb()
     .prepare(
       `SELECT
@@ -347,11 +350,12 @@ export const getGenreList = (): GenreSummary[] => {
        FROM tracks t, json_each(COALESCE(NULLIF(t.genres, ''), '[]')) g
        WHERE g.value IS NOT NULL
          AND TRIM(g.value) != ''
+         AND (? = 0 OR LOWER(TRIM(g.value)) != 'music')
          AND ${excludeCueContainer("t.path")}
        GROUP BY LOWER(${genreNameSql})
        ORDER BY trackCount DESC, name`,
     )
-    .all() as { name: string; trackCount: number; cover: string | null }[];
+    .all(Number(ignoreMusicGenre)) as { name: string; trackCount: number; cover: string | null }[];
   return rows.map((row) => ({
     name: row.name,
     trackCount: row.trackCount,
@@ -362,16 +366,18 @@ export const getGenreList = (): GenreSummary[] => {
 /**
  * Retrieve local tracks under a canonical genre or any supported alias.
  * @param genreName - Genre tag or browsing label.
+ * @param ignoreMusicGenre - Exclude the exact generic Music label.
  * @returns Distinct matching tracks with their original genre metadata.
  */
-export const getGenreTracks = (genreName: string): Track[] => {
+export const getGenreTracks = (genreName: string, ignoreMusicGenre = true): Track[] => {
   const rows = getDb()
     .prepare(
       `SELECT DISTINCT t.* FROM tracks t, json_each(COALESCE(NULLIF(t.genres, ''), '[]')) g
        WHERE LOWER(${genreNameSql}) = LOWER(?)
+         AND (? = 0 OR LOWER(TRIM(g.value)) != 'music')
          AND ${excludeCueContainer("t.path")}`,
     )
-    .all(normalizeGenre(genreName)) as TrackRow[];
+    .all(normalizeGenre(genreName), Number(ignoreMusicGenre)) as TrackRow[];
   return rows.map(rowToTrack);
 };
 
@@ -397,8 +403,11 @@ export const getArtistTracks = (artistName: string): Track[] => {
   return rows.map(rowToTrack);
 };
 
-/** 音乐库统计概览：数量、总时长/大小与格式分布 */
-export const getLibraryStats = (): LibraryStats => {
+/**
+ * Read authoritative library counts, duration, size, and audio formats.
+ * @param ignoreMusicGenre - Exclude Music from the distinct genre count.
+ */
+export const getLibraryStats = (ignoreMusicGenre = true): LibraryStats => {
   const d = getDb();
   const aggregate = d
     .prepare(
@@ -435,9 +444,10 @@ export const getLibraryStats = (): LibraryStats => {
        FROM tracks t, json_each(COALESCE(NULLIF(t.genres, ''), '[]')) g
        WHERE g.value IS NOT NULL
          AND TRIM(g.value) != ''
+         AND (? = 0 OR LOWER(TRIM(g.value)) != 'music')
          AND ${excludeCueContainer("t.path")}`,
     )
-    .get() as { count: number };
+    .get(Number(ignoreMusicGenre)) as { count: number };
 
   const codecs = d
     .prepare(

@@ -10,6 +10,7 @@ import { useMultiSelect } from "@/composables/useMultiSelect";
 import { useFavorite } from "@/composables/useFavorite";
 import { usePlaylistPicker } from "@/composables/usePlaylistPicker";
 import { useFloatingPlayerBar } from "@/composables/useFloatingPlayerBar";
+import { getVisibleGenres } from "@shared/utils/genre";
 import { getTrackYear } from "@shared/utils/year";
 import { matchesSearch } from "@/utils/search/match";
 import { formatTime } from "@/utils/time";
@@ -157,9 +158,12 @@ const goAlbum = (item: Track): void => {
   });
 };
 
-/** 有效流派列表 */
+/**
+ * Resolve visible genre labels using the current display preference.
+ * @param item - Track whose original metadata must remain unchanged.
+ */
 const trackGenres = (item: Track): string[] =>
-  (item.genres ?? []).map((genre) => genre.trim()).filter(Boolean);
+  getVisibleGenres(item.genres, settings.preset.ignoreMusicGenre);
 
 /** 流派是否可跳转：流派页仅聚合本地曲库 */
 const isGenreLinkable = (item: Track): boolean => item.source === "local";
@@ -223,7 +227,7 @@ const filteredItems = computed(() => {
       track.title,
       track.album?.name,
       ...track.artists.map((artist) => artist.name),
-      ...(track.genres ?? []),
+      ...trackGenres(track),
       getTrackYear(track)?.toString(),
     ),
   );

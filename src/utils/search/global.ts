@@ -2,7 +2,7 @@ import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { PlaylistSummary } from "@shared/types/playlist";
 import type { FolderNode } from "@/types/folder";
 import type { CoverItem } from "@/types/artist";
-import { normalizeGenre } from "@shared/utils/genre";
+import { getVisibleGenres, normalizeGenre } from "@shared/utils/genre";
 import { getTrackYear } from "@shared/utils/year";
 import { matchesSearch } from "./match";
 
@@ -52,9 +52,10 @@ export interface SearchIndex {
  * Build a disposable metadata index over local and synchronized server libraries.
  * Tracks are referenced, not cloned; no lyrics, network queries, or module caches are retained.
  * @param library - Current library snapshots and playlist summaries.
+ * @param ignoreMusicGenre - Omit the exact Music label from genre browsing.
  * @returns Categorized metadata with source-safe resource identities.
  */
-export const buildSearchIndex = (library: SearchLibrary): SearchIndex => {
+export const buildSearchIndex = (library: SearchLibrary, ignoreMusicGenre = true): SearchIndex => {
   const maps = Object.fromEntries(
     ENTITY_CATEGORIES.map((category) => [category, new Map<string, SearchEntity>()]),
   ) as Record<EntityCategory, Map<string, SearchEntity>>;
@@ -128,7 +129,7 @@ export const buildSearchIndex = (library: SearchLibrary): SearchIndex => {
         },
         true,
       );
-    for (const genre of new Set(track.genres?.map(normalizeGenre).filter(Boolean)))
+    for (const genre of getVisibleGenres(track.genres, ignoreMusicGenre))
       add(
         {
           category: "genres",
@@ -223,15 +224,21 @@ export const buildSearchIndex = (library: SearchLibrary): SearchIndex => {
  * @param index - Current library index.
  * @param query - User-entered query.
  * @param genre - Optional exact genre selected from a genre result.
+ * @param ignoreMusicGenre - Exclude the Music genre without hiding matching titles or artists.
  * @returns Matching resources, or empty categories for an empty query.
  */
-export const searchIndex = (index: SearchIndex, query: string, genre?: string): SearchIndex => {
+export const searchIndex = (
+  index: SearchIndex,
+  query: string,
+  genre?: string,
+  ignoreMusicGenre = true,
+): SearchIndex => {
   const active = Boolean(query.trim());
   return {
     songs: active
       ? index.songs.filter((track) =>
           genre
-            ? track.genres?.some(
+            ? getVisibleGenres(track.genres, ignoreMusicGenre).some(
                 (value) =>
                   normalizeGenre(value).toLowerCase() === normalizeGenre(genre).toLowerCase(),
               )
@@ -241,9 +248,9 @@ export const searchIndex = (index: SearchIndex, query: string, genre?: string): 
                 track.album?.name,
                 getTrackYear(track)?.toString(),
                 ...track.artists.map((a) => a.name),
-                ...(track.genres ?? []),
+                ...getVisibleGenres(track.genres, ignoreMusicGenre),
               ) ||
-              track.genres?.some((value) =>
+              getVisibleGenres(track.genres, ignoreMusicGenre).some((value) =>
                 matchesSearch(normalizeGenre(query), normalizeGenre(value)),
               ),
         )

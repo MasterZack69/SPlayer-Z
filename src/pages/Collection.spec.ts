@@ -5,6 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Collection as CollectionData } from "@/types/collection";
 import en from "@/i18n/locales/en-US.json";
 
+vi.mock("@/stores/settings", () => ({
+  useSettingsStore: () => ({ preset: { ignoreMusicGenre: true } }),
+}));
+
 const fixture = vi.hoisted(() => ({
   type: "album",
   description: undefined as string | undefined,

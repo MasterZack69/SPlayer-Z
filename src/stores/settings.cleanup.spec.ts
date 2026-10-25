@@ -2,6 +2,7 @@ import { createApp, nextTick } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import en from "@/i18n/locales/en-US.json";
 import { useSettingsStore } from "./settings";
 
 vi.mock("@/stores/theme", () => ({ useThemeStore: () => ({}) }));
@@ -61,4 +62,28 @@ describe("retired display preferences", () => {
         expect(saved).not.toContain(key);
     },
   );
+});
+
+describe("Miscellaneous genre preference", () => {
+  it("starts enabled and is discoverable as a default-on settings switch", () => {
+    const store = mountStore();
+    expect(store.preset.ignoreMusicGenre).toBe(true);
+    expect(en.settings.section.preset).toBe("Miscellaneous");
+    const control = otherCategory.sections
+      ?.flatMap((section) => section.items ?? [])
+      .find((item) => item.key === "ignoreMusicGenre");
+    expect(control).toMatchObject({
+      type: "switch",
+      defaultValue: true,
+      binding: { store: "settings", path: "preset.ignoreMusicGenre" },
+    });
+  });
+  it("defaults existing profiles to enabled and permanently remembers an explicit opt-out", async () => {
+    localStorage.setItem("settings", JSON.stringify({ preset: { hideQualityTag: true } }));
+    const store = mountStore();
+    expect(store.preset.ignoreMusicGenre).toBe(true);
+    store.preset.ignoreMusicGenre = false;
+    await nextTick();
+    expect(mountStore().preset.ignoreMusicGenre).toBe(false);
+  });
 });

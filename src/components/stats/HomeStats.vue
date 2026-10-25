@@ -9,6 +9,7 @@ import type {
   TopArtist,
   TopTrack,
 } from "@shared/types/stats";
+import { useSettingsStore } from "@/stores/settings";
 import { useLibraryStore } from "@/stores/library";
 import StatsOverview from "./StatsOverview.vue";
 import StatsHeatmap from "./StatsHeatmap.vue";
@@ -28,6 +29,7 @@ const topArtists = shallowRef<TopArtist[]>([]);
 const loading = ref(true);
 
 const library = useLibraryStore();
+const settings = useSettingsStore();
 let loadGeneration = 0;
 
 /** Refresh every Home statistic after an index update, ignoring stale responses. */
@@ -37,7 +39,7 @@ const load = async (): Promise<void> => {
   try {
     error.value = false;
     const [library, history, hourlyHistory, songs, albums, artists] = await Promise.all([
-      window.api.stats.getLibraryStats(),
+      window.api.stats.getLibraryStats(settings.preset.ignoreMusicGenre),
       window.api.stats.getPlayHistoryDaily(90),
       window.api.stats.getPlayHistoryHourly(),
       window.api.stats.getTopTracks(10),
@@ -61,7 +63,7 @@ const load = async (): Promise<void> => {
 };
 
 watch(
-  () => library.tracks,
+  [() => library.tracks, () => settings.preset.ignoreMusicGenre],
   () => {
     void load();
   },

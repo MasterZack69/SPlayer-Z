@@ -802,7 +802,7 @@
       "cache": "Cache Management",
       "backupReset": "Backup & Reset",
       "debug": "Debug",
-      "preset": "OCD Settings",
+      "preset": "Miscellaneous",
       "envInfo": "Environment Info",
       "softwareAnimations": "Transitions & Animations"
     },
@@ -844,6 +844,10 @@
     "hideQualityTag": {
       "label": "Hide Quality Tag",
       "description": "Don't show quality tags in song list"
+    },
+    "ignoreMusicGenre": {
+      "label": "Ignore “Music” Genre",
+      "description": "Hide the generic Music genre label in browsing and song lists. Turn off to keep it for music/podcast distinctions. Your file tags are unchanged."
     },
     "showSubtitle": {
       "label": "Show Subtitle",

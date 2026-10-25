@@ -20,3 +20,20 @@ export const normalizeGenre = (name: string): string => {
   const key = trimmed.toLowerCase();
   return Object.hasOwn(GENRE_ALIASES, key) ? GENRE_ALIASES[key] : trimmed;
 };
+
+/**
+ * Build genre labels for browsing without changing the source tags.
+ * @param genres - Original metadata values.
+ * @param ignoreMusicGenre - Whether to omit the exact generic Music label.
+ * @returns Distinct, nonblank labels with aliases resolved.
+ */
+export const getVisibleGenres = (
+  genres: readonly string[] | undefined,
+  ignoreMusicGenre = true,
+): string[] => [
+  ...new Set(
+    (genres ?? [])
+      .map(normalizeGenre)
+      .filter((name) => name && (!ignoreMusicGenre || name.toLowerCase() !== "music")),
+  ),
+];

@@ -802,7 +802,7 @@
       "downloadTags": "写入内容",
       "backupReset": "备份与重置",
       "debug": "调试",
-      "preset": "强迫症配置",
+      "preset": "杂项设置",
       "envInfo": "环境信息",
       "softwareAnimations": "过渡与动画"
     },
@@ -844,6 +844,10 @@
     "hideQualityTag": {
       "label": "隐藏音质标签",
       "description": "歌曲列表中不显示音质标签"
+    },
+    "ignoreMusicGenre": {
+      "label": "忽略“Music”流派",
+      "description": "在浏览页面和歌曲列表中隐藏通用的 Music 流派标签。关闭后可保留音乐与播客的分类区别，不会修改文件标签。"
     },
     "showSubtitle": {
       "label": "显示副标题",

@@ -28,7 +28,7 @@ import { ErrorCode } from "@shared/types/errors";
 import type { JsTagWriteRequest } from "@splayer/audio-engine";
 import type { TagEditRequest, TagWriteOutcome } from "@shared/types/tagEditor";
 
-/** 注册音乐库相关 IPC */
+/** Register local-library operations and preference-aware genre queries. */
 export const registerLibraryIpc = (): void => {
   // 开始扫描（全量或增量）
   ipcMain.handle("library:scan", (_event, incremental?: boolean) => {
@@ -85,22 +85,25 @@ export const registerLibraryIpc = (): void => {
   });
 
   // 获取流派聚合列表
-  ipcMain.handle("library:getGenres", () => {
+  ipcMain.handle("library:getGenres", (_event, ignoreMusicGenre?: boolean) => {
     try {
-      return { success: true, data: getGenreList() };
+      return { success: true, data: getGenreList(ignoreMusicGenre) };
     } catch (_error) {
       return { success: false, error: ErrorCode.UNKNOWN };
     }
   });
 
   // 获取某流派下的全部曲目
-  ipcMain.handle("library:getGenreTracks", (_event, genreName: string) => {
-    try {
-      return { success: true, data: getGenreTracks(genreName) };
-    } catch (_error) {
-      return { success: false, error: ErrorCode.UNKNOWN };
-    }
-  });
+  ipcMain.handle(
+    "library:getGenreTracks",
+    (_event, genreName: string, ignoreMusicGenre?: boolean) => {
+      try {
+        return { success: true, data: getGenreTracks(genreName, ignoreMusicGenre) };
+      } catch (_error) {
+        return { success: false, error: ErrorCode.UNKNOWN };
+      }
+    },
+  );
 
   // 获取某专辑下的全部曲目
   ipcMain.handle("library:getAlbumTracks", (_event, albumName: string) => {

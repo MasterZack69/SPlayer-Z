@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getVisibleGenres } from "@shared/utils/genre";
+import { useSettingsStore } from "@/stores/settings";
 import { matchesSearch } from "@/utils/search/match";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "StreamingSongs" });
@@ -9,6 +11,7 @@ import * as player from "@/core/player";
 
 const { t } = useI18n();
 const streaming = useStreamingStore();
+const settings = useSettingsStore();
 const { songs, loading, isConnected } = storeToRefs(streaming);
 
 const refreshKey = inject("streamingRefreshKey", ref(0));
@@ -23,7 +26,7 @@ const visibleSongs = computed(() =>
         track.title,
         track.album?.name,
         ...track.artists.map((artist) => artist.name),
-        ...(track.genres ?? []),
+        ...getVisibleGenres(track.genres, settings.preset.ignoreMusicGenre),
       ),
   ),
 );

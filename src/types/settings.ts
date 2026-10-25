@@ -301,8 +301,10 @@ export interface AppearanceSettings {
   showPerformanceMonitor: boolean;
 }
 
-/** 强迫症设置 */
+/** Miscellaneous display and playback preferences. */
 export interface PresetSettings {
+  /** Ignore the generic Music genre without rewriting metadata. */
+  ignoreMusicGenre: boolean;
   /** 跳过指定关键词歌曲 */
   skipKeywordsSongs: boolean;
   /** 跳过指定关键词列表 */

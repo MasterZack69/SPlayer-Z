@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSettingsStore } from "@/stores/settings";
 import { trackYears, validYear } from "@shared/utils/year";
 import { usePageSearch } from "@/composables/usePageSearch";
 import type { PlaybackContext, TrackSource } from "@shared/types/player";
@@ -26,6 +27,7 @@ import IconCopy from "~icons/lucide/copy";
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const settings = useSettingsStore();
 const { copy } = useCopyText();
 
 const source = route.params.source as TrackSource;
@@ -250,7 +252,14 @@ const handleMoreMenu = (key: string) => {
   }
 };
 
-watch(() => route.query.serverId, loadCollection, { immediate: true });
+watch(
+  [
+    () => route.query.serverId,
+    () => (type === "genre" && source === "local" ? settings.preset.ignoreMusicGenre : null),
+  ],
+  loadCollection,
+  { immediate: true },
+);
 
 onBeforeUnmount(() => {
   loadAbort?.abort();

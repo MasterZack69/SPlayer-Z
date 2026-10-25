@@ -11,8 +11,10 @@ import { useStatusStore } from "@/stores/status";
 beforeEach(() => {
   localStorage.clear();
   appearance.songListStyle = "comfortable";
+  preset.ignoreMusicGenre = true;
   setActivePinia(createPinia());
 });
+const preset = reactive({ ignoreMusicGenre: true });
 const appearance = reactive({ songListStyle: "comfortable" });
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("vue-router", () => ({
@@ -21,7 +23,7 @@ vi.mock("vue-router", () => ({
 }));
 vi.mock("@/stores/media", () => ({ useMediaStore: () => ({ track: null }) }));
 vi.mock("@/stores/settings", () => ({
-  useSettingsStore: () => ({ preset: {}, player: {}, appearance }),
+  useSettingsStore: () => ({ preset, player: {}, appearance }),
 }));
 vi.mock("@/core/player", () => ({ playNow: vi.fn(), playFrom: vi.fn() }));
 vi.mock("@/utils/navigate", () => ({
@@ -291,6 +293,30 @@ describe("unknown-genre song links", () => {
     const player = await import("@/core/player");
     expect(player.playNow).not.toHaveBeenCalled();
     expect(player.playFrom).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+});
+
+describe("Music genre display preference", () => {
+  it("hides only the exact generic label and restores it without changing tags", async () => {
+    const genres = ["Dubstep", " Music ", "Electronic Music", "Podcast"];
+    const wrapper = mountList({ showGenre: true, items: [{ ...track, genres }] });
+    expect(wrapper.find('[title="Dubstep / Electronic Music / Podcast"]').exists()).toBe(true);
+    preset.ignoreMusicGenre = false;
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[title="Dubstep / Music / Electronic Music / Podcast"]').exists()).toBe(
+      true,
+    );
+    expect(genres).toEqual(["Dubstep", " Music ", "Electronic Music", "Podcast"]);
+    wrapper.unmount();
+  });
+  it("links a Music-only song to Unknown Genre only while ignoring Music", async () => {
+    const wrapper = mountList({ showGenre: true, items: [{ ...track, genres: ["Music"] }] });
+    expect(wrapper.find("[data-unknown-genre-link]").exists()).toBe(true);
+    preset.ignoreMusicGenre = false;
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find("[data-unknown-genre-link]").exists()).toBe(false);
+    expect(wrapper.find('[title="Music"]').exists()).toBe(true);
     wrapper.unmount();
   });
 });

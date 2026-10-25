@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getVisibleGenres } from "@shared/utils/genre";
 import { setPlayerExpanded } from "@/services/playerTransition";
 import type { Artist } from "@shared/types/player";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
@@ -117,9 +118,9 @@ const lyricLabel = computed(() => media.activeLyric?.format.toUpperCase() ?? "NO
 /** 专辑文本 */
 const albumText = computed(() => displayTrack.value?.album?.name ?? "");
 
-/** 流派列表 */
+/** Visible genre labels respect the miscellaneous display preference. */
 const genres = computed(() =>
-  (displayTrack.value?.genres ?? []).map((name) => name.trim()).filter(Boolean),
+  getVisibleGenres(displayTrack.value?.genres, settings.preset.ignoreMusicGenre),
 );
 
 /** 生成流派详情页跳转目标（仅本地曲目按流派聚合） */

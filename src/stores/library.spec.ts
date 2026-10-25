@@ -10,6 +10,7 @@ const cache = vi.hoisted(() => ({
 }));
 vi.mock("localforage", () => ({ default: { createInstance: () => cache } }));
 import { useLibraryStore } from "./library";
+import { useSettingsStore } from "./settings";
 
 let listener: (progress: ScanProgress) => void;
 const unsubscribe = vi.fn();
@@ -18,6 +19,7 @@ const api = {
   getScanDirs: vi.fn(),
   getArtists: vi.fn(),
   getGenreTracks: vi.fn(),
+  getGenres: vi.fn(),
   prefetchArtistAvatars: vi.fn(),
   scan: vi.fn(),
   cancelScan: vi.fn(),
@@ -167,8 +169,22 @@ describe("genre alias collections", () => {
     } as Track;
     api.getGenreTracks.mockResolvedValue({ success: true, data: [track] });
     const collection = await useLibraryStore().getGenreCollection("Rap/Hip Hop");
-    expect(api.getGenreTracks).toHaveBeenCalledWith("Hip-Hop/Rap");
+    expect(api.getGenreTracks).toHaveBeenCalledWith("Hip-Hop/Rap", true);
     expect(collection?.title).toBe("Hip-Hop/Rap");
     expect(collection?.tracks[0].genres).toEqual(["Rap/Hip Hop"]);
   });
+});
+
+it("forwards an explicit Music opt-out to both genre list and collection queries", async () => {
+  useSettingsStore().preset.ignoreMusicGenre = false;
+  api.getGenres.mockResolvedValue({ success: true, data: [{ name: "Music", trackCount: 1 }] });
+  api.getGenreTracks.mockResolvedValue({
+    success: true,
+    data: [{ id: "music", title: "Track", source: "local", genres: ["Music"] }],
+  });
+  const store = useLibraryStore();
+  expect(await store.getGenreList()).toEqual([{ name: "Music", trackCount: 1 }]);
+  expect((await store.getGenreCollection("Music"))?.title).toBe("Music");
+  expect(api.getGenres).toHaveBeenCalledWith(false);
+  expect(api.getGenreTracks).toHaveBeenCalledWith("Music", false);
 });

@@ -70,3 +70,44 @@ describe("genre alias queries", () => {
     expect(getGenreTracks("")).toEqual([]);
   });
 });
+
+describe("Music genre query preference", () => {
+  it("hides only Music from browsing, genre collections and counts, and restores it on opt-out", () => {
+    const insert = state.db!.prepare("INSERT INTO tracks (id, path, genres) VALUES (?, ?, ?)");
+    insert.run("music", "/music.flac", '[" Music "]');
+    insert.run("mixed", "/mixed.flac", '["MUSIC", "Dubstep"]');
+    insert.run("electronic", "/electronic.flac", '["Electronic Music"]');
+    insert.run("podcast", "/podcast.flac", '["Podcast"]');
+    expect(getGenreList().some((genre) => genre.name.toLowerCase() === "music")).toBe(false);
+    expect(getGenreTracks("Music")).toEqual([]);
+    expect(getLibraryStats().genreCount).toBe(6);
+    expect(
+      getGenreList(false).find((genre) => genre.name.toLowerCase() === "music")?.trackCount,
+    ).toBe(2);
+    expect(
+      getGenreTracks("Music", false)
+        .map((track) => track.id)
+        .sort(),
+    ).toEqual(["mixed", "music"]);
+    expect(getLibraryStats(false).genreCount).toBe(7);
+    expect(getGenreTracks("Electronic Music").map((track) => track.id)).toEqual(["electronic"]);
+    expect(getGenreTracks("Podcast").map((track) => track.id)).toEqual(["podcast"]);
+    expect(state.db!.prepare("SELECT genres FROM tracks WHERE id = 'music'").get()?.genres).toBe(
+      '[" Music "]',
+    );
+  });
+});
+
+it.each(["Music", "music", "MUSIC", "mUsIc", " music "])(
+  "filters %s consistently in SQLite queries",
+  (name) => {
+    state
+      .db!.prepare("INSERT INTO tracks (id, path, genres) VALUES (?, ?, ?)")
+      .run("music", "/music.flac", JSON.stringify([name]));
+    expect(getGenreList().some((genre) => genre.name.toLowerCase() === "music")).toBe(false);
+    expect(getGenreTracks(name)).toEqual([]);
+    expect(getLibraryStats().genreCount).toBe(3);
+    expect(getGenreTracks(name, false).map((track) => track.id)).toEqual(["music"]);
+    expect(getLibraryStats(false).genreCount).toBe(4);
+  },
+);

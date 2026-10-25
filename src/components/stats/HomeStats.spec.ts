@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/core/player", () => ({ playNow: vi.fn() }));
 const index = await vi.hoisted(async () => {
   const { reactive } = await import("vue");
-  return reactive({ tracks: [] as unknown[] });
+  return reactive({ tracks: [] as unknown[], preset: { ignoreMusicGenre: true } });
 });
 vi.mock("@/stores/library", () => ({ useLibraryStore: () => index }));
+vi.mock("@/stores/settings", () => ({ useSettingsStore: () => ({ preset: index.preset }) }));
 vi.mock("@/utils/navigate", () => ({ navigateToAlbum: vi.fn(), navigateToArtist: vi.fn() }));
 import HomeStats from "./HomeStats.vue";
 import StatsOverview from "./StatsOverview.vue";
@@ -31,6 +32,7 @@ const stats = {
 };
 beforeEach(() => {
   vi.resetAllMocks();
+  index.preset.ignoreMusicGenre = true;
   Object.assign(window, { api: { stats } });
   for (const fn of Object.values(stats)) fn.mockResolvedValue([]);
   stats.getLibraryStats.mockResolvedValue(library);
@@ -82,4 +84,16 @@ describe("Home statistics", () => {
     expect(wrapper.getComponent(StatsHeatmap).props("loading")).toBe(false);
     wrapper.unmount();
   });
+});
+
+it("refreshes genre counts immediately when the Music preference changes", async () => {
+  const wrapper = mountStats();
+  await flushPromises();
+  expect(stats.getLibraryStats).toHaveBeenLastCalledWith(true);
+  stats.getLibraryStats.mockResolvedValue({ ...library, genreCount: 13 });
+  index.preset.ignoreMusicGenre = false;
+  await flushPromises();
+  expect(stats.getLibraryStats).toHaveBeenLastCalledWith(false);
+  expect(wrapper.getComponent(StatsOverview).props("stats")?.genreCount).toBe(13);
+  wrapper.unmount();
 });

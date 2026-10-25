@@ -8,6 +8,7 @@ import en from "@/i18n/locales/en-US.json";
 import type { Track } from "@shared/types/player";
 import type { CoverItem } from "@/types/artist";
 
+vi.mock("@/stores/settings", () => ({ useSettingsStore: () => settings }));
 vi.mock("@/stores/library", () => ({ useLibraryStore: () => library }));
 vi.mock("@/stores/playlist", () => ({ usePlaylistStore: () => playlists }));
 vi.mock("@/stores/streaming", () => ({ useStreamingStore: () => streaming }));
@@ -15,6 +16,8 @@ vi.mock("@/utils/navigate", () => ({ navigateToResource: vi.fn() }));
 import { navigateToResource } from "@/utils/navigate";
 import Search from "./Search.vue";
 import NavSearch from "@/components/layout/NavSearch.vue";
+
+const settings = reactive({ preset: { ignoreMusicGenre: true } });
 
 const track: Track = {
   id: "song",
@@ -130,6 +133,7 @@ const setup = async (path = "/search?q=Night") => {
 };
 
 beforeEach(() => {
+  settings.preset.ignoreMusicGenre = true;
   library.initialized = true;
   library.load.mockReset().mockResolvedValue(undefined);
   library.tracks = [track];
@@ -231,5 +235,18 @@ it("renders year results as text links and opens the year's songs", async () => 
   await flushPromises();
   expect(router.currentRoute.value.name).toBe("year");
   expect(router.currentRoute.value.params.year).toBe("2024");
+  wrapper.unmount();
+});
+
+it("updates Music genre results immediately when the preference changes", async () => {
+  library.tracks = [{ ...track, genres: ["mUsIc"] }];
+  const { wrapper } = await setup("/search?q=music&category=genres");
+  expect(wrapper.find('[data-title="mUsIc"]').exists()).toBe(false);
+  settings.preset.ignoreMusicGenre = false;
+  await flushPromises();
+  expect(wrapper.find('[data-title="mUsIc"]').exists()).toBe(true);
+  settings.preset.ignoreMusicGenre = true;
+  await flushPromises();
+  expect(wrapper.find('[data-title="mUsIc"]').exists()).toBe(false);
   wrapper.unmount();
 });

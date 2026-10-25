@@ -1,3 +1,4 @@
+import { useSettingsStore } from "@/stores/settings";
 import { normalizeGenre } from "@shared/utils/genre";
 import { getTrackYear } from "@shared/utils/year";
 import localforage from "localforage";
@@ -341,9 +342,9 @@ export const useLibraryStore = defineStore("library", () => {
     return res.success && res.data ? res.data : [];
   };
 
-  /** 流派聚合列表 */
+  /** Load genre summaries using the current Music-label preference. */
   const getGenreList = async (): Promise<GenreSummary[]> => {
-    const res = await window.api.library.getGenres();
+    const res = await window.api.library.getGenres(useSettingsStore().preset.ignoreMusicGenre);
     return res.success && res.data ? res.data : [];
   };
 
@@ -355,7 +356,10 @@ export const useLibraryStore = defineStore("library", () => {
   const getGenreCollection = async (genreName: string): Promise<Collection | null> => {
     const name = normalizeGenre(genreName);
     if (!name) return null;
-    const res = await window.api.library.getGenreTracks(name);
+    const res = await window.api.library.getGenreTracks(
+      name,
+      useSettingsStore().preset.ignoreMusicGenre,
+    );
     if (!res.success || !res.data?.length) return null;
     const genreTracks = res.data;
     // Preserve source capitalization for genres outside the explicit alias list.

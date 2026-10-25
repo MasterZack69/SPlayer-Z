@@ -210,8 +210,9 @@ export const useSettingsStore = defineStore(
       searchPlayBehavior: "current",
     });
 
-    /** 强迫症设置 */
+    /** Miscellaneous display and playback preferences. */
     const preset = reactive<PresetSettings>({
+      ignoreMusicGenre: true,
       skipKeywordsSongs: false,
       skipTrackKeywords: [...DEFAULT_SKIP_TRACK_KEYWORDS],
       hideQualityTag: false,
@@ -371,6 +372,7 @@ export const useSettingsStore = defineStore(
         if (typeof lyric.detectBackgroundLyrics !== "boolean") {
           lyric.detectBackgroundLyrics = true;
         }
+        if (typeof preset.ignoreMusicGenre !== "boolean") preset.ignoreMusicGenre = true;
         if (!Array.isArray(preset.skipTrackKeywords)) {
           preset.skipTrackKeywords = [...DEFAULT_SKIP_TRACK_KEYWORDS];
         }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useBrowseSortStore } from "@/stores/browseSort";
 import type { BrowseSortKey, BrowseSortMode } from "@/types/list";
-import { normalizeGenre } from "@shared/utils/genre";
+import { useSettingsStore } from "@/stores/settings";
+import { getVisibleGenres, normalizeGenre } from "@shared/utils/genre";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "LocalList" });
 
@@ -25,6 +26,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const libraryStore = useLibraryStore();
+const settings = useSettingsStore();
 const { artistAvatars } = storeToRefs(libraryStore);
 
 const mode: BrowseSortKey =
@@ -37,7 +39,9 @@ const mode: BrowseSortKey =
 const searchQuery = usePageSearch();
 const unknownGenrePage = computed(() => route.name === "unknown-genre");
 const unknownGenreTracks = computed(() =>
-  libraryStore.tracks.filter((track) => !track.genres?.some((genre) => genre.trim())),
+  libraryStore.tracks.filter(
+    (track) => !getVisibleGenres(track.genres, settings.preset.ignoreMusicGenre).length,
+  ),
 );
 const unknownGenreId = "missing:genre";
 
@@ -195,17 +199,24 @@ const handlePlay = async (item: CoverItem): Promise<void> => {
   }
 };
 
-onMounted(async () => {
-  if (mode === "genre" && !libraryStore.initialized) await libraryStore.load();
-  source.value =
-    mode === "artist"
-      ? await libraryStore.getArtistList()
-      : mode === "genre"
-        ? await libraryStore.getGenreList()
-        : await libraryStore.getAlbumList();
-  // 拉取当前列表中尚未缓存的歌手头像
-  if (mode === "artist") libraryStore.loadArtistAvatars();
-});
+let loadGeneration = 0;
+watch(
+  () => (mode === "genre" ? settings.preset.ignoreMusicGenre : null),
+  async () => {
+    const generation = ++loadGeneration;
+    if (mode === "genre" && !libraryStore.initialized) await libraryStore.load();
+    const items =
+      mode === "artist"
+        ? await libraryStore.getArtistList()
+        : mode === "genre"
+          ? await libraryStore.getGenreList()
+          : await libraryStore.getAlbumList();
+    if (generation !== loadGeneration) return;
+    source.value = items;
+    if (mode === "artist") libraryStore.loadArtistAvatars();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: "SearchPage" });
 import type { CoverItem } from "@/types/artist";
+import { useSettingsStore } from "@/stores/settings";
 import { useLibraryStore } from "@/stores/library";
 import { usePlaylistStore } from "@/stores/playlist";
 import { useStreamingStore } from "@/stores/streaming";
@@ -16,6 +17,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const library = useLibraryStore();
+const settings = useSettingsStore();
 const playlists = usePlaylistStore();
 const streaming = useStreamingStore();
 const loading = ref(true);
@@ -28,24 +30,28 @@ const category = computed<SearchCategory>(() =>
     : "all",
 );
 const index = computed(() =>
-  buildSearchIndex({
-    tracks: library.tracks,
-    folders: library.folderTree,
-    playlists: playlists.playlists,
-    server: {
-      id: streaming.activeServerId ?? undefined,
-      songs: streaming.songs,
-      albums: streaming.albums,
-      artists: streaming.artists,
-      playlists: streaming.playlists,
+  buildSearchIndex(
+    {
+      tracks: library.tracks,
+      folders: library.folderTree,
+      playlists: playlists.playlists,
+      server: {
+        id: streaming.activeServerId ?? undefined,
+        songs: streaming.songs,
+        albums: streaming.albums,
+        artists: streaming.artists,
+        playlists: streaming.playlists,
+      },
     },
-  }),
+    settings.preset.ignoreMusicGenre,
+  ),
 );
 const results = computed(() =>
   searchIndex(
     index.value,
     keyword.value,
     typeof route.query.genre === "string" ? route.query.genre : undefined,
+    settings.preset.ignoreMusicGenre,
   ),
 );
 const total = computed(
