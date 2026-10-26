@@ -54,7 +54,7 @@ For installation and build problems, start with [Downloads and installation](dow
 
 Enable **Settings → Player → Keep Screen Awake During Playback** to prevent display sleep while music is playing. It is on by default. When disabled, the app never blocks screen sleep or automatic system suspension, including during playback. When enabled, sleep inhibitors are held only for active playback, not while loading or idle, and are released on pause, stop, completion, playback failure, player reset, or exit. The desktop environment controls whether inhibitors are honored.
 
-Local PCM preloading and crossfade remain available without a song cache. Streaming tracks play directly from your server; they are not downloaded into an automatic song cache. Only cover, artist-artwork, and background caches are managed under **Local & Cache**.
+Local PCM preloading and crossfade remain available without a song cache. Streaming tracks play directly from your server; they are not downloaded into an automatic song cache. Only cover-thumbnail and background caches are managed under **Local & Cache**.
 
 About identifies MasterZack69 as maintainer and acknowledges upstream SPlayer-Next contributors. Application updates are installed manually, not checked for in the background.
 

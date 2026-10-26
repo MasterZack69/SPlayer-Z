@@ -18,9 +18,9 @@ const api = {
   getTracks: vi.fn(),
   getScanDirs: vi.fn(),
   getArtists: vi.fn(),
+  getArtistTracks: vi.fn(),
   getGenreTracks: vi.fn(),
   getGenres: vi.fn(),
-  prefetchArtistAvatars: vi.fn(),
   scan: vi.fn(),
   cancelScan: vi.fn(),
   addScanDir: vi.fn(),
@@ -50,6 +50,30 @@ beforeEach(() => {
 afterEach(() => disposePinia(pinia));
 
 describe("application-owned library indexing", () => {
+  it("uses indexed cover artwork for local artists without an online avatar API", async () => {
+    const track: Track = {
+      id: "local:artist-song",
+      source: "local",
+      title: "Local Song",
+      artists: [{ name: "Local Artist" }],
+      album: { name: "Local Album" },
+      duration: 180000,
+      cover: "cache://covers/local.jpg",
+    };
+    api.getArtistTracks.mockResolvedValue({ success: true, data: [track] });
+    const store = useLibraryStore();
+    expect(await store.getArtistProfile("Local Artist")).toMatchObject({
+      avatar: track.cover,
+      tracks: [track],
+      albums: [{ title: "Local Album", cover: track.cover }],
+    });
+    api.getArtistTracks.mockResolvedValue({
+      success: true,
+      data: [{ ...track, cover: undefined }],
+    });
+    expect((await store.getArtistProfile("Local Artist"))?.avatar).toBeUndefined();
+  });
+
   it("scans a setup folder without mounting Library and publishes the completed index", async () => {
     const store = useLibraryStore();
     api.addScanDir.mockResolvedValue({ success: true, data: "/music" });

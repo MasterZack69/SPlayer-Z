@@ -18,7 +18,6 @@ vi.mock("@main/store", () => ({ store: {} }));
 vi.mock("@main/utils/config", () => ({
   getAppCacheDir: () => "/cache",
   getCoverCacheDir: () => "/cache/covers",
-  getArtistCacheDir: () => "/cache/artists",
   getBackgroundsDir: () => "/cache/backgrounds",
 }));
 vi.mock("@main/services/engine", () => ({ syncCoverCacheDir: vi.fn() }));
@@ -34,25 +33,26 @@ describe("artwork-only cache management", () => {
     registerCacheIpc();
   });
 
-  it("exposes only cover, artist, and background cache statistics", async () => {
+  it("exposes only cover and background cache statistics", async () => {
     await expect(mocks.handlers.get("cache:getStats")!()).resolves.toEqual([
       { id: "covers", kind: "file", path: "/cache/covers", size: 0 },
-      { id: "artists", kind: "file", path: "/cache/artists", size: 0 },
       { id: "backgrounds", kind: "file", path: "/cache/backgrounds", size: 0 },
     ]);
   });
 
-  it.each(["lyric", "lyricTTML", "lyricMatch"])("ignores removed %s cache requests", async (id) => {
-    await mocks.handlers.get("cache:clear")!(null, id);
-    expect(mocks.readdir).not.toHaveBeenCalled();
-    expect(mocks.rm).not.toHaveBeenCalled();
-  });
+  it.each(["artists", "lyric", "lyricTTML", "lyricMatch"])(
+    "ignores removed %s cache requests",
+    async (id) => {
+      await mocks.handlers.get("cache:clear")!(null, id);
+      expect(mocks.readdir).not.toHaveBeenCalled();
+      expect(mocks.rm).not.toHaveBeenCalled();
+    },
+  );
 
   it("clears artwork files without touching the library database", async () => {
     mocks.readdir.mockResolvedValue(["cover.png"]);
     await mocks.handlers.get("cache:clearAllByKind")!(null, "file");
     expect(mocks.rm.mock.calls.map(([path]) => path).sort()).toEqual([
-      "/cache/artists/cover.png",
       "/cache/backgrounds/cover.png",
       "/cache/covers/cover.png",
     ]);

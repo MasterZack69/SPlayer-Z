@@ -5,7 +5,6 @@ import type { TopAlbum, TopArtist, TopTrack } from "@shared/types/stats";
 import * as player from "@/core/player";
 import { navigateToAlbum, navigateToArtist } from "@/utils/navigate";
 import { formatCompact } from "@/utils/format";
-import { useLibraryStore } from "@/stores/library";
 import IconLucideMusic from "~icons/lucide/music";
 import IconLucideDisc3 from "~icons/lucide/disc-3";
 import IconLucideUser from "~icons/lucide/user";
@@ -47,7 +46,6 @@ const props = defineProps<{
 }>();
 
 const { t, locale } = useI18n();
-const libraryStore = useLibraryStore();
 
 /** 歌曲榜：保留 track 供点击播放 */
 const songItems = computed<RankItem[]>(() =>
@@ -74,10 +72,7 @@ const albumItems = computed<RankItem[]>(() =>
 /** 歌手榜 */
 const artistItems = computed<RankItem[]>(() =>
   props.artists.map((item) => ({
-    cover:
-      item.track.source === "local"
-        ? (libraryStore.getArtistAvatar(item.artist.name) ?? item.artist.avatar ?? item.track.cover)
-        : (item.artist.avatar ?? item.track.cover),
+    cover: item.artist.avatar ?? item.track.cover,
     title: item.artist.name,
     plays: item.playCount,
     track: item.track,

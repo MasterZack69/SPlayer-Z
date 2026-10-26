@@ -8,8 +8,9 @@ import test from "node:test";
  */
 const read = (path: string): string => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("retired proxy, automatic updater, and song-cache services stay removed", () => {
+test("retired proxy, updater, song-cache, and public artist-artwork services stay removed", () => {
   for (const path of [
+    "electron/main/apis/musicbrainz.ts",
     "electron/main/utils/proxy.ts",
     "electron/main/services/songCache.ts",
     "electron/main/database/songCache.ts",
@@ -28,6 +29,15 @@ test("retired proxy, automatic updater, and song-cache services stay removed", (
   );
   assert.doesNotMatch(read("src/settings/categories/services.ts"), /networkProxy/);
   assert.doesNotMatch(read("src/settings/categories/localCache.ts"), /songCache|cacheStreaming/);
+  for (const path of [
+    "electron/main/ipc/library.ts",
+    "electron/preload/index.ts",
+    "shared/types/library.ts",
+    "src/services/artistLoader.ts",
+    "src/stores/library.ts",
+  ]) {
+    assert.doesNotMatch(read(path), /fetchArtistAvatar|prefetchArtistAvatars|loadArtistAvatars/);
+  }
   const pkg = JSON.parse(read("package.json"));
   assert.equal(pkg.dependencies["electron-updater"], undefined);
 });

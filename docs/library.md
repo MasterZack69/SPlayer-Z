@@ -51,7 +51,7 @@ music files. Unrelated compound genres remain separate. The explicit alias list 
 
 ## Covers
 
-Local covers come from audio metadata. FLAC cover extraction includes a bounded PICTURE-block fallback for files whose picture metadata cannot be handled by the normal decoder path, including malformed MIME metadata. Server covers are fetched through an authenticated main-process proxy. Local artist-avatar lookup can also query MusicBrainz and TheAudioDB and cache the returned artwork; it is separate from audio playback and does require network access.
+Local covers come from audio metadata. FLAC cover extraction includes a bounded PICTURE-block fallback for files whose picture metadata cannot be handled by the normal decoder path, including malformed MIME metadata. Server covers are fetched through an authenticated main-process proxy. Local artist cards and profiles use indexed album artwork, with a placeholder when none is available. Artist artwork from configured media servers is preserved. There is no public artist-artwork lookup.
 
 A missing cover can still mean there is no embedded picture, the file is damaged, or the server cannot provide it. Include a legally shareable sample or metadata details when reporting extraction errors.
 

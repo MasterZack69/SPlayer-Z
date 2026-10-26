@@ -9,7 +9,6 @@ interface CacheStat {
 
 const stats = ref<CacheStat[]>([
   { id: "covers", kind: "file", path: "", size: 0 },
-  { id: "artists", kind: "file", path: "", size: 0 },
   { id: "backgrounds", kind: "file", path: "", size: 0 },
 ]);
 const cacheDir = ref<string>("");

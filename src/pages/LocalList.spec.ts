@@ -1,5 +1,5 @@
 import { createPinia, type Pinia } from "pinia";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h } from "vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { createI18n } from "vue-i18n";
@@ -17,7 +17,6 @@ const mocks = vi.hoisted(() => ({
   getArtistProfile: vi.fn(),
   getAlbumCollection: vi.fn(),
   getGenreCollection: vi.fn(),
-  loadArtistAvatars: vi.fn(),
   playFrom: vi.fn(),
   navigateToGenre: vi.fn(),
   navigateToAlbum: vi.fn(),
@@ -28,7 +27,6 @@ vi.mock("@/stores/library", () => ({
     ...mocks,
     tracks: mocks.libraryTracks,
     initialized: true,
-    artistAvatars: ref({}),
   }),
 }));
 vi.mock("@/core/player", () => ({ playFrom: mocks.playFrom }));

@@ -37,7 +37,7 @@ The software processes this information to play and organize media, restore your
 2. **Last.fm:** When enabled, the app communicates with the official Last.fm API. Its own terms and privacy policy apply.
 3. **Releases:** The app does not check for updates or automatically contact a release feed. Opening a release or profile link in your browser contacts that website.
 4. **Lyrics:** Local files and embedded lyrics stay local; lyrics supplied by your media server are requested from that server, not from a public lyric-search provider.
-5. **Artist artwork:** Local artist-avatar lookup can send artist names to MusicBrainz, then request artwork metadata from TheAudioDB and download the returned image. Images and unsuccessful lookup markers are cached locally. Offline-first playback does not mean the application never makes network requests.
+5. **Artist artwork:** Local artist views use artwork from your music files. Server artwork comes from the configured media server. Artist names are not sent to public artist-artwork services.
 
 ## 5. Storage, retention, and protection
 

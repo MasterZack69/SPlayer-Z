@@ -1676,11 +1676,11 @@
       "open": "Open in file manager",
       "change": "Change",
       "reset": "Reset",
-      "hint": "Covers, artist avatars and backgrounds live under this folder. Switching wipes the old caches; the new location must be an empty folder.",
+      "hint": "Cover thumbnails and backgrounds live under this folder. Switching wipes the old caches; the new location must be an empty folder.",
       "changedHint": "Cache directory switched",
       "notEmpty": "The selected folder isn't empty. Please pick an empty folder.",
       "switchConfirmTitle": "Switch cache directory?",
-      "switchConfirmDesc": "Current cover / artist / background caches will be cleared before the switch, and the new location must be an empty folder.",
+      "switchConfirmDesc": "Current cover / background caches will be cleared before the switch, and the new location must be an empty folder.",
       "switchConfirmOk": "Pick Folder",
       "resetConfirmTitle": "Reset to default cache directory?",
       "resetConfirmDesc": "Current file caches will be cleared before resetting."
@@ -1692,7 +1692,6 @@
     },
     "cacheCategory": {
       "covers": "Cover Thumbnails",
-      "artists": "Artist Avatars",
       "backgrounds": "Backgrounds",
       "songs": "Song Files"
     },

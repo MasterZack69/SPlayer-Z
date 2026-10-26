@@ -16,7 +16,7 @@ export const configDir = path.join(dataRoot, "config");
 /** Database directory: library.db */
 export const databaseDir = path.join(dataRoot, "database");
 
-/** Default cache directory: covers / artists / backgrounds / songs */
+/** Default cache directory: covers / backgrounds */
 export const defaultCacheDir = path.join(dataRoot, "cache");
 
 /** Log directory: application logs and native/. */

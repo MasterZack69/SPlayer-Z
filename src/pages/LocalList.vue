@@ -27,7 +27,6 @@ const route = useRoute();
 const router = useRouter();
 const libraryStore = useLibraryStore();
 const settings = useSettingsStore();
-const { artistAvatars } = storeToRefs(libraryStore);
 
 const mode: BrowseSortKey =
   route.name === "album-list"
@@ -68,7 +67,7 @@ const items = computed<CoverItem[]>(() => {
       ? (source.value as ArtistSummary[]).map((item) => ({
           id: encodeURIComponent(item.name),
           title: item.name,
-          cover: artistAvatars.value[item.name.trim().toLowerCase()] ?? item.cover,
+          cover: item.cover,
           subtitle: t("common.totalSongs", { count: item.trackCount }),
           trackCount: item.trackCount,
         }))
@@ -213,7 +212,6 @@ watch(
           : await libraryStore.getAlbumList();
     if (generation !== loadGeneration) return;
     source.value = items;
-    if (mode === "artist") libraryStore.loadArtistAvatars();
   },
   { immediate: true },
 );

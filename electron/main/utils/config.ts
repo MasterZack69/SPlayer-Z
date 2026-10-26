@@ -25,9 +25,6 @@ export const getAppCacheDir = (): string => store.get("cache.dir") || defaultCac
 /** 当前生效的封面缩略图目录 */
 export const getCoverCacheDir = (): string => path.join(getAppCacheDir(), "covers");
 
-/** 当前生效的歌手头像目录 */
-export const getArtistCacheDir = (): string => path.join(getAppCacheDir(), "artists");
-
 /** 当前生效的背景图目录 */
 export const getBackgroundsDir = (): string => path.join(getAppCacheDir(), "backgrounds");
 

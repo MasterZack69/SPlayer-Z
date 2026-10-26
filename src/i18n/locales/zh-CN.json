@@ -1670,11 +1670,11 @@
       "open": "在文件管理器中打开",
       "change": "更改",
       "reset": "还原默认",
-      "hint": "封面、歌手头像、背景图都会存到该目录下；切换会先清空旧缓存，新位置必须是空文件夹",
+      "hint": "封面和背景图都会存到该目录下；切换会先清空旧缓存，新位置必须是空文件夹",
       "changedHint": "缓存目录已切换",
       "notEmpty": "所选文件夹不为空，请选择一个空文件夹",
       "switchConfirmTitle": "切换缓存目录？",
-      "switchConfirmDesc": "切换前会清空当前封面、歌手头像和背景缓存，新目录必须为空。",
+      "switchConfirmDesc": "切换前会清空当前封面和背景缓存，新目录必须为空。",
       "switchConfirmOk": "选择文件夹",
       "resetConfirmTitle": "还原默认缓存目录？",
       "resetConfirmDesc": "还原前同样会清空当前的文件类缓存"
@@ -1686,7 +1686,6 @@
     },
     "cacheCategory": {
       "covers": "封面缩略图",
-      "artists": "歌手头像",
       "backgrounds": "背景图",
       "songs": "歌曲文件"
     },

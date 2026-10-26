@@ -50,7 +50,7 @@ Settings are declared in `src/settings/schema.ts`, with category implementations
 ```text
 config/             settings.json, streaming.json, lastfm.json
 database/           library.db
-cache/              covers, artists, backgrounds
+cache/              covers, backgrounds
 logs/               application and native diagnostics
 ```
 

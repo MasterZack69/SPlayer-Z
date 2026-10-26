@@ -3,18 +3,13 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { existsSync, type Dirent } from "node:fs";
 import { store } from "@main/store";
-import {
-  getAppCacheDir,
-  getCoverCacheDir,
-  getArtistCacheDir,
-  getBackgroundsDir,
-} from "@main/utils/config";
+import { getAppCacheDir, getCoverCacheDir, getBackgroundsDir } from "@main/utils/config";
 import { syncCoverCacheDir } from "@main/services/engine";
 import { systemLog } from "@main/utils/logger";
 import { defaultCacheDir } from "@main/utils/paths";
 
 /** 已知的缓存类别 */
-export type CacheCategory = "covers" | "artists" | "backgrounds";
+export type CacheCategory = "covers" | "backgrounds";
 
 /** 缓存介质 */
 export type CacheKind = "file";
@@ -95,12 +90,6 @@ const categoryHandlers: Record<
     path: getCoverCacheDir,
     size: () => dirSize(getCoverCacheDir()),
     clear: () => clearDir(getCoverCacheDir()),
-  },
-  artists: {
-    kind: "file",
-    path: getArtistCacheDir,
-    size: () => dirSize(getArtistCacheDir()),
-    clear: () => clearDir(getArtistCacheDir()),
   },
   backgrounds: {
     kind: "file",
