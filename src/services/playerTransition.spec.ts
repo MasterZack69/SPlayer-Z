@@ -73,6 +73,7 @@ afterEach(async () => {
 describe("Now Playing cover transitions", () => {
   it("matches bar/full covers on open and close and releases snapshot markers", async () => {
     setPlayerExpanded(true);
+    expect(document.documentElement.dataset.playerTransition).toBe("expand");
     expect(status.isPlayerExpanded).toBe(false);
     expect(
       document.querySelector('[data-player-cover="bar"]')?.hasAttribute("data-player-shared"),
@@ -88,6 +89,7 @@ describe("Now Playing cover transitions", () => {
     expect(document.querySelector("[data-player-shared]")).toBeNull();
     expect(document.documentElement.hasAttribute("data-player-transition")).toBe(false);
     setPlayerExpanded(false);
+    expect(document.documentElement.dataset.playerTransition).toBe("collapse");
     await updateSnapshot(1);
     expect(status.isPlayerExpanded).toBe(false);
     expect(
@@ -144,6 +146,7 @@ describe("Now Playing cover transitions", () => {
     setPlayerExpanded(true);
     await updateSnapshot();
     setPlayerExpanded(false);
+    expect(document.documentElement.dataset.playerTransition).toBe("collapse");
     await updateSnapshot(1);
     expect(playerTransition.value).not.toBeNull();
     expect(

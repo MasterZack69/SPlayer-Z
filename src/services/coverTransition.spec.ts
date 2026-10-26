@@ -31,7 +31,7 @@ const setupNavigation = async () => {
     const ready = Promise.resolve().then(update);
     return { ready, finished: completed.promise, skipTransition: completed.resolve };
   });
-  Object.assign(scope, { startViewTransition: start });
+  Object.assign(document, { startViewTransition: start });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -58,6 +58,8 @@ afterEach(async () => {
   dispose?.();
   dispose = undefined;
   await flushPromises();
+  Reflect.deleteProperty(document, "startViewTransition");
+  document.documentElement.removeAttribute("data-player-transition");
   document.body.innerHTML = "";
   vi.restoreAllMocks();
 });
@@ -90,19 +92,27 @@ describe("shared cover navigation", () => {
     "%s matches entry and return navigation and cleans up after completion",
     async (target) => {
       const { router, scope, start } = await setupNavigation();
+      scope.querySelector<HTMLElement>("[data-cover-key]")!.style.borderRadius = "12px";
       captureCover(album, "cover");
       await router.push(target);
       await flushPromises();
       expect(getCoverPreview(target)?.title).toBe(album.title);
       expect(coverTransitionActive.value).toBe(true);
+      expect(document.documentElement.dataset.coverTransition).toBe("enter");
+      expect(document.documentElement.style.getPropertyValue("--cover-transition-radius")).toBe(
+        "12px",
+      );
       expect(scope.querySelector("[data-cover-hero][data-cover-shared]")).not.toBeNull();
       start.mock.results[0].value.skipTransition();
       await flushPromises();
       expect(coverTransitionActive.value).toBe(false);
       expect(scope.querySelector("[data-cover-shared]")).toBeNull();
+      expect(document.documentElement.hasAttribute("data-cover-transition")).toBe(false);
+      expect(document.documentElement.style.getPropertyValue("--cover-transition-radius")).toBe("");
       await router.push("/");
       await flushPromises();
       expect(start).toHaveBeenCalledTimes(2);
+      expect(document.documentElement.dataset.coverTransition).toBe("back");
       expect(
         scope.querySelector('[data-cover-key="cover"]')!.hasAttribute("data-cover-shared"),
       ).toBe(true);
@@ -113,6 +123,16 @@ describe("shared cover navigation", () => {
       expect(start).toHaveBeenCalledTimes(2);
     },
   );
+
+  it("does not start a cover transition while Now Playing is transitioning", async () => {
+    const { router, start } = await setupNavigation();
+    document.documentElement.setAttribute("data-player-transition", "expand");
+    captureCover(album, "cover");
+    await router.push(path);
+    expect(start).not.toHaveBeenCalled();
+    expect(coverTransitionActive.value).toBe(false);
+    expect(document.documentElement.hasAttribute("data-cover-transition")).toBe(false);
+  });
 
   it("ordinary navigation neither transitions nor leaves a stale preview", async () => {
     const { router, start } = await setupNavigation();
@@ -127,11 +147,11 @@ describe("shared cover navigation", () => {
   it.each(["transitions disabled", "native API unavailable"])(
     "%s uses ordinary navigation",
     async (condition) => {
-      const { router, scope, start } = await setupNavigation();
+      const { router, start } = await setupNavigation();
       if (condition === "transitions disabled") {
         dispose?.();
         dispose = undefined;
-      } else Object.assign(scope, { startViewTransition: undefined });
+      } else Object.assign(document, { startViewTransition: undefined });
       const timer = vi.spyOn(window, "setTimeout");
       captureCover(album, "cover");
       if (condition === "transitions disabled") expect(timer).not.toHaveBeenCalled();
