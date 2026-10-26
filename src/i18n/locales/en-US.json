@@ -847,7 +847,7 @@
     },
     "ignoreMusicGenre": {
       "label": "Ignore “Music” Genre",
-      "description": "Hide the generic Music genre label in browsing and song lists. Turn off to keep it for music/podcast distinctions. Your file tags are unchanged."
+      "description": "Hide the generic Music genre label in browsing and song lists."
     },
     "showSubtitle": {
       "label": "Show Subtitle",

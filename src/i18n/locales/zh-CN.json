@@ -847,7 +847,7 @@
     },
     "ignoreMusicGenre": {
       "label": "忽略“Music”流派",
-      "description": "在浏览页面和歌曲列表中隐藏通用的 Music 流派标签。关闭后可保留音乐与播客的分类区别，不会修改文件标签。"
+      "description": "隐藏“Music”类别标签"
     },
     "showSubtitle": {
       "label": "显示副标题",
