@@ -3,7 +3,7 @@
   "name": "splayer-z",
   "productName": "SPlayer-Z",
   "desktopName": "io.github.MasterZack69.SPlayerZ",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Linux desktop music player with local lyrics and self-hosted media libraries",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
