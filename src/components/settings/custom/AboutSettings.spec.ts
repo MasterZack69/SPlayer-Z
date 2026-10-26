@@ -46,7 +46,7 @@ describe("About settings", () => {
       },
     });
     expect(view.text()).toContain("SPlayer-Z");
-    expect(view.text()).toContain("V1.0.0");
+    expect(view.text()).toContain("V1.1.0");
     expect(view.text()).toContain("MasterZack69");
     expect(view.text()).toContain("Maintainer");
     expect(view.text()).toContain(
