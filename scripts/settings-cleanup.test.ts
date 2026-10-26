@@ -29,6 +29,5 @@ test("retired proxy, automatic updater, and song-cache services stay removed", (
   assert.doesNotMatch(read("src/settings/categories/services.ts"), /networkProxy/);
   assert.doesNotMatch(read("src/settings/categories/localCache.ts"), /songCache|cacheStreaming/);
   const pkg = JSON.parse(read("package.json"));
-  assert.equal(pkg.version, "1.0.0");
   assert.equal(pkg.dependencies["electron-updater"], undefined);
 });

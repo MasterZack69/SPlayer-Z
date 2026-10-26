@@ -1,3 +1,4 @@
+import pkg from "../../../../../package.json" with { type: "json" };
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { subsonicAdapter } from "./subsonic";
 import { jellyfinAdapter } from "./jellyfin";
@@ -44,6 +45,10 @@ describe("流媒体协议契约", () => {
         return response({ Items: items.slice(offset, offset + 1) });
       });
       const tracks = await jellyfinAdapter.getPlaylistSongs({ ...config, type }, "playlist");
+      const headers = new Headers(fetchMock.mock.calls[0][1].headers);
+      expect(headers.get(type === "emby" ? "X-Emby-Authorization" : "Authorization")).toContain(
+        `Version="${pkg.version}"`,
+      );
       expect(tracks.map((track) => track.originalId)).toEqual(["song", "song", "other"]);
       expect(
         fetchMock.mock.calls.map(([url]) => new URL(url).searchParams.get("StartIndex")),

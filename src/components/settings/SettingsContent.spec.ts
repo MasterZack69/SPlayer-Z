@@ -24,7 +24,7 @@ vi.mock("@/utils/url", () => ({ openExternal: vi.fn() }));
 vi.mock("@/utils/config", () => ({
   REPO_URL: "https://github.com/MasterZack69/SPlayer-Z",
   REPO_NAME: "SPlayer-Z",
-  APP_VERSION: "1.1.0",
+  APP_VERSION: __APP_VERSION__,
 }));
 let wrapper: VueWrapper;
 const scrollIntoView = vi.fn();

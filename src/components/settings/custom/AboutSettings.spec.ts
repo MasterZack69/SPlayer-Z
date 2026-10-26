@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import english from "@/i18n/locales/en-US.json";
 
 vi.mock("@/utils/config", () => ({
-  APP_VERSION: "1.0.0",
+  APP_VERSION: __APP_VERSION__,
   REPO_URL: "https://github.com/MasterZack69/SPlayer-Z",
   REPO_NAME: "SPlayer-Z",
   COMMIT_HASH: "",
@@ -46,7 +46,7 @@ describe("About settings", () => {
       },
     });
     expect(view.text()).toContain("SPlayer-Z");
-    expect(view.text()).toContain("V1.1.0");
+    expect(view.text()).toContain(`V${__APP_VERSION__}`);
     expect(view.text()).toContain("MasterZack69");
     expect(view.text()).toContain("Maintainer");
     expect(view.text()).toContain(

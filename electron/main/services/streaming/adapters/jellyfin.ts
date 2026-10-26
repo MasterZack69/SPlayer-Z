@@ -1,3 +1,4 @@
+import pkg from "../../../../../package.json" with { type: "json" };
 import { validYear } from "@shared/utils/year";
 import type { Album, Artist, Playlist, Track } from "@shared/types/player";
 import type { StreamingPingResult } from "@shared/types/streaming";
@@ -14,7 +15,7 @@ export interface StreamingAuthSession {
 }
 
 const CLIENT_NAME = "SPlayer-Z";
-const CLIENT_VERSION = "1.0.0";
+const CLIENT_VERSION = pkg.version;
 const DEVICE_NAME = "SPlayer-Z Desktop";
 const REQUEST_TIMEOUT_MS = 15_000;
 
