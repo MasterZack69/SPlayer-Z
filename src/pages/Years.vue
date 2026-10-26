@@ -82,21 +82,23 @@ onMounted(load);
 
 <template>
   <section class="years-browser flex h-full min-h-0 flex-col gap-4 p-5">
-    <h1 class="shrink-0 text-3xl font-bold">{{ t("year.label") }}</h1>
+    <header class="years-header flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <h1 class="text-3xl font-bold">{{ t("year.label") }}</h1>
+      <div
+        role="group"
+        :aria-label="t('songList.sort.mode')"
+        class="year-sort-control relative z-10 flex shrink-0 items-center gap-2 text-sm text-on-surface-variant/70"
+      >
+        <IconLucideArrowUpDown class="size-3.5 shrink-0" />
+        <span class="year-sort-label">{{ t("songList.sort.mode") }}</span>
+        <div class="year-sort-select w-40">
+          <SSelect v-model="sortOrder" :options="sortOptions" />
+        </div>
+      </div>
+    </header>
     <p v-if="error" role="alert" class="text-error">{{ t("common.error") }}</p>
     <div class="years-panes min-h-0 flex-1">
       <aside class="year-navigation flex min-h-0 flex-col gap-4" :aria-label="t('year.label')">
-        <div
-          role="group"
-          :aria-label="t('songList.sort.mode')"
-          class="year-sort-control relative z-10 flex shrink-0 flex-wrap items-center justify-center gap-2 text-sm text-on-surface-variant/70"
-        >
-          <IconLucideArrowUpDown class="size-3.5 shrink-0" />
-          <span>{{ t("songList.sort.mode") }}</span>
-          <div class="w-full max-w-40">
-            <SSelect v-model="sortOrder" :options="sortOptions" />
-          </div>
-        </div>
         <YearWheel
           :items="years"
           :selected="selectedId"
@@ -148,6 +150,9 @@ onMounted(load);
 </template>
 
 <style scoped>
+.years-browser {
+  container-type: inline-size;
+}
 .years-panes {
   display: grid;
   grid-template-columns: clamp(180px, 22%, 260px) minmax(0, 1fr);
@@ -177,9 +182,23 @@ onMounted(load);
   .years-browser {
     padding: 12px;
   }
+}
+@container (max-width: 640px) {
   .years-panes {
     grid-template-columns: 104px minmax(0, 1fr);
     gap: 12px;
+  }
+}
+@container (max-width: 560px) {
+  .years-header h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .year-sort-label {
+    display: none;
+  }
+  .year-sort-select {
+    width: 140px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

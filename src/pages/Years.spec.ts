@@ -152,6 +152,16 @@ describe("Years browser", () => {
 });
 
 describe("year sorting and summaries", () => {
+  it("keeps sorting beside the page title rather than inside the narrow wheel rail", async () => {
+    const { wrapper } = await setup();
+    const header = wrapper.get(".years-header");
+    expect(header.get("h1").text()).toBe("Years");
+    expect(header.get('[role="group"]').attributes("aria-label")).toBe("Sort Mode");
+    expect(header.getComponent({ name: "SSelect" }).props("modelValue")).toBe("desc");
+    expect(wrapper.get("aside").findComponent({ name: "SSelect" }).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("sorts numeric years in both directions and leaves unknown last", async () => {
     const { wrapper, router } = await setup();
     const control = wrapper.getComponent({ name: "SSelect" });
