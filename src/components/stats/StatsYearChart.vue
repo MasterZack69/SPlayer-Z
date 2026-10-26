@@ -82,13 +82,20 @@ const handleWheel = (event: WheelEvent): void => {
     </div>
     <div
       ref="viewport"
-      tabindex="0"
+      :tabindex="counts.length > 1 ? 0 : undefined"
       class="scrollbar-hidden min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden rounded focus-visible:ring-1 focus-visible:ring-primary/40"
       :aria-label="t('year.distribution')"
       @wheel="handleWheel"
     >
+      <p
+        v-if="counts.length === 1"
+        class="flex h-full items-center justify-center text-2xl font-semibold tabular-nums text-on-surface"
+        data-year-summary
+      >
+        {{ t("year.summary", { year: counts[0].year, count: counts[0].count }) }}
+      </p>
       <svg
-        v-if="points.length"
+        v-else-if="points.length"
         :width="width"
         :height="height"
         role="img"

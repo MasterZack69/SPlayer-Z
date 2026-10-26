@@ -1952,6 +1952,7 @@
     "singular": "Year",
     "byYear": "Sort by Year",
     "distribution": "Songs by Year",
+    "summary": "{year} · {count} song | {year} · {count} songs",
     "unknown": "Unknown year",
     "missing": "{count} track without a year | {count} tracks without a year"
   }

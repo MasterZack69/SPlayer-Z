@@ -35,6 +35,19 @@ afterEach(() => {
 });
 
 describe("year chart", () => {
+  it("summarizes one known year and restores the chart when another year appears", async () => {
+    const wrapper = chart([song("a", 2018)]);
+    expect(wrapper.get("[data-year-summary]").text()).toBe("2018 · 1 song");
+    expect(wrapper.find("svg").exists()).toBe(false);
+    await wrapper.setProps({ tracks: [song("a", 2018), song("b", 2018), song("missing")] });
+    expect(wrapper.get("[data-year-summary]").text()).toBe("2018 · 2 songs");
+    expect(wrapper.text()).toContain("1 track without a year");
+    await wrapper.setProps({ tracks: [song("a", 2018), song("b", 2024)] });
+    expect(wrapper.find("[data-year-summary]").exists()).toBe(false);
+    expect(wrapper.findAll("circle")).toHaveLength(2);
+    wrapper.unmount();
+  });
+
   it("renders true counts, chronological points, and missing-year coverage", () => {
     const wrapper = chart([song("a", 2024), song("b", 1999), song("c", 2024), song("d")]);
     expect(wrapper.findAll("circle title").map((title) => title.text())).toEqual([

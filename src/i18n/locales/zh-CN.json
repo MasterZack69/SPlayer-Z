@@ -1952,6 +1952,7 @@
     "singular": "年份",
     "byYear": "按年份排序",
     "distribution": "歌曲年份分布",
+    "summary": "{year} · {count} 首歌曲",
     "unknown": "未知年份",
     "missing": "{count} 首歌曲无年份"
   }
