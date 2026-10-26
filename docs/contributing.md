@@ -33,6 +33,11 @@ pnpm dev
 - Keep server authentication in the main process. Do not log secrets or put tokens in renderer-visible URLs.
 - Do not reintroduce removed public-catalog playback, plugins, external control services, lyric lookup, or auxiliary lyric windows as an incidental fix.
 
+## Miscellaneous settings order
+
+Keep **Skip Songs by Keywords** first in the Miscellaneous section; it is not a toggle.
+All current and future Miscellaneous toggles must appear below it, never above it.
+
 ## Validation
 
 Run the checks relevant to your change, and report their actual results:

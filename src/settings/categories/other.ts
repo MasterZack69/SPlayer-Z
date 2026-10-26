@@ -10,15 +10,15 @@ const otherCategory: SettingCategory = {
       id: "preset",
       items: [
         {
+          key: "skipKeywordsSongs",
+          type: "custom",
+          component: SkipKeywordsConfig,
+        },
+        {
           key: "ignoreMusicGenre",
           type: "switch",
           binding: { store: "settings", path: "preset.ignoreMusicGenre" },
           defaultValue: true,
-        },
-        {
-          key: "skipKeywordsSongs",
-          type: "custom",
-          component: SkipKeywordsConfig,
         },
         {
           key: "hideQualityTag",
