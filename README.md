@@ -12,7 +12,7 @@ A cut-down fork of SPlayer-Next primarily focused on local music and user-owned 
 Same as upstream: LRC, eLRC, KRC, QRC, TTML
 
 ## Images
-<img width="1920" height="1080" alt="Screenshot From 2026-10-17 17-08-58" src="https://github.com/user-attachments/assets/af9a264b-3ec5-477b-887b-5d0bf44d76e7" />
+<img width="1920" height="1080" alt="Screenshot From 2026-10-26 11-50-48" src="https://github.com/user-attachments/assets/a455f6ea-bafc-4665-b766-731273cb7fcd" />
 <img width="1920" height="1080" alt="Screenshot From 2026-10-17 17-09-31" src="https://github.com/user-attachments/assets/6f81b209-e8bd-4cc3-b430-e75a2fc6dc27" />
 
 ## Removed app features
@@ -24,6 +24,7 @@ Same as upstream: LRC, eLRC, KRC, QRC, TTML
 - Desktop/Dynamic Island lyric controls
 - Discord RPC and NCM Scrobble
 - Online lyric matching and AMLL TTML network fetching
+- Online Cover and Artist fetching
 - Plugin initialization, plugin playback/lyric/cover fallbacks, and plugin settings
 - Download UI/service startup, music recognition, external API servers, and AI/MCP integration
 - Windows and MacOS compatibility
