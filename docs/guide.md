@@ -66,6 +66,11 @@ visible. Confirm saves the layout across song lists and app restarts; Cancel dis
 changes. Reset restores the default order and visibility in the editor until confirmed.
 Pages may still omit columns that do not apply to their content. There are no custom columns.
 
+Sidebar and column configuration use lifted drag previews that follow the pointer,
+slide neighbouring rows aside, and settle into the drop position. Press Escape to
+cancel a drag without closing the editor. Sidebar handles also support up/down arrow
+keys for reordering groups, navigation entries, and playlists.
+
 ## Song-list density
 
 Choose **Appearance → Song List Style → Compact** for smaller song rows and covers.

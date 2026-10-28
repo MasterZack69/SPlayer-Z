@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Component } from "vue";
-import Sortable from "sortablejs";
+import { createSettingsDragSort } from "@/composables/useSettingsDragSort";
 import type { SidebarPlaylistOrder } from "@/types/settings";
 import type { ContentScope } from "@/types/collection";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
@@ -35,13 +35,10 @@ const playlistOrder = ref<SidebarPlaylistOrder>({ myLocal: [], myOnline: [], sub
 const expandedMy = ref(false);
 /** 「我的歌单」卡片内的来源切换 */
 const mySource = ref<ContentScope>("local");
-/** 数据变更后整体重建列表 DOM，避免 sortablejs 的 DOM 搬移与 Vue 渲染冲突 */
-const version = ref(0);
 
 const groupsEl = ref<HTMLElement | null>(null);
 const navListEls = ref<HTMLElement[]>([]);
 const myListEl = ref<HTMLElement | null>(null);
-const subscribedListEl = ref<HTMLElement | null>(null);
 
 watch(open, (val) => {
   if (!val) return;
@@ -62,25 +59,20 @@ watch(open, (val) => {
   expandedMy.value = false;
   mySource.value = "local";
   if (!playlistStore.initialized) playlistStore.load();
-  version.value++;
 });
 
-let sortables: Sortable[] = [];
+let sortables: ReturnType<typeof createSettingsDragSort>[] = [];
 
+/** Release drag listeners and previews when the editor closes or changes its lists. */
 const destroySortables = (): void => {
   for (const instance of sortables) instance.destroy();
   sortables = [];
 };
 
-const bump = (): void => {
-  version.value++;
-};
-
-/**
- * 为歌单列表挂载组内排序，拖放后把完整顺序写回工作副本
- * @param el - 列表容器
- * @param rowsOf - 当前展示顺序
- * @param targetOf - 顺序写入的目标字段
+/** Attach playlist ordering to the dialog draft.
+ * @param el - Playlist list element.
+ * @param rowsOf - Rows in their current displayed order.
+ * @param targetOf - Playlist order field to update.
  */
 const attachPlaylistSortable = (
   el: HTMLElement,
@@ -88,63 +80,52 @@ const attachPlaylistSortable = (
   targetOf: () => keyof SidebarPlaylistOrder,
 ): void => {
   sortables.push(
-    Sortable.create(el, {
-      animation: 150,
+    createSettingsDragSort(el, {
       handle: ".item-handle",
       draggable: "[data-playlist-key]",
-      forceFallback: true,
-      fallbackClass: "sortable-ghost",
       onEnd: (evt) => {
-        const { oldIndex, newIndex } = evt;
+        const { oldDraggableIndex: oldIndex, newDraggableIndex: newIndex } = evt;
         if (oldIndex == null || newIndex == null || oldIndex === newIndex) return;
         const keys = rowsOf().map((row) => row.key);
         const [moved] = keys.splice(oldIndex, 1);
         keys.splice(newIndex, 0, moved);
         playlistOrder.value[targetOf()] = keys;
-        bump();
       },
     }),
   );
 };
 
+/** Attach queue-style dragging to groups, navigation rows and expanded playlists. */
 const initSortables = (): void => {
   destroySortables();
   if (groupsEl.value) {
     sortables.push(
-      Sortable.create(groupsEl.value, {
-        animation: 150,
+      createSettingsDragSort(groupsEl.value, {
         handle: ".group-handle",
         draggable: "[data-editor-group]",
-        forceFallback: true,
-        fallbackClass: "sortable-ghost",
         onEnd: (evt) => {
-          const { oldIndex, newIndex } = evt;
+          const { oldDraggableIndex: oldIndex, newDraggableIndex: newIndex } = evt;
           if (oldIndex == null || newIndex == null || oldIndex === newIndex) return;
           const [moved] = groups.value.splice(oldIndex, 1);
           groups.value.splice(newIndex, 0, moved);
-          bump();
         },
       }),
     );
   }
   for (const el of navListEls.value) {
     sortables.push(
-      Sortable.create(el, {
-        animation: 150,
+      createSettingsDragSort(el, {
         group: "sidebar-nav-items",
         handle: ".item-handle",
         draggable: "[data-nav-key]",
-        forceFallback: true,
-        fallbackClass: "sortable-ghost",
         onEnd: (evt) => {
           const from = Number((evt.from as HTMLElement).dataset.groupList);
           const to = Number((evt.to as HTMLElement).dataset.groupList);
-          const { oldIndex, newIndex } = evt;
+          const { oldDraggableIndex: oldIndex, newDraggableIndex: newIndex } = evt;
           if (oldIndex == null || newIndex == null) return;
           if (from === to && oldIndex === newIndex) return;
           const [moved] = groups.value[from].keys.splice(oldIndex, 1);
           groups.value[to].keys.splice(newIndex, 0, moved);
-          bump();
         },
       }),
     );
@@ -158,13 +139,61 @@ const initSortables = (): void => {
   }
 };
 
-// version 变化会以 :key 重建列表 DOM，容器 ref 随之更新（含展开/收起歌单卡片），此时重建 sortable 实例
-watch([groupsEl, myListEl, subscribedListEl], () => {
-  if (groupsEl.value) nextTick(() => initSortables());
-  else destroySortables();
-});
+watch(
+  [
+    groupsEl,
+    myListEl,
+    open,
+    () =>
+      groups.value
+        .map((group) => group.id)
+        .sort()
+        .join(","),
+  ],
+  () => {
+    destroySortables();
+    if (open.value && groupsEl.value) {
+      void nextTick(() => {
+        if (open.value) initSortables();
+      });
+    }
+  },
+);
 
 onBeforeUnmount(destroySortables);
+
+/** Move a sidebar group, navigation entry or playlist with the handle's arrow keys.
+ * @param event - Keyboard input from the focused drag handle.
+ * @param values - Draft ordering to update.
+ * @param index - Current item position.
+ */
+const moveByKeyboard = async <T,>(
+  event: KeyboardEvent,
+  values: T[],
+  index: number,
+): Promise<void> => {
+  if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+  event.preventDefault();
+  event.stopPropagation();
+  const target = index + (event.key === "ArrowUp" ? -1 : 1);
+  if (target < 0 || target >= values.length) return;
+  const handle = event.currentTarget as HTMLElement;
+  const [moved] = values.splice(index, 1);
+  values.splice(target, 0, moved);
+  await nextTick();
+  handle.focus();
+};
+
+/** Reorder the displayed playlists using the same keyboard controls as navigation.
+ * @param event - Keyboard input from a playlist drag handle.
+ * @param key - Stable playlist key.
+ */
+const movePlaylistByKeyboard = (event: KeyboardEvent, key: string): void => {
+  if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+  const keys = myRows.value.map((row) => row.key);
+  playlistOrder.value[myOrderKey.value] = keys;
+  void moveByKeyboard(event, playlistOrder.value[myOrderKey.value], keys.indexOf(key));
+};
 
 interface EditorRow {
   key: string;
@@ -232,19 +261,20 @@ const toggleShowName = (index: number): void => {
   groups.value[index].showName = !groups.value[index].showName;
 };
 
+/** Add an empty draft group without rebuilding existing rows. */
 const addGroup = (): void => {
   groups.value.push({ id: nextGroupId++, name: "", showName: false, keys: [] });
-  bump();
 };
 
-/** 删除分组：组内项并入上一组末尾，第一组则并入下一组开头 */
+/** Remove a group while retaining its entries in the adjacent group.
+ * @param index - Group being removed.
+ */
 const removeGroup = (index: number): void => {
   if (groups.value.length <= 1) return;
   const removed = groups.value[index];
   if (index > 0) groups.value[index - 1].keys.push(...removed.keys);
   else groups.value[1].keys.unshift(...removed.keys);
   groups.value.splice(index, 1);
-  bump();
 };
 
 const handleConfirm = (): void => {
@@ -264,6 +294,7 @@ const handleConfirm = (): void => {
   open.value = false;
 };
 
+/** Restore the default sidebar draft after confirmation. */
 const handleReset = async (): Promise<void> => {
   const ok = await dialog.confirm({
     title: t("settings.sidebarCustomize.confirmResetTitle"),
@@ -282,7 +313,6 @@ const handleReset = async (): Promise<void> => {
   keepEmptyDivider.value = false;
   nameWithDivider.value = false;
   playlistOrder.value = { myLocal: [], myOnline: [], subscribed: [] };
-  bump();
 };
 </script>
 
@@ -294,24 +324,30 @@ const handleReset = async (): Promise<void> => {
     v-model:open="open"
     :title="t('settings.sidebarCustomize.label')"
     :description="t('settings.sidebarCustomize.hint')"
-    width="460px"
+    width="min(460px, calc(100vw - 32px))"
   >
     <div class="flex flex-col gap-2.5">
       <span class="text-xs text-on-surface-variant/60">
         {{ t("settings.sidebarCustomize.nav") }}
       </span>
-      <div ref="groupsEl" :key="version" class="flex flex-col gap-2.5">
+      <div ref="groupsEl" class="flex flex-col gap-2.5">
         <SCard
           v-for="(group, gi) in editorGroups"
           :key="group.id"
           data-editor-group
+          :data-config-drag-id="`group-${group.id}`"
           flush
           class="flex flex-col gap-1.5 p-2"
         >
           <div class="flex items-center gap-2 px-1 min-h-6.5">
-            <IconLucideGripVertical
-              class="group-handle size-4 shrink-0 text-on-surface-variant/40 cursor-grab active:cursor-grabbing"
-            />
+            <button
+              type="button"
+              class="group-handle flex size-7 items-center justify-center shrink-0 rounded bg-transparent border-none text-on-surface-variant/60 cursor-grab active:cursor-grabbing touch-none select-none focus-visible:outline-primary"
+              :aria-label="t('settings.sidebarCustomize.group', { n: gi + 1 })"
+              @keydown="moveByKeyboard($event, groups, gi)"
+            >
+              <IconLucideGripVertical class="size-4" />
+            </button>
             <SInput
               :model-value="group.name"
               size="small"
@@ -346,16 +382,22 @@ const handleReset = async (): Promise<void> => {
               <template #icon><IconLucideTrash2 /></template>
             </SButton>
           </div>
-          <div ref="navListEls" class="flex flex-col gap-1.5" :data-group-list="gi">
+          <div ref="navListEls" class="flex flex-col gap-1.5 min-h-9" :data-group-list="gi">
             <div
               v-for="row in group.rows"
               :key="row.key"
               :data-nav-key="row.key"
+              :data-config-drag-id="row.key"
               class="flex items-center gap-3 px-2.5 py-1.5 rounded-lg bg-on-surface/4"
             >
-              <IconLucideGripVertical
-                class="item-handle size-4 shrink-0 text-on-surface-variant/40 cursor-grab active:cursor-grabbing"
-              />
+              <button
+                type="button"
+                class="item-handle flex size-7 items-center justify-center shrink-0 rounded bg-transparent border-none text-on-surface-variant/60 cursor-grab active:cursor-grabbing touch-none select-none focus-visible:outline-primary"
+                :aria-label="row.label"
+                @keydown="moveByKeyboard($event, groups[gi].keys, groups[gi].keys.indexOf(row.key))"
+              >
+                <IconLucideGripVertical class="size-4" />
+              </button>
               <component
                 :is="row.icon"
                 v-if="row.icon"
@@ -410,7 +452,7 @@ const handleReset = async (): Promise<void> => {
       <span class="text-xs text-on-surface-variant/60 mt-1">
         {{ t("settings.sidebarCustomize.groups") }}
       </span>
-      <div :key="`pl-${version}`" class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-2.5">
         <!-- 我的歌单 -->
         <SCard flush class="flex flex-col gap-1.5 p-2">
           <div
@@ -472,11 +514,17 @@ const handleReset = async (): Promise<void> => {
                 v-for="row in myRows"
                 :key="row.key"
                 :data-playlist-key="row.key"
+                :data-config-drag-id="row.key"
                 class="flex items-center gap-3 px-2.5 py-1.5 rounded-lg bg-on-surface/4"
               >
-                <IconLucideGripVertical
-                  class="item-handle size-4 shrink-0 text-on-surface-variant/40 cursor-grab active:cursor-grabbing"
-                />
+                <button
+                  type="button"
+                  class="item-handle flex size-7 items-center justify-center shrink-0 rounded bg-transparent border-none text-on-surface-variant/60 cursor-grab active:cursor-grabbing touch-none select-none focus-visible:outline-primary"
+                  :aria-label="row.title"
+                  @keydown="movePlaylistByKeyboard($event, row.key)"
+                >
+                  <IconLucideGripVertical class="size-4" />
+                </button>
                 <span
                   class="text-sm flex-1 min-w-0 truncate"
                   :class="isHidden(row.key) ? 'opacity-40' : ''"

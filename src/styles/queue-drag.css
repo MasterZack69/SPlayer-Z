@@ -66,3 +66,9 @@
     transform: none;
   }
 }
+
+/* Sortable supplies insertion geometry; the queue-style preview owns the visible card. */
+.settings-drag-fallback {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

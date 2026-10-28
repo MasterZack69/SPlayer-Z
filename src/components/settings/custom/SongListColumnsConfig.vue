@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Sortable from "sortablejs";
+import { createSettingsDragSort } from "@/composables/useSettingsDragSort";
 import { useSettingsStore } from "@/stores/settings";
 import {
   SONG_LIST_COLUMNS,
@@ -45,20 +45,14 @@ const onHandleKeydown = async (event: KeyboardEvent, column: SongListColumn): Pr
   listEl.value?.querySelector<HTMLButtonElement>(`[data-column-handle="${column}"]`)?.focus();
 };
 
-watch(listEl, (element, _, onCleanup) => {
-  if (!element) return;
-  const sortable = Sortable.create(element, {
-    animation: settings.reducedMotion ? 0 : 150,
+watch([listEl, open], ([element, isOpen], _, onCleanup) => {
+  if (!element || !isOpen) return;
+  const sortable = createSettingsDragSort(element, {
     handle: "[data-column-handle]",
     draggable: "[data-column-key]",
-    forceFallback: true,
-    onEnd: ({ item, from, oldIndex, newIndex }) => {
-      if (oldIndex == null || newIndex == null || oldIndex === newIndex) return;
-      const column = order.value[oldIndex];
-      // Return DOM ownership to Vue before changing the keyed array.
-      item.remove();
-      from.insertBefore(item, from.children[oldIndex] ?? null);
-      moveColumn(column, newIndex);
+    onEnd: ({ oldDraggableIndex, newDraggableIndex }) => {
+      if (oldDraggableIndex == null || newDraggableIndex == null) return;
+      moveColumn(order.value[oldDraggableIndex], newDraggableIndex);
     },
   });
   onCleanup(() => sortable.destroy());
@@ -104,6 +98,7 @@ const save = (): void => {
         v-for="column in order"
         :key="column"
         :data-column-key="column"
+        :data-config-drag-id="column"
         class="flex items-center gap-3 rounded-lg bg-on-surface/4 px-3 py-2"
       >
         <button
@@ -112,7 +107,7 @@ const save = (): void => {
           :aria-label="
             t('settings.songListColumns.reorder', { column: t(SONG_LIST_COLUMN_LABELS[column]) })
           "
-          class="flex size-9 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-on-surface-variant cursor-grab active:cursor-grabbing focus-visible:outline-primary"
+          class="flex size-9 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-on-surface-variant cursor-grab active:cursor-grabbing touch-none select-none focus-visible:outline-primary"
           @keydown="onHandleKeydown($event, column)"
         >
           <IconLucideGripVertical class="size-4" />
