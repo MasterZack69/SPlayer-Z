@@ -4,6 +4,7 @@ import { createI18n } from "vue-i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import en from "@/i18n/locales/en-US.json";
+import { SONG_LIST_COLUMNS, type SongListColumn } from "@/utils/songListColumns";
 import type { Track } from "@shared/types/player";
 
 import { createPinia, setActivePinia } from "pinia";
@@ -11,11 +12,17 @@ import { useStatusStore } from "@/stores/status";
 beforeEach(() => {
   localStorage.clear();
   appearance.songListStyle = "comfortable";
+  appearance.songListColumnOrder = [...SONG_LIST_COLUMNS];
+  appearance.songListHiddenColumns = [];
   preset.ignoreMusicGenre = true;
   setActivePinia(createPinia());
 });
 const preset = reactive({ ignoreMusicGenre: true });
-const appearance = reactive({ songListStyle: "comfortable" });
+const appearance = reactive({
+  songListStyle: "comfortable",
+  songListColumnOrder: [...SONG_LIST_COLUMNS],
+  songListHiddenColumns: [] as SongListColumn[],
+});
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("vue-router", () => ({
   useRoute: () => ({ name: "library" }),
@@ -120,6 +127,49 @@ describe("shared song-list columns", () => {
     expect(wrapper.get("[data-song-item]").element.children).toHaveLength(8);
     wrapper.unmount();
   });
+  it("hides optional columns and keeps reordered header and row cells aligned", async () => {
+    const wrapper = mountList();
+    appearance.songListColumnOrder = [
+      "year",
+      "title",
+      "index",
+      "album",
+      "genre",
+      "actions",
+      "duration",
+      "size",
+    ];
+    appearance.songListHiddenColumns = ["album", "genre", "size", "index", "actions"];
+    await wrapper.vm.$nextTick();
+    const header = wrapper.get("[data-song-header]");
+    const row = wrapper.get("[data-song-item]");
+    expect(header.findAll("[data-song-column]")).toHaveLength(3);
+    expect(row.findAll("[data-song-column]")).toHaveLength(3);
+    for (const [column, position] of [
+      ["year", 1],
+      ["title", 2],
+      ["duration", 3],
+    ] as const) {
+      expect(header.get(`[data-song-column="${column}"]`).attributes("style")).toContain(
+        `grid-column: ${position}`,
+      );
+      expect(row.get(`[data-song-column="${column}"]`).attributes("style")).toBe(
+        header.get(`[data-song-column="${column}"]`).attributes("style"),
+      );
+    }
+    expect(header.attributes("style")).toBe(row.attributes("style"));
+    wrapper.unmount();
+  });
+
+  it("keeps title visible when every optional column is hidden", async () => {
+    appearance.songListHiddenColumns = [...SONG_LIST_COLUMNS];
+    const wrapper = mountList();
+    expect(wrapper.get("[data-song-header]").element.children).toHaveLength(1);
+    expect(wrapper.get("[data-song-item]").element.children).toHaveLength(1);
+    expect(wrapper.get("[data-song-item]").text()).toContain("Test Song");
+    wrapper.unmount();
+  });
+
   it("never renders obsolete VIP or paid EP labels", () => {
     const wrapper = mountList({
       items: [

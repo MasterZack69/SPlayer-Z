@@ -1333,6 +1333,14 @@
       "label": "歌单显示封面",
       "description": "侧边栏的歌单项以歌单封面替代默认图标"
     },
+    "songListColumns": {
+      "label": "歌曲列表列",
+      "description": "选择显示的列及其顺序",
+      "hint": "拖动手柄或使用上下方向键调整顺序。标题始终显示。",
+      "index": "序号",
+      "reorder": "调整{column}顺序",
+      "required": "必选"
+    },
     "sidebarCustomize": {
       "label": "自定义侧边栏",
       "description": "调整侧边栏导航项的分组、顺序与显示",

@@ -2,6 +2,11 @@
 import type { Artist, PlaybackContext, Track, TrackSource } from "@shared/types/player";
 import type { CollectionType } from "@/types/collection";
 import type { SortField, SortOrder, SongListSortKey, SongListSortPreference } from "@/types/list";
+import {
+  SONG_LIST_COLUMNS,
+  SONG_LIST_COLUMN_WIDTHS,
+  type SongListColumn,
+} from "@/utils/songListColumns";
 import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { useSettingsStore } from "@/stores/settings";
@@ -85,20 +90,6 @@ const props = withDefaults(
   },
 );
 
-/** Share exact grid tracks between the header and every virtualized row. */
-const columnStyle = computed(() => ({
-  "--song-list-columns": [
-    ...(props.showIndex ? ["2rem"] : []),
-    "minmax(0, 1.5fr)",
-    ...(props.showAlbum ? ["minmax(0, 1fr)"] : []),
-    ...(props.showGenre ? ["minmax(0, 0.7fr)"] : []),
-    "4rem",
-    "3rem",
-    ...(props.showDuration ? ["4rem"] : []),
-    ...(props.showSize ? ["4.5rem"] : []),
-  ].join(" "),
-}));
-
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
@@ -106,6 +97,58 @@ const media = useMediaStore();
 const status = useStatusStore();
 const settings = useSettingsStore();
 const fav = useFavorite();
+
+const visibleColumns = computed(() => {
+  const available: Record<SongListColumn, boolean> = {
+    index: props.showIndex,
+    title: true,
+    album: props.showAlbum,
+    genre: props.showGenre,
+    year: true,
+    actions: true,
+    duration: props.showDuration,
+    size: props.showSize,
+  };
+  const hidden = settings.appearance.songListHiddenColumns ?? [];
+  return (settings.appearance.songListColumnOrder ?? SONG_LIST_COLUMNS).filter(
+    (column) => available[column] && (column === "title" || !hidden.includes(column)),
+  );
+});
+
+/** Check whether a column is enabled for this page and the saved layout.
+ * @param column - Built-in column key.
+ */
+const isColumnVisible = (column: SongListColumn): boolean => visibleColumns.value.includes(column);
+
+/** Position a cell on the same grid track as its header.
+ * @param column - Built-in column key.
+ */
+const cellStyle = (column: SongListColumn) => ({
+  gridColumn: visibleColumns.value.indexOf(column) + 1,
+  gridRow: 1,
+});
+
+const columnStyle = computed(() => ({
+  "--song-list-columns": visibleColumns.value
+    .map((column) => SONG_LIST_COLUMN_WIDTHS[column])
+    .join(" "),
+}));
+const minimumWidth = computed(() => {
+  const widths: Record<SongListColumn, number> = {
+    index: 32,
+    title: 180,
+    album: 140,
+    genre: 100,
+    year: 64,
+    actions: 48,
+    duration: 64,
+    size: 72,
+  };
+  const hiddenWidth = SONG_LIST_COLUMNS.filter(
+    (column) => !visibleColumns.value.includes(column),
+  ).reduce((total, column) => total + widths[column] + 12, 0);
+  return `${Math.max(240, 680 - hiddenWidth)}px`;
+});
 
 const { isFloatingBar: isFloatingPlayerBar, PLAYER_BAR_GAP } = useFloatingPlayerBar();
 
@@ -414,7 +457,7 @@ defineExpose({
 <template>
   <div class="relative h-full" @contextmenu.capture="onListContextMenu">
     <div class="h-full overflow-x-auto overflow-y-hidden" data-song-scroll>
-      <div class="h-full min-w-[680px]">
+      <div class="h-full" :style="{ minWidth: minimumWidth }">
         <SContextMenu :items="contextMenuItems" @select="onContextMenu">
           <template #header>
             <div v-if="contextTrack">
@@ -551,10 +594,20 @@ defineExpose({
                   :style="columnStyle"
                   class="song-list-columns mx-3 h-10 border-2 border-solid border-transparent text-sm text-on-surface-variant/60"
                 >
-                  <div v-if="showIndex" class="w-8 shrink-0 flex items-center justify-center">
+                  <div
+                    v-if="isColumnVisible('index')"
+                    class="w-8 shrink-0 flex items-center justify-center"
+                    data-song-column="index"
+                    :style="cellStyle('index')"
+                  >
                     <span>#</span>
                   </div>
-                  <div class="flex-1 min-w-0">
+                  <div
+                    v-if="isColumnVisible('title')"
+                    class="flex-1 min-w-0"
+                    data-song-column="title"
+                    :style="cellStyle('title')"
+                  >
                     <SPopover
                       v-if="enableSort"
                       :side-offset="6"
@@ -609,16 +662,52 @@ defineExpose({
                       {{ t("songList.title") }}
                     </div>
                   </div>
-                  <div v-if="showAlbum" class="flex-1 min-w-0">{{ t("songList.album") }}</div>
-                  <div v-if="showGenre" class="min-w-0 truncate">{{ t("songList.genre") }}</div>
-                  <div class="min-w-0 truncate">{{ t("year.singular") }}</div>
-                  <div class="min-w-0 truncate text-center text-xs leading-6">
+                  <div
+                    v-if="isColumnVisible('album')"
+                    class="flex-1 min-w-0"
+                    data-song-column="album"
+                    :style="cellStyle('album')"
+                  >
+                    {{ t("songList.album") }}
+                  </div>
+                  <div
+                    v-if="isColumnVisible('genre')"
+                    class="min-w-0 truncate"
+                    data-song-column="genre"
+                    :style="cellStyle('genre')"
+                  >
+                    {{ t("songList.genre") }}
+                  </div>
+                  <div
+                    v-if="isColumnVisible('year')"
+                    class="min-w-0 truncate"
+                    data-song-column="year"
+                    :style="cellStyle('year')"
+                  >
+                    {{ t("year.singular") }}
+                  </div>
+                  <div
+                    v-if="isColumnVisible('actions')"
+                    class="min-w-0 truncate text-center text-xs leading-6"
+                    data-song-column="actions"
+                    :style="cellStyle('actions')"
+                  >
                     {{ t("songList.actions") }}
                   </div>
-                  <div v-if="showDuration" class="min-w-0 truncate text-center">
+                  <div
+                    v-if="isColumnVisible('duration')"
+                    class="min-w-0 truncate text-center"
+                    data-song-column="duration"
+                    :style="cellStyle('duration')"
+                  >
                     {{ t("songList.duration") }}
                   </div>
-                  <div v-if="showSize" class="min-w-0 truncate text-center">
+                  <div
+                    v-if="isColumnVisible('size')"
+                    class="min-w-0 truncate text-center"
+                    data-song-column="size"
+                    :style="cellStyle('size')"
+                  >
                     {{ t("songList.size") }}
                   </div>
                 </div>
@@ -638,7 +727,7 @@ defineExpose({
                 >
                   <!-- 序号 / 多选 -->
                   <div
-                    v-if="showIndex"
+                    v-if="isColumnVisible('index')"
                     class="w-8 shrink-0 flex items-center justify-center relative"
                     :class="
                       batch.active.value
@@ -647,6 +736,8 @@ defineExpose({
                           ? 'text-primary'
                           : 'text-on-surface-variant'
                     "
+                    data-song-column="index"
+                    :style="cellStyle('index')"
                     @click.stop="
                       batch.active.value
                         ? batch.toggle(item.id)
@@ -687,7 +778,12 @@ defineExpose({
                     </template>
                   </div>
                   <!-- 信息 -->
-                  <div class="flex-1 min-w-0 flex items-center gap-3">
+                  <div
+                    v-if="isColumnVisible('title')"
+                    class="flex-1 min-w-0 flex items-center gap-3"
+                    data-song-column="title"
+                    :style="cellStyle('title')"
+                  >
                     <SImg
                       :src="item.cover"
                       :class="[
@@ -769,10 +865,12 @@ defineExpose({
                   </div>
                   <!-- 专辑 -->
                   <div
-                    v-if="showAlbum"
+                    v-if="isColumnVisible('album')"
                     :title="item.album?.name"
                     class="flex-1 min-w-0 truncate text-sm"
                     :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
+                    data-song-column="album"
+                    :style="cellStyle('album')"
                   >
                     <span
                       class="transition-opacity"
@@ -786,10 +884,12 @@ defineExpose({
                   </div>
                   <!-- 流派 -->
                   <div
-                    v-if="showGenre"
+                    v-if="isColumnVisible('genre')"
                     :title="trackGenres(item).join(' / ')"
                     class="min-w-0 truncate text-sm"
                     :class="playingId === item.id ? 'text-primary/70' : 'text-on-surface'"
+                    data-song-column="genre"
+                    :style="cellStyle('genre')"
                   >
                     <template v-if="trackGenres(item).length">
                       <template v-for="(genre, gi) in trackGenres(item)" :key="genre">
@@ -822,7 +922,12 @@ defineExpose({
                       {{ t("genre.unknown") }}
                     </button>
                   </div>
-                  <div class="min-w-0 truncate text-sm tabular-nums text-on-surface-variant">
+                  <div
+                    v-if="isColumnVisible('year')"
+                    class="min-w-0 truncate text-sm tabular-nums text-on-surface-variant"
+                    data-song-column="year"
+                    :style="cellStyle('year')"
+                  >
                     <button
                       type="button"
                       data-year-link
@@ -842,8 +947,10 @@ defineExpose({
                   </div>
                   <!-- 红心：批量模式下隐藏，其余始终显示 -->
                   <div
-                    v-if="!batch.active.value"
+                    v-if="isColumnVisible('actions') && !batch.active.value"
                     class="justify-self-center flex items-center justify-center"
+                    data-song-column="actions"
+                    :style="cellStyle('actions')"
                     @click.stop
                   >
                     <SButton
@@ -863,20 +970,29 @@ defineExpose({
                       </template>
                     </SButton>
                   </div>
-                  <div v-else class="justify-self-center" />
+                  <div
+                    v-else-if="isColumnVisible('actions')"
+                    class="justify-self-center"
+                    data-song-column="actions"
+                    :style="cellStyle('actions')"
+                  />
                   <!-- 时长 -->
                   <div
-                    v-if="showDuration"
+                    v-if="isColumnVisible('duration')"
                     class="min-w-0 truncate text-center text-sm tabular-nums"
                     :class="playingId === item.id ? 'text-primary/60' : 'text-on-surface-variant'"
+                    data-song-column="duration"
+                    :style="cellStyle('duration')"
                   >
                     {{ formatTime(item.duration) }}
                   </div>
                   <!-- 文件大小 -->
                   <div
-                    v-if="showSize"
+                    v-if="isColumnVisible('size')"
                     class="min-w-0 truncate text-center text-sm tabular-nums"
                     :class="playingId === item.id ? 'text-primary/60' : 'text-on-surface-variant'"
+                    data-song-column="size"
+                    :style="cellStyle('size')"
                   >
                     {{ item.fileSize ? formatFileSize(item.fileSize) : "—" }}
                   </div>

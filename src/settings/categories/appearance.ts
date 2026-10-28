@@ -4,6 +4,7 @@ import { useThemeStore } from "@/stores/theme";
 import FontConfig from "@/components/settings/custom/FontConfig.vue";
 import BackgroundImagePicker from "@/components/settings/custom/BackgroundImagePicker.vue";
 import SidebarCustomizeConfig from "@/components/settings/custom/SidebarCustomizeConfig.vue";
+import SongListColumnsConfig from "@/components/settings/custom/SongListColumnsConfig.vue";
 import IconLucidePalette from "~icons/lucide/palette";
 
 const appearanceCategory: SettingCategory = {
@@ -147,6 +148,11 @@ const appearanceCategory: SettingCategory = {
             { value: "compact", labelKey: "settings.songListStyle.compact" },
           ],
           defaultValue: "comfortable",
+        },
+        {
+          key: "songListColumns",
+          type: "custom",
+          component: SongListColumnsConfig,
         },
         {
           key: "sidebarCollapsed",

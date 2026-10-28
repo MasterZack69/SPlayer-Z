@@ -1,3 +1,4 @@
+import type { SongListColumn } from "@/utils/songListColumns";
 import type { LyricFormat } from "@shared/types/lyrics";
 import { DEFAULT_LYRIC_FORMAT_ORDER as DEFAULT_LYRIC_FORMAT_ORDER_SHARED } from "@shared/types/lyrics";
 import type { Platform } from "@shared/types/platform";
@@ -267,6 +268,9 @@ export interface PlayerSettings {
 export interface AppearanceSettings {
   /** Song row density; comfortable preserves the original layout. */
   songListStyle: SongListStyle;
+  /** Shared song-table column order and visibility. */
+  songListColumnOrder: SongListColumn[];
+  songListHiddenColumns: SongListColumn[];
   /** 布局模式 */
   layoutMode: LayoutMode;
   /** 路由切换动效 */

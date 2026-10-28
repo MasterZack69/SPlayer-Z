@@ -58,6 +58,14 @@ Local PCM preloading and crossfade remain available without a song cache. Stream
 
 About identifies MasterZack69 as maintainer and acknowledges upstream SPlayer-Next contributors. Application updates are installed manually, not checked for in the background.
 
+## Song-list columns
+
+Open **Appearance → Song List Columns → Configure** to hide or reorder the built-in
+columns. Drag a handle, or focus it and use the up/down arrow keys. Title remains
+visible. Confirm saves the layout across song lists and app restarts; Cancel discards
+changes. Reset restores the default order and visibility in the editor until confirmed.
+Pages may still omit columns that do not apply to their content. There are no custom columns.
+
 ## Song-list density
 
 Choose **Appearance → Song List Style → Compact** for smaller song rows and covers.

@@ -1,3 +1,8 @@
+import {
+  SONG_LIST_COLUMNS,
+  normalizeSongListColumnOrder,
+  normalizeSongListHiddenColumns,
+} from "@/utils/songListColumns";
 import type {
   PlayerSettings,
   LyricSettings,
@@ -152,6 +157,8 @@ export const useSettingsStore = defineStore(
     const appearance = reactive<AppearanceSettings>({
       layoutMode: "default",
       songListStyle: "comfortable",
+      songListColumnOrder: [...SONG_LIST_COLUMNS],
+      songListHiddenColumns: [],
       routeTransition: "fade",
       seamlessTransition: false,
       reduceMotion: false,
@@ -378,6 +385,12 @@ export const useSettingsStore = defineStore(
         }
         lyric.lyricSourceOrder = reconcileOrder(lyric.lyricSourceOrder, ALL_PLATFORMS);
         lyric.lyricFormatOrder = reconcileOrder(lyric.lyricFormatOrder, DEFAULT_LYRIC_FORMAT_ORDER);
+        appearance.songListColumnOrder = normalizeSongListColumnOrder(
+          appearance.songListColumnOrder,
+        );
+        appearance.songListHiddenColumns = normalizeSongListHiddenColumns(
+          appearance.songListHiddenColumns,
+        );
         appearance.sidebarNavGroups = reconcileNavGroups(appearance.sidebarNavGroups ?? []);
         appearance.sidebarNavPlacementFixes = applyNavPlacementFixes(
           appearance.sidebarNavGroups,

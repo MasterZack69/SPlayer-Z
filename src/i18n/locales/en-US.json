@@ -1339,6 +1339,14 @@
       "label": "Show Playlist Covers",
       "description": "Show playlist covers instead of default icons in the sidebar"
     },
+    "songListColumns": {
+      "label": "Song List Columns",
+      "description": "Choose which columns appear and their order",
+      "hint": "Drag handles or use the up and down arrow keys to reorder. Title is always shown.",
+      "index": "Track Number",
+      "reorder": "Reorder {column}",
+      "required": "Required"
+    },
     "sidebarCustomize": {
       "label": "Customize Sidebar",
       "description": "Group, reorder and toggle sidebar navigation items",
