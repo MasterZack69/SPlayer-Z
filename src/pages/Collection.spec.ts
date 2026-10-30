@@ -82,6 +82,12 @@ const mountPage = async () => {
       plugins: [createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
       config: { warnHandler: () => {} },
       stubs: {
+        SDropdownMenu: {
+          name: "SDropdownMenu",
+          props: ["items"],
+          emits: ["select"],
+          template: "<div />",
+        },
         SButton: { template: "<button><slot /></button>" },
         SDialog: {
           props: ["open"],
@@ -184,4 +190,37 @@ it("plays album discs and tagged track numbers in the same order as the song lis
     "bonus",
   ]);
   wrapper.unmount();
+});
+
+describe("collection Shuffle All", () => {
+  it.each(["album", "genre", "playlist"])("uses the %s tracks and context", async (type) => {
+    fixture.type = type;
+    fixture.years = [2023, 2024];
+    const wrapper = await mountPage();
+    const menu = wrapper.getComponent({ name: "SDropdownMenu" });
+    expect(menu.props("items")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "shuffleAll", label: "Shuffle All", disabled: false }),
+      ]),
+    );
+    menu.vm.$emit("select", "shuffleAll");
+    await flushPromises();
+    const { playFrom } = await import("@/core/player");
+    expect(playFrom).toHaveBeenLastCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ year: 2023 }),
+        expect.objectContaining({ year: 2024 }),
+      ]),
+      {
+        shuffle: true,
+        context: {
+          provider: "local",
+          originId: "test",
+          originType: type,
+          originName: "Test Album",
+        },
+      },
+    );
+    wrapper.unmount();
+  });
 });

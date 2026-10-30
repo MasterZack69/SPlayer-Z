@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShuffleAll } from "@/composables/useShuffleAll";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "Library" });
 
@@ -54,7 +55,10 @@ const scanPercent = computed(() => {
 // 目录管理弹窗
 const folderDialogOpen = ref(false);
 
+const { shuffleAllItem, shuffleAll } = useShuffleAll(tracks, playbackContext);
+
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
+  shuffleAllItem.value,
   { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
   { key: "folders", label: t("library.folders"), icon: IconFolderOpen, separator: true },
   {
@@ -67,6 +71,10 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => [
 
 // 更多菜单
 const handleMoreMenu = (key: string): void => {
+  if (key === "shuffleAll") {
+    void shuffleAll();
+    return;
+  }
   switch (key) {
     // 批量管理
     case "batchManage":

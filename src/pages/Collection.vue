@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShuffleAll } from "@/composables/useShuffleAll";
 import { useSettingsStore } from "@/stores/settings";
 import { trackYears, validYear } from "@shared/utils/year";
 import { usePageSearch } from "@/composables/usePageSearch";
@@ -199,10 +200,16 @@ const manage = usePlaylistManage(collection, {
 /** 更多菜单 */
 const editLabel = computed(() => t("collection.edit", { type: typeLabel.value }));
 
+const { shuffleAllItem, shuffleAll } = useShuffleAll(
+  () => collection.value?.tracks ?? [],
+  playbackContext,
+);
+
 const moreMenuItems = computed<DropdownMenuItem[]>(() => {
   const isOnline = source !== "local" && source !== "streaming";
   const isLocal = source === "local";
   const list: DropdownMenuItem[] = [
+    shuffleAllItem.value,
     { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
     { key: "edit", label: editLabel.value, icon: IconLucidePencil, show: manage.canManage.value },
     {
@@ -241,6 +248,10 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => {
 });
 
 const handleMoreMenu = (key: string) => {
+  if (key === "shuffleAll") {
+    void shuffleAll();
+    return;
+  }
   switch (key) {
     case "batchManage":
       songListRef.value?.enterBatch();

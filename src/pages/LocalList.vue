@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ListPlaybackActions from "@/components/list/ListPlaybackActions.vue";
 import { useBrowseSortStore } from "@/stores/browseSort";
 import type { BrowseSortKey, BrowseSortMode } from "@/types/list";
 import { useSettingsStore } from "@/stores/settings";
@@ -221,6 +222,16 @@ watch(
   <div class="flex flex-col h-full">
     <template v-if="unknownGenrePage">
       <h1 class="shrink-0 px-5 py-4 text-3xl font-bold">{{ t("genre.unknown") }}</h1>
+      <ListPlaybackActions
+        :items="unknownGenreTracks"
+        :context="{
+          provider: 'local',
+          originType: 'genre',
+          originId: unknownGenreId,
+          originName: t('genre.unknown'),
+        }"
+        class="px-5 pb-3"
+      />
       <div class="flex-1 min-h-0">
         <SongList
           :items="unknownGenreTracks"

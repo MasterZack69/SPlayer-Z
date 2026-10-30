@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShuffleAll } from "@/composables/useShuffleAll";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "Folders" });
 
@@ -35,7 +36,10 @@ const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 const createOpen = ref(false);
 
 /** 更多操作菜单 */
+const { shuffleAllItem, shuffleAll } = useShuffleAll(() => selectedTracks.value);
+
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
+  shuffleAllItem.value,
   {
     key: "createPlaylist",
     label: t("collection.create", { type: t("collection.playlist") }),
@@ -46,6 +50,10 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => [
 
 /** 处理更多操作 */
 const handleMore = (key: string): void => {
+  if (key === "shuffleAll") {
+    void shuffleAll();
+    return;
+  }
   if (key === "createPlaylist") createOpen.value = true;
   else if (key === "batchManage") songListRef.value?.enterBatch();
 };

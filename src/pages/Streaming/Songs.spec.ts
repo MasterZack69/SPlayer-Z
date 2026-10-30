@@ -52,13 +52,15 @@ it("收藏筛选随服务器状态更新，播放全部使用筛选后的歌曲"
             "zh-CN": {
               streaming: { favoritesOnly: "仅看收藏", empty: { noFavorites: "暂无收藏" } },
               search: { noResults: "没有匹配的结果" },
-              common: { playAll: "播放全部", search: "搜索" },
+              common: { playAll: "播放全部", shuffleAll: "随机播放全部", search: "搜索" },
+              collection: { context: { more: "更多" } },
             },
           },
         }),
       ],
       stubs: {
         SButton: { template: "<button><slot /></button>" },
+        SDropdownMenu: { props: ["items"], template: '<div><slot name="trigger" /></div>' },
         SInput: true,
         SongList: {
           props: ["items", "searchQuery"],
@@ -80,7 +82,7 @@ it("收藏筛选随服务器状态更新，播放全部使用筛选后的歌曲"
   await wrapper.get('[aria-pressed="false"]').trigger("click");
   expect(wrapper.get("[data-list]").text()).toBe("a");
   await wrapper.findAll("button")[0].trigger("click");
-  expect(state.play).toHaveBeenCalledWith([store.songs[0]]);
+  expect(state.play).toHaveBeenCalledWith([store.songs[0]], { context: undefined });
   store.songs = store.songs.map((item) => ({ ...item, favorite: false }));
   await nextTick();
   expect(wrapper.text()).toContain("暂无收藏");

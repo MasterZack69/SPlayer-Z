@@ -106,6 +106,7 @@ const setup = async (
         createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } }),
       ],
       stubs: {
+        ListPlaybackActions: true,
         CoverList,
         SSelect: { name: "SSelect", props: ["modelValue", "options"], template: "<div />" },
         SButton: true,

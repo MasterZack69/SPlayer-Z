@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useLibraryStore } from "@/stores/library";
 import { useStreamingStore } from "@/stores/streaming";
+import type { PlaybackContext } from "@shared/types/player";
+import ListPlaybackActions from "@/components/list/ListPlaybackActions.vue";
 import YearWheel from "@/components/list/YearWheel.vue";
 import { useBrowseSortStore } from "@/stores/browseSort";
 import { useYearBrowserStore } from "@/stores/yearBrowser";
@@ -65,6 +67,12 @@ const selectYear = (id: string): void => {
   void router.push({ name: "year", params: { year: id }, query: route.query });
 };
 
+const playbackContext = computed<PlaybackContext>(() => ({
+  originType: "page",
+  originId: `year:${selectedId.value}`,
+  originName: heading.value,
+}));
+
 const totalDuration = computed(() =>
   formatTime(songs.value.reduce((sum, track) => sum + track.duration, 0)),
 );
@@ -126,6 +134,11 @@ onMounted(load);
               {{ t("collection.totalDuration", { time: totalDuration }) }}
             </span>
           </div>
+          <ListPlaybackActions
+            :items="songs"
+            :context="playbackContext"
+            class="mt-3 justify-center"
+          />
         </header>
         <div
           :key="selectedId"
@@ -137,11 +150,7 @@ onMounted(load);
             :search-query="filter"
             enable-sort
             sort-key="years"
-            :playback-context="{
-              originType: 'page',
-              originId: `year:${selectedId}`,
-              originName: heading,
-            }"
+            :playback-context="playbackContext"
           />
         </div>
       </div>

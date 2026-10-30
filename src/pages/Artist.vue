@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShuffleAll } from "@/composables/useShuffleAll";
 import { usePageSearch } from "@/composables/usePageSearch";
 import { matchesSearch } from "@/utils/search/match";
 import type { PlaybackContext, TrackSource } from "@shared/types/player";
@@ -190,11 +191,21 @@ const searchQuery = usePageSearch();
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 
 /** 更多菜单 */
+const { shuffleAllItem, shuffleAll } = useShuffleAll(
+  () => artist.value?.tracks ?? [],
+  playbackContext,
+);
+
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
+  shuffleAllItem.value,
   { key: "batchManage", label: t("songList.batch.manage"), icon: IconLucideListChecks },
 ]);
 
 const handleMoreMenu = (key: string) => {
+  if (key === "shuffleAll") {
+    void shuffleAll();
+    return;
+  }
   if (key === "batchManage") songListRef.value?.enterBatch();
 };
 

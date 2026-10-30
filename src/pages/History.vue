@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShuffleAll } from "@/composables/useShuffleAll";
 defineOptions({ name: "History" });
 
 import type { PlaybackContext } from "@shared/types/player";
@@ -27,7 +28,10 @@ const handlePlayAll = (): void => {
 const clearConfirmOpen = ref(false);
 
 /** 更多菜单 */
+const { shuffleAllItem, shuffleAll } = useShuffleAll(() => history.tracks, playbackContext);
+
 const moreMenuItems = computed<DropdownMenuItem[]>(() => [
+  shuffleAllItem.value,
   {
     key: "clear",
     label: t("history.clear"),
@@ -36,6 +40,10 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => [
 ]);
 
 const handleMoreMenu = (key: string): void => {
+  if (key === "shuffleAll") {
+    void shuffleAll();
+    return;
+  }
   if (key === "clear") clearConfirmOpen.value = true;
 };
 

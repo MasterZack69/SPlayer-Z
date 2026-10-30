@@ -7,7 +7,7 @@ defineOptions({ name: "StreamingSongs" });
 
 import { useStreamingStore } from "@/stores/streaming";
 import SongList from "@/components/list/SongList.vue";
-import * as player from "@/core/player";
+import ListPlaybackActions from "@/components/list/ListPlaybackActions.vue";
 
 const { t } = useI18n();
 const streaming = useStreamingStore();
@@ -48,29 +48,12 @@ watch(isConnected, (v) => v && refresh());
 onMounted(() => {
   if (isConnected.value && songs.value.length === 0) refresh();
 });
-
-/** 播放当前筛选范围内的歌曲 */
-const handlePlayAll = (): void => {
-  if (visibleSongs.value.length === 0) return;
-  player.playFrom(visibleSongs.value);
-};
 </script>
 
 <template>
   <div class="flex flex-col h-full">
     <div class="shrink-0 px-5 py-2 flex items-center justify-between">
-      <SButton
-        type="primary"
-        variant="secondary"
-        round
-        :disabled="visibleSongs.length === 0"
-        @click="handlePlayAll"
-      >
-        <template #icon>
-          <IconLucidePlay />
-        </template>
-        {{ t("common.playAll") }}
-      </SButton>
+      <ListPlaybackActions :items="visibleSongs" />
       <div class="flex items-center gap-2">
         <SButton
           :type="favoritesOnly ? 'primary' : 'default'"

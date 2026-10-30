@@ -772,22 +772,24 @@ export const switchDevice = async (deviceId: string | null): Promise<void> => {
   }
 };
 
-/** 列表播放选项 */
+/** Starting position, source context, and optional mode for a new queue. */
 export interface PlayFromOptions {
-  /** 省略时顺序模式从首曲开始、随机模式随机选曲 */
+  /** Defaults to the first song, or a random song in shuffle mode. */
   startIndex?: number;
-  /** 队列中曲目共用的播放来源上下文 */
+  /** Playback source shared by entries in this queue. */
   context?: PlaybackContext;
+  /** Explicitly enable shuffle when replacing the queue. */
+  shuffle?: boolean;
 }
 
 /**
- * 设置队列并开始播放，未指定起点时遵循随机模式
- * @param items - 歌曲列表
- * @param options - 起始位置和播放来源选项
+ * Replace the queue and play from an explicit or mode-appropriate starting position.
+ * @param items - Tracks in their original list order.
+ * @param options - Starting position, source context, and optional shuffle override.
  */
 export const playFrom = async (
   items: readonly Track[],
-  { startIndex, context }: PlayFromOptions = {},
+  { startIndex, context, shuffle }: PlayFromOptions = {},
 ): Promise<void> => {
   if (items.length === 0) return;
   const status = useStatusStore();
@@ -795,6 +797,13 @@ export const playFrom = async (
   // 退出特殊模式
   status.heartMode = false;
   status.fmMode = false;
+  if (shuffle !== undefined) {
+    const mode = shuffle ? "on" : "off";
+    if (status.shuffleMode !== mode) {
+      status.shuffleMode = mode;
+      syncPlayMode();
+    }
+  }
   const start =
     startIndex ?? (status.shuffleMode === "on" ? Math.floor(Math.random() * items.length) : 0);
   const idx = Math.max(0, Math.min(start, items.length - 1));

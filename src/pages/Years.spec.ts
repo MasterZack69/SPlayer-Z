@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({ library: null as unknown, streaming: null as u
 vi.mock("@/stores/settings", () => ({ useSettingsStore: () => ({ reducedMotion: true }) }));
 vi.mock("@/stores/library", () => ({ useLibraryStore: () => state.library }));
 vi.mock("@/stores/streaming", () => ({ useStreamingStore: () => state.streaming }));
+vi.mock("@/core/player", () => ({ playFrom: vi.fn() }));
 import Years from "./Years.vue";
 const song = (id: string, year?: number): Track => ({
   id,
@@ -52,6 +53,11 @@ const setup = async (pinia: Pinia = createPinia()) => {
         createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } }),
       ],
       stubs: {
+        ListPlaybackActions: {
+          name: "ListPlaybackActions",
+          props: ["items", "context"],
+          template: "<div data-playback-actions />",
+        },
         SSelect: {
           name: "SSelect",
           props: ["modelValue", "options"],
@@ -76,7 +82,7 @@ beforeEach(() => localStorage.clear());
 describe("Years browser", () => {
   it("keeps the text wheel beside the selected year songs across route changes", async () => {
     const { wrapper, router } = await setup();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+    expect(wrapper.findAll("[data-year-wheel] button").map((button) => button.text())).toEqual([
       "2024",
       "1999",
       "Unknown year",
@@ -84,7 +90,7 @@ describe("Years browser", () => {
     expect(wrapper.find("img").exists()).toBe(false);
     const wheel = wrapper.get("[data-year-wheel]").element;
     expect(wrapper.getComponent({ name: "SongList" }).props("items")).toHaveLength(2);
-    await wrapper.get("button").trigger("click");
+    await wrapper.get("[data-year-wheel] button").trigger("click");
     await flushPromises();
     expect(wrapper.get("h1").text()).toBe("Years");
     expect(wrapper.get("h2").text()).toBe("2024");
@@ -109,7 +115,9 @@ describe("Years browser", () => {
       { ...song("album-year"), source: "streaming", album: { name: "Album", year: 2024 } },
     );
     await flushPromises();
-    const unknown = wrapper.findAll("button").find((button) => button.text() === "Unknown year")!;
+    const unknown = wrapper
+      .findAll("[data-year-wheel] button")
+      .find((button) => button.text() === "Unknown year")!;
     await unknown.trigger("click");
     await flushPromises();
     expect(router.currentRoute.value.params.year).toBe("unknown");
@@ -126,7 +134,7 @@ describe("Years browser", () => {
     const { wrapper, router } = await setup();
     await router.replace({ name: "year-list", query: { filter: "newer" } });
     await flushPromises();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+    expect(wrapper.findAll("[data-year-wheel] button").map((button) => button.text())).toEqual([
       "2024",
       "1999",
       "Unknown year",
@@ -172,14 +180,14 @@ describe("year sorting and summaries", () => {
     ]);
     control.vm.$emit("update:modelValue", "asc");
     await flushPromises();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+    expect(wrapper.findAll("[data-year-wheel] button").map((button) => button.text())).toEqual([
       "1999",
       "2024",
       "Unknown year",
     ]);
     await router.replace({ name: "year-list", query: { filter: "1999" } });
     await flushPromises();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+    expect(wrapper.findAll("[data-year-wheel] button").map((button) => button.text())).toEqual([
       "1999",
       "2024",
       "Unknown year",
@@ -187,7 +195,7 @@ describe("year sorting and summaries", () => {
     await router.replace({ name: "year-list" });
     control.vm.$emit("update:modelValue", "desc");
     await flushPromises();
-    expect(wrapper.findAll("button").map((button) => button.text())).toEqual([
+    expect(wrapper.findAll("[data-year-wheel] button").map((button) => button.text())).toEqual([
       "2024",
       "1999",
       "Unknown year",
@@ -264,4 +272,31 @@ describe("year wheel session state", () => {
     expect(restarted.wrapper.getComponent({ name: "SSelect" }).props("modelValue")).toBe("asc");
     restarted.wrapper.unmount();
   });
+});
+
+it("scopes playback controls to the selected year, including unknown and empty years", async () => {
+  const { wrapper, router } = await setup();
+  const actions = () => wrapper.getComponent({ name: "ListPlaybackActions" });
+  expect(
+    actions()
+      .props("items")
+      .map((track: Track) => track.id),
+  ).toEqual(["newer", "remote"]);
+  expect(actions().props("context")).toEqual({
+    originType: "page",
+    originId: "year:2024",
+    originName: "2024",
+  });
+  await router.push({ name: "year", params: { year: "unknown" } });
+  await flushPromises();
+  expect(
+    actions()
+      .props("items")
+      .map((track: Track) => track.id),
+  ).toEqual(["unknown"]);
+  expect(actions().props("context").originId).toBe("year:unknown");
+  await router.push({ name: "year", params: { year: "1900" } });
+  await flushPromises();
+  expect(actions().props("items")).toEqual([]);
+  wrapper.unmount();
 });

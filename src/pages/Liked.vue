@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShuffleAll } from "@/composables/useShuffleAll";
 import { usePageSearch } from "@/composables/usePageSearch";
 defineOptions({ name: "Liked" });
 
@@ -45,8 +46,10 @@ onMounted(() => {
 const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 
 /** 更多菜单 */
+const { shuffleAllItem, shuffleAll } = useShuffleAll(currentTracks, playbackContext);
+
 const moreMenuItems = computed<DropdownMenuItem[]>(() => {
-  const items: DropdownMenuItem[] = [];
+  const items: DropdownMenuItem[] = [shuffleAllItem.value];
   items.push({
     key: "batch",
     label: t("songList.batch.manage"),
@@ -60,6 +63,10 @@ const moreMenuItems = computed<DropdownMenuItem[]>(() => {
  * @param key - 菜单项标识
  */
 const handleMoreMenu = (key: string): void => {
+  if (key === "shuffleAll") {
+    void shuffleAll();
+    return;
+  }
   if (key === "batch") songListRef.value?.enterBatch();
 };
 </script>

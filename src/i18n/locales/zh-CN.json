@@ -114,6 +114,7 @@
     "copied": "已复制",
     "copyFailed": "复制失败",
     "playAll": "播放全部",
+    "shuffleAll": "随机播放全部",
     "totalSongs": "共 {count} 首",
     "totalAlbums": "共 {count} 张专辑",
     "totalArtists": "共 {count} 位歌手",

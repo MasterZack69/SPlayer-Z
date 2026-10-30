@@ -615,6 +615,57 @@ describe("列表播放起点", () => {
     });
   });
 
+  it("enables Shuffle All on the new queue and preserves its source order", async () => {
+    const { useStatusStore } = await import("@/stores/status");
+    const queue = await import("@/stores/queue");
+    const { playFrom, setShuffleMode } = await import("./index");
+    const status = useStatusStore();
+    status.shuffleMode = "off";
+    status.heartMode = true;
+    status.fmMode = true;
+    queue.setQueue([{ ...tracks[0], id: "previous" }]);
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+
+    await playFrom(tracks, { shuffle: true, context });
+
+    expect(status.shuffleMode).toBe("on");
+    expect(status.heartMode).toBe(false);
+    expect(status.fmMode).toBe(false);
+    expect(window.api.player.syncPlayMode).toHaveBeenCalledOnce();
+    expect(status.currentTrack?.id).toBe("b");
+    expect(queue.queue.value[0].id).toBe("b");
+    expect(queue.queue.value.map(({ id }) => id).sort()).toEqual(["a", "b", "c"]);
+    expect(status.currentPlaybackContext).toEqual(context);
+    setShuffleMode("off");
+    expect(queue.queue.value.map(({ id }) => id)).toEqual(["a", "b", "c"]);
+    expect(status.currentTrack?.id).toBe("b");
+  });
+
+  it("does not change playback mode or queue for an empty Shuffle All", async () => {
+    const { useStatusStore } = await import("@/stores/status");
+    const queue = await import("@/stores/queue");
+    const { playFrom } = await import("./index");
+    const status = useStatusStore();
+    status.shuffleMode = "off";
+    queue.setQueue(tracks, context);
+    await playFrom([], { shuffle: true });
+    expect(status.shuffleMode).toBe("off");
+    expect(queue.queue.value.map(({ id }) => id)).toEqual(["a", "b", "c"]);
+    expect(window.api.player.syncPlayMode).not.toHaveBeenCalled();
+    expect(mocks.load).not.toHaveBeenCalled();
+  });
+
+  it("supports a single-song shuffled queue without re-syncing an unchanged mode", async () => {
+    const { useStatusStore } = await import("@/stores/status");
+    const { playFrom } = await import("./index");
+    const status = useStatusStore();
+    status.shuffleMode = "on";
+    await playFrom([tracks[0]], { shuffle: true, context });
+    expect(status.currentTrack?.id).toBe("a");
+    expect(status.currentPlaybackContext).toEqual(context);
+    expect(window.api.player.syncPlayMode).not.toHaveBeenCalled();
+  });
+
   it.each([
     [0, "a"],
     [0.5, "b"],
