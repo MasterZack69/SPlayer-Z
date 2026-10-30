@@ -7,16 +7,24 @@ const state = vi.hoisted(() => ({
   persisted: "",
   initial: "",
   writes: vi.fn(),
+  encryptFails: false,
+  decryptFails: false,
+  decryptCalls: vi.fn(),
 }));
 vi.mock("electron", () => ({
   safeStorage: {
     isAsyncEncryptionAvailable: async () => state.available,
     getSelectedStorageBackend: () => state.backend,
-    encryptStringAsync: async (text: string) => Buffer.from(`cipher:${text}`),
+    encryptStringAsync: async (text: string) => {
+      if (state.encryptFails) throw new Error("keyring locked");
+      return Buffer.from(`v11${text}`);
+    },
     decryptStringAsync: async (buffer: Buffer) => {
+      state.decryptCalls();
+      if (state.decryptFails) throw new Error("invalid ciphertext");
       await state.decryptGate;
-      if (!buffer.toString().startsWith("cipher:")) throw new Error("invalid ciphertext");
-      return { result: buffer.toString().slice(7), shouldReEncrypt: state.reEncrypt };
+      if (!buffer.toString().startsWith("v11")) throw new Error("invalid ciphertext");
+      return { result: buffer.toString().slice(3), shouldReEncrypt: state.reEncrypt };
     },
   },
 }));
@@ -39,6 +47,9 @@ vi.mock("@main/utils/paths", () => ({ configDir: "test-config" }));
 beforeEach(() => {
   vi.resetModules();
   state.available = true;
+  state.encryptFails = false;
+  state.decryptFails = false;
+  state.decryptCalls.mockClear();
   state.backend = "gnome_libsecret";
   state.decryptGate = undefined;
   state.reEncrypt = false;
@@ -89,7 +100,7 @@ describe("流媒体凭据存储", () => {
   it("安全存储不可用时拒绝保存，不写入 base64 Plain text", async () => {
     const service = await import("./config");
     state.available = false;
-    await expect(service.addStreamingServer(input)).rejects.toThrow("Enable the system keyring");
+    await expect(service.addStreamingServer(input)).rejects.toThrow("Unlock your desktop keyring");
     expect(service.getStreamingConfig().servers).toHaveLength(0);
     expect(state.writes).not.toHaveBeenCalled();
   });
@@ -118,7 +129,7 @@ describe("流媒体凭据存储", () => {
   it("兼容旧加密文件，历史Plain text回退要求重新输入而非错误解密", async () => {
     state.initial = JSON.stringify({
       servers: [
-        { ...input, id: "server", encryptedPassword: Buffer.from("cipher:old").toString("base64") },
+        { ...input, id: "server", encryptedPassword: Buffer.from("v11old").toString("base64") },
       ],
       activeServerId: "server",
     });
@@ -132,7 +143,7 @@ describe("流媒体凭据存储", () => {
       activeServerId: "server",
     });
     const legacy = await import("./config");
-    await expect(legacy.getStreamingServer("server")).rejects.toThrow("enter it again");
+    await expect(legacy.getStreamingServer("server")).rejects.toThrow("Re-enter the password");
     await legacy.updateStreamingServer("server", { ...input, password: "new" });
     expect((await legacy.getStreamingServer("server")).password).toBe("new");
   });
@@ -143,7 +154,7 @@ describe("asynchronous keyring safety", () => {
     const service = await import("./config");
     const server = await service.addStreamingServer(input);
     state.backend = "basic_text";
-    await expect(service.addStreamingServer(input)).rejects.toThrow("system keyring");
+    await expect(service.addStreamingServer(input)).rejects.toThrow("desktop keyring");
     await expect(service.getStreamingServer(server.id)).rejects.toThrow("system keyring");
   });
   it("does not rotate over a password edited while decryption is pending", async () => {
@@ -161,5 +172,112 @@ describe("asynchronous keyring safety", () => {
     state.decryptGate = undefined;
     state.reEncrypt = false;
     expect((await service.getStreamingServer(server.id)).password).toBe("replacement");
+  });
+});
+
+describe("credential format recovery", () => {
+  it.each([
+    Buffer.from("old plain password").toString("base64"),
+    `safe:v2:${Buffer.from("v11secret").toString("base64")}`,
+    "safe:v1:invalid!",
+    Buffer.from([0xf6, 0xb1, 0xb1, 0x41]).toString("base64"),
+    "safe:v1:",
+    `safe:v1:${Buffer.from("plaintext").toString("base64")}`,
+    Buffer.from("v10weak legacy storage").toString("base64"),
+  ])(
+    "rejects unsupported data without decrypting, rewriting or exposing it",
+    async (encryptedPassword) => {
+      state.initial = JSON.stringify({
+        servers: [{ ...input, id: "server", encryptedPassword }],
+        activeServerId: "server",
+      });
+      const service = await import("./config");
+      await expect(service.getStreamingServer("server")).rejects.toMatchObject({
+        message: expect.stringContaining("Re-enter the password"),
+      });
+      expect(state.decryptCalls).not.toHaveBeenCalled();
+      expect(state.writes).not.toHaveBeenCalled();
+      expect(service.getStreamingConfig().servers[0]).not.toHaveProperty("encryptedPassword");
+    },
+  );
+
+  it("migrates unprefixed Linux keyring ciphertext on successful access", async () => {
+    state.initial = JSON.stringify({
+      servers: [
+        { ...input, id: "server", encryptedPassword: Buffer.from("v11old").toString("base64") },
+      ],
+      activeServerId: "server",
+    });
+    const service = await import("./config");
+    expect((await service.getStreamingServer("server")).password).toBe("old");
+    expect(JSON.parse(state.persisted).servers[0].encryptedPassword).toBe(
+      `safe:v1:${Buffer.from("v11old").toString("base64")}`,
+    );
+    expect(state.writes).toHaveBeenCalledOnce();
+  });
+
+  it("preserves saved credentials when encryption fails during replacement", async () => {
+    const service = await import("./config");
+    const server = await service.addStreamingServer(input);
+    const before = state.persisted;
+    state.writes.mockClear();
+    state.encryptFails = true;
+    await expect(
+      service.updateStreamingServer(server.id, { ...input, password: "replacement" }),
+    ).rejects.toThrow("saved credentials have not been changed");
+    expect(state.persisted).toBe(before);
+    expect(state.writes).not.toHaveBeenCalled();
+    expect((await service.getStreamingServer(server.id)).password).toBe("secret");
+  });
+
+  it("keeps working credentials when an optional format rewrite fails", async () => {
+    state.initial = JSON.stringify({
+      servers: [
+        { ...input, id: "server", encryptedPassword: Buffer.from("v11old").toString("base64") },
+      ],
+      activeServerId: "server",
+    });
+    state.encryptFails = true;
+    const service = await import("./config");
+    expect((await service.getStreamingServer("server")).password).toBe("old");
+    expect(state.writes).not.toHaveBeenCalled();
+  });
+});
+
+describe("credential recovery paths", () => {
+  it("reports damaged versioned ciphertext without overwriting the record", async () => {
+    const service = await import("./config");
+    const server = await service.addStreamingServer(input);
+    const before = state.persisted;
+    state.decryptFails = true;
+    state.writes.mockClear();
+    await expect(service.getStreamingServer(server.id)).rejects.toThrow("local storage error");
+    expect(state.persisted).toBe(before);
+    expect(state.writes).not.toHaveBeenCalled();
+  });
+
+  it("can test an explicitly supplied password without reading or saving old credentials", async () => {
+    state.initial = JSON.stringify({
+      servers: [
+        {
+          ...input,
+          id: "server",
+          encryptedPassword: Buffer.from("old plaintext").toString("base64"),
+        },
+      ],
+      activeServerId: "server",
+    });
+    state.backend = "basic_text";
+    const service = await import("./config");
+    expect(
+      (await service.createTestStreamingServer({ ...input, password: "replacement" }, "server"))
+        .password,
+    ).toBe("replacement");
+    expect(state.decryptCalls).not.toHaveBeenCalled();
+    expect(state.writes).not.toHaveBeenCalled();
+    await expect(
+      service.updateStreamingServer("server", { ...input, password: "replacement" }),
+    ).rejects.toThrow("desktop keyring");
+    expect(state.writes).not.toHaveBeenCalled();
   });
 });

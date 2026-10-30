@@ -53,7 +53,7 @@ export interface StreamingServerInput {
 }
 
 /** 错误归类 */
-export type StreamingErrorCode = "auth" | "network" | "protocol" | "unknown";
+export type StreamingErrorCode = "auth" | "network" | "protocol" | "storage" | "unknown";
 
 /** 连通性测试结果 */
 export interface StreamingPingResult {

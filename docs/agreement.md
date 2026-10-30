@@ -47,7 +47,7 @@ The developers claim no ownership over media, metadata, lyrics, covers, or other
 
 ## 6. Accounts and credentials
 
-Credentials are used only for requested features and remain on your device. Streaming passwords and Last.fm session keys prefer operating-system `safeStorage`; when unavailable, the app stores them as Base64 and logs a warning. Base64 is not encryption. The developers do not upload these credentials to a server they control.
+Credentials are used only for requested features and remain on your device. Media-server passwords require operating-system `safeStorage` with a real desktop keyring; the app does not save them using a plaintext or Base64 fallback. Last.fm session keys use `safeStorage` when available and otherwise fall back to Base64 with a logged warning. Base64 is not encryption. The developers do not upload these credentials to a server they control.
 
 You are responsible for protecting accounts, devices, and credentials.
 

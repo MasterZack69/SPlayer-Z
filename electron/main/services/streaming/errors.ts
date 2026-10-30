@@ -1,3 +1,6 @@
+/** A local credential-storage failure, not a server authentication rejection. */
+export class StreamingCredentialError extends Error {}
+
 /** 保留 HTTP / Subsonic 状态，避免将权限拒绝或网络故障当成不支持端点 */
 export class StreamingRequestError extends Error {
   /**

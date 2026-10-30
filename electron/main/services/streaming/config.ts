@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { safeStorage } from "electron";
+import { StreamingCredentialError } from "./errors";
 import { writeFileSync as atomicWriteSync } from "atomically";
 import { configDir } from "@main/utils/paths";
 import { decryptSecret, encryptSecret, isSecureStorageAvailable } from "@main/utils/secureStorage";
@@ -60,34 +61,62 @@ const save = (): void => {
  */
 const encryptPassword = async (password: string): Promise<string> => {
   if (!password) return "";
-  if (
-    !(await isSecureStorageAvailable()) ||
-    safeStorage.getSelectedStorageBackend() === "basic_text"
-  ) {
-    throw new Error("Enable the system keyring before saving a media server password");
+  try {
+    if (
+      !(await isSecureStorageAvailable()) ||
+      safeStorage.getSelectedStorageBackend() === "basic_text"
+    ) {
+      throw new StreamingCredentialError(
+        "Secure credential storage is unavailable. Unlock your desktop keyring and restart SPlayer-Z in the same desktop session. If Electron selects basic_text, check your Secret Service/keyring integration. Passwords are not saved without a real keyring.",
+      );
+    }
+    return `safe:v1:${(await encryptSecret(password)).toString("base64")}`;
+  } catch (error) {
+    if (error instanceof StreamingCredentialError) throw error;
+    throw new StreamingCredentialError(
+      "Unable to securely save the media server password. Unlock your desktop keyring and try again. The saved credentials have not been changed.",
+    );
   }
-  return `safe:v1:${(await encryptSecret(password)).toString("base64")}`;
 };
 
-/** Decrypt credentials and rotate ciphertext without overwriting a concurrent password edit.
+/** Read supported credentials and migrate legacy ciphertext without overwriting a concurrent edit.
  * @param server - Persisted server owning the encrypted password.
  */
 const decryptPassword = async (server: PersistedServer): Promise<string> => {
   const encrypted = server.encryptedPassword;
   if (!encrypted) return "";
+  const versioned = encrypted.startsWith("safe:v1:");
+  const encoded = versioned ? encrypted.slice("safe:v1:".length) : encrypted;
+  const ciphertext = Buffer.from(encoded, "base64");
+  // Linux keyring ciphertext uses v11; reject plaintext before calling Chromium's decryptor.
   if (
-    !(await isSecureStorageAvailable()) ||
-    safeStorage.getSelectedStorageBackend() === "basic_text"
+    !encoded ||
+    ciphertext.toString("base64") !== encoded ||
+    ciphertext.length <= 3 ||
+    !ciphertext.subarray(0, 3).equals(Buffer.from("v11"))
   ) {
-    throw new Error("The system keyring is unavailable");
+    throw new StreamingCredentialError(
+      "Unsupported or legacy media server credential format. Re-enter the password in Settings → Media Sources and save it with an unlocked desktop keyring. The existing record has not been changed.",
+    );
   }
   let decrypted: Awaited<ReturnType<typeof decryptSecret>>;
   try {
-    decrypted = await decryptSecret(Buffer.from(encrypted.replace(/^safe:v1:/, ""), "base64"));
-  } catch {
-    throw new Error("Unable to decrypt the media server password; enter it again in Settings");
+    if (
+      !(await isSecureStorageAvailable()) ||
+      safeStorage.getSelectedStorageBackend() === "basic_text"
+    ) {
+      throw new StreamingCredentialError(
+        "The system keyring is unavailable. Unlock it and restart SPlayer-Z in the same desktop session. Electron's basic_text backend cannot read saved media server credentials.",
+      );
+    }
+    decrypted = await decryptSecret(ciphertext);
+  } catch (error) {
+    if (error instanceof StreamingCredentialError) throw error;
+    throw new StreamingCredentialError(
+      "Unable to decrypt the media server password. Unlock the original desktop keyring or re-enter the password in Settings → Media Sources. This is a local storage error, not a server authentication failure.",
+    );
   }
-  if (decrypted.needsReEncrypt) {
+  if (!versioned || decrypted.needsReEncrypt) {
     try {
       const rotated = `safe:v1:${(await encryptSecret(decrypted.plainText)).toString("base64")}`;
       if (getState().servers.includes(server) && server.encryptedPassword === encrypted) {

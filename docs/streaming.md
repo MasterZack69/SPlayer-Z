@@ -37,6 +37,10 @@ Synchronized metadata is not cached audio. Streaming playback does not save trac
 
 ## Security and diagnostics
 
-Prefer HTTPS, particularly outside a trusted local network. Passwords are stored using Electron `safeStorage` when available. If it is unavailable, streaming credentials fall back to Base64 and a local warning is logged. Base64 is not encryption; protect and back up the application data accordingly.
+Prefer HTTPS, particularly outside a trusted local network. Media-server passwords require Electron `safeStorage` backed by a real desktop keyring. The `basic_text` backend is rejected even if Electron reports encryption as available; there is no plaintext or Base64 fallback. Protect and back up the application data and keyring accordingly.
+
+If credential storage fails, unlock the keyring and restart SPlayer-Z in the same desktop session. A running keyring daemon alone does not guarantee that Electron can access it; check the desktop session’s Secret Service/keyring integration if Electron still selects `basic_text`. A successful connection test with a newly entered password does not guarantee that the keyring can save it.
+
+Older unprefixed Linux keyring ciphertext (`v11`) is decrypted and rewritten as `safe:v1:` on successful access. Old Base64 plaintext fallback, unsupported formats and damaged records require re-entering the password under **Settings → Media Sources**. They are never sent to the server as guessed passwords. Failed decryption or saving leaves the stored credentials intact. A failed format rewrite does not block playback with successfully decrypted credentials. Credential-storage errors are distinct from server authentication failures.
 
 For failures, check the URL, certificate, credentials, server permissions, synchronization state, and active server. Share redacted logs and server versions, never passwords or access tokens.

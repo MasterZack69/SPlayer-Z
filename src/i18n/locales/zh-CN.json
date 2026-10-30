@@ -423,6 +423,7 @@
     "hint": "连接到媒体源",
     "hintDetail": "添加个人流媒体服务器，配置内容全程加密",
     "errorCode": {
+      "storage": "凭据存储错误",
       "auth": "鉴权失败",
       "network": "网络错误",
       "protocol": "协议错误",
@@ -443,6 +444,7 @@
       "noResults": "没有找到内容"
     },
     "server": {
+      "secureStorageHint": "保存密码需要已解锁的桌面密钥环。连接测试成功不代表凭据一定能够保存。",
       "type": "类型",
       "name": "名称",
       "namePlaceholder": "用于识别的别名",

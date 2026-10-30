@@ -93,8 +93,8 @@ const validate = (inputData: StreamingServerInput): string | null => {
 };
 
 /**
- * 测试服务器连通性
- * @param inputData - 当前表单数据
+ * Test the server and display credential-storage or connection failures in the dialog.
+ * @param inputData - Current server form values.
  */
 const handleTest = async (inputData: StreamingServerInput): Promise<void> => {
   const invalid = validate(inputData);
@@ -103,18 +103,21 @@ const handleTest = async (inputData: StreamingServerInput): Promise<void> => {
     return;
   }
   formError.value = null;
+  testResult.value = null;
   testing.value = true;
   try {
     const res = await streaming.testConnection(inputData, editingId.value ?? undefined);
     testResult.value = res;
+  } catch (error) {
+    formError.value = error instanceof Error ? error.message : String(error);
   } finally {
     testing.value = false;
   }
 };
 
 /**
- * 提交表单保存服务器配置
- * @param inputData - 当前表单数据
+ * Save server settings without closing the dialog when credential storage fails.
+ * @param inputData - Current server form values.
  */
 const handleSubmit = async (inputData: StreamingServerInput): Promise<void> => {
   const invalid = validate(inputData);
@@ -123,6 +126,7 @@ const handleSubmit = async (inputData: StreamingServerInput): Promise<void> => {
     return;
   }
   formError.value = null;
+  testResult.value = null;
   submitting.value = true;
   try {
     if (editingId.value) {
@@ -139,6 +143,8 @@ const handleSubmit = async (inputData: StreamingServerInput): Promise<void> => {
       toast.success(t("streaming.server.added"));
     }
     dialogOpen.value = false;
+  } catch (error) {
+    formError.value = error instanceof Error ? error.message : String(error);
   } finally {
     submitting.value = false;
   }
@@ -299,7 +305,7 @@ const formatTime = (t?: number): string => (t ? new Date(t).toLocaleString() : "
     <SDialog
       v-model:open="dialogOpen"
       :title="editingId ? t('streaming.server.edit') : t('streaming.server.add')"
-      width="520px"
+      width="min(520px, calc(100vw - 32px))"
     >
       <div class="flex flex-col gap-3">
         <SFormItem :label="t('streaming.server.type')">
@@ -318,22 +324,34 @@ const formatTime = (t?: number): string => (t ? new Date(t).toLocaleString() : "
           <SInput v-model="form.password" type="password" autocomplete="new-password" />
         </SFormItem>
 
+        <p class="text-xs text-on-surface-variant/70">
+          {{ t("streaming.server.secureStorageHint") }}
+        </p>
+
         <!-- 测试结果展示 -->
         <div
           v-if="formError"
-          class="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-500 break-all"
+          role="alert"
+          class="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-500 break-words"
         >
           {{ formError }}
         </div>
         <div
           v-if="testResult"
-          class="rounded-md px-3 py-2 text-xs break-all"
+          :role="testResult.ok ? 'status' : 'alert'"
+          class="rounded-md px-3 py-2 text-xs break-words"
           :class="testResult.ok ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'"
         >
           <div class="flex items-center gap-2">
             <IconLucideCheck v-if="testResult.ok" class="size-3.5" />
             <span>
-              {{ testResult.ok ? t("streaming.server.testOk") : t("streaming.server.testFail") }}
+              {{
+                testResult.ok
+                  ? t("streaming.server.testOk")
+                  : testResult.code === "storage"
+                    ? t("streaming.errorCode.storage")
+                    : t("streaming.server.testFail")
+              }}
             </span>
             <span v-if="testResult.version" class="opacity-70">
               <template v-if="/^[0-9]/.test(testResult.version)">v</template>

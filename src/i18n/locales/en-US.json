@@ -423,6 +423,7 @@
     "hint": "Connect to Media Source",
     "hintDetail": "Add a personal streaming server with encrypted configuration",
     "errorCode": {
+      "storage": "Credential storage error",
       "auth": "Authentication failed",
       "network": "Network error",
       "protocol": "Protocol error",
@@ -443,6 +444,7 @@
       "noResults": "No results"
     },
     "server": {
+      "secureStorageHint": "Passwords require an unlocked desktop keyring. A successful connection test does not guarantee that credentials can be saved.",
       "type": "Type",
       "name": "Name",
       "namePlaceholder": "Friendly name for this server",
