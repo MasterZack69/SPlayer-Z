@@ -39,6 +39,7 @@ vi.mock("@/stores/media", async () => {
         track: { id: "song-1", cover: "thumb.jpg" },
         parsedLyric: [{}],
         lyricLoading: false,
+        lyricFormat: "lrc",
       }),
     }),
   };
@@ -74,6 +75,7 @@ vi.mock("@/composables/useWindowControls", () => ({
 vi.mock("../Lyrics/index.vue", () => ({
   default: {
     name: "Lyrics",
+    props: ["lyricFormat"],
     emits: ["ready", "seek"],
     template: "<div />",
     methods: { setCurrentTime: vi.fn(), resume: vi.fn(), freeze: vi.fn() },
@@ -182,6 +184,7 @@ describe("Now Playing initialization", () => {
     await vi.advanceTimersByTimeAsync(100);
     await flushPromises();
     expect(wrapper.findComponent(Lyrics).exists()).toBe(true);
+    expect(wrapper.findComponent(Lyrics).props("lyricFormat")).toBe("lrc");
     expect(wrapper.findComponent({ name: "BottomSpectrum" }).exists()).toBe(false);
     wrapper.findComponent(Lyrics).vm.$emit("ready");
     await nextTick();

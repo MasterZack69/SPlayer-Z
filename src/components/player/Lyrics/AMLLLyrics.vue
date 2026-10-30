@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LyricLine } from "@shared/types/lyrics";
+import type { LyricFormat, LyricLine } from "@shared/types/lyrics";
 import {
   LyricPlayer as CoreLyricPlayer,
   type LyricLineMouseEvent,
@@ -9,6 +9,7 @@ import { useStatusStore } from "@/stores/status";
 import { getCurrentTime } from "@/services/playback";
 import "@applemusic-like-lyrics/core/style.css";
 import LyricCredit from "./LyricCredit.vue";
+import { isWordTimedLrcBackground } from "@/utils/lyric/background";
 import {
   observeLyricMarkdown,
   prepareLyricMarkdown,
@@ -20,6 +21,8 @@ const props = withDefaults(
   defineProps<{
     /** 歌词行数据数组 */
     lyricLines: LyricLine[];
+    /** Format of the active lyric source. */
+    lyricFormat?: LyricFormat | null;
     /** 是否正在播放（默认 true） */
     playing?: boolean;
     /** 激活行在容器中的对齐位置 [0 ~ 1] */
@@ -129,7 +132,7 @@ const handleLineClick = (event: Event) => {
 };
 
 /**
- * Apply language tags and safe emphasis to the current AMLL lyric groups.
+ * Apply language tags, safe emphasis, and timed background styling to AMLL groups.
  * @param player - The initialized player whose DOM may have been rebuilt.
  */
 const processLyricLanguage = (player = playerRef.value) => {
@@ -144,6 +147,11 @@ const processLyricLanguage = (player = playerRef.value) => {
       const lyricLine = line?.getLine();
       const lyricLineElement = line?.getElement();
       if (!lyricLine || !lyricLineElement) continue;
+
+      lyricLineElement.classList.toggle(
+        "lp-word-timed-background",
+        isWordTimedLrcBackground(lyricLine, props.lyricFormat),
+      );
 
       const styles = (lyricLine as FormattedLyricLine).inlineStyles;
       if (styles) {
@@ -334,6 +342,12 @@ watch(processedLyrics, (newLyrics) => {
   }
 });
 
+// A source-format change must also remove styling from reused lyric elements.
+watch(
+  () => props.lyricFormat,
+  () => processLyricLanguage(),
+);
+
 // 监听歌词优化配置变动并更新 Core
 watch(
   () => ({
@@ -415,6 +429,11 @@ defineExpose({
   --amll-lp-color: var(--lp-color, #fff);
   width: 100%;
   height: 100%;
+}
+
+/* Keep word-timed LRC backing vocals readable without changing their word masks. */
+:deep([class*="lyricBgLine"].lp-word-timed-background) {
+  opacity: 0.8;
 }
 
 /* AMLL core 将副行字号硬编码为 max(.5em, 10px)，此处改用应用侧配置 */

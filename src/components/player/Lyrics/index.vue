@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LyricLine } from "@shared/types/lyrics";
+import type { LyricFormat, LyricLine } from "@shared/types/lyrics";
 import { useSettingsStore } from "@/stores/settings";
 import AMLLLyrics from "./AMLLLyrics.vue";
 import LyricCredit from "./LyricCredit.vue";
@@ -8,6 +8,8 @@ const props = withDefaults(
   defineProps<{
     /** Timed lyric lines. */
     lyricLines: LyricLine[];
+    /** Format of the active lyric source. */
+    lyricFormat?: LyricFormat | null;
     /** Initial playback position in milliseconds. */
     initialTime?: number;
     /** Whether playback is running. */
@@ -64,6 +66,7 @@ defineExpose({
   <AMLLLyrics
     ref="lyricPlayerRef"
     :lyric-lines="props.lyricLines"
+    :lyric-format="props.lyricFormat"
     :initial-time="props.initialTime"
     :playing="props.playing"
     :align-position="settings.lyric.alignPosition"

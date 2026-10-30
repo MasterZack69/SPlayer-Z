@@ -6,7 +6,7 @@ vi.mock("./LyricCredit.vue", () => ({ default: { template: "<span />" } }));
 vi.mock("./AMLLLyrics.vue", () => ({
   default: {
     name: "AMLLLyrics",
-    props: ["lyricLines", "playing", "initialTime"],
+    props: ["lyricLines", "lyricFormat", "playing", "initialTime"],
     template: '<div class="amll"><slot name="bottom" /></div>',
   },
 }));
@@ -17,12 +17,17 @@ vi.mock("@/stores/settings", () => ({
 describe("AMLL-only lyric playback", () => {
   it("uses AMLL even when an old saved engine preference is present", () => {
     const wrapper = mount(Lyrics, {
-      props: { lyricLines: [], playing: true, initialTime: 4200 },
+      props: { lyricLines: [], lyricFormat: "lrc", playing: true, initialTime: 4200 },
       slots: { bottom: "Credits" },
     });
     const amll = wrapper.findComponent({ name: "AMLLLyrics" });
     expect(amll.exists()).toBe(true);
-    expect(amll.props()).toMatchObject({ lyricLines: [], playing: true, initialTime: 4200 });
+    expect(amll.props()).toMatchObject({
+      lyricLines: [],
+      lyricFormat: "lrc",
+      playing: true,
+      initialTime: 4200,
+    });
     expect(wrapper.text()).toContain("Credits");
     expect(wrapper.find(".lp-root").exists()).toBe(false);
     amll.vm.$emit("seek", 1234);

@@ -361,6 +361,7 @@ const toggleLyric = (): void => {
                 v-if="lyricMounted && hasLyric"
                 ref="lyricRef"
                 :lyric-lines="media.parsedLyric"
+                :lyric-format="media.lyricFormat"
                 :initial-time="initialLyricTimeMs"
                 :playing="isPlaying"
                 @seek="handleLyricSeek"
