@@ -563,6 +563,7 @@
     "context": {
       "play": "Play",
       "playNext": "Play Next",
+      "addToQueue": "Add to Queue",
       "showInExplorer": "Open Location",
       "copyFile": "Copy Song File",
       "copyPath": "Copy File Path",
@@ -591,7 +592,8 @@
       "fileConfirm": "Permanently delete {count} files from disk? This cannot be undone"
     },
     "toast": {
-      "addedToNext": "Added to play next"
+      "addedToNext": "Added to play next",
+      "addedToQueue": "Added to queue"
     }
   },
   "quality": {

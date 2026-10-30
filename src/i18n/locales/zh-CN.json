@@ -563,6 +563,7 @@
     "context": {
       "play": "播放",
       "playNext": "下一首播放",
+      "addToQueue": "添加到队列",
       "showInExplorer": "打开文件位置",
       "copyFile": "复制歌曲文件",
       "copyPath": "复制文件路径",
@@ -591,7 +592,8 @@
       "fileConfirm": "确认从磁盘删除 {count} 个文件？此操作不可撤销"
     },
     "toast": {
-      "addedToNext": "已添加到下一曲播放"
+      "addedToNext": "已添加到下一曲播放",
+      "addedToQueue": "已添加到队列末尾"
     }
   },
   "quality": {

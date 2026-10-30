@@ -5,10 +5,12 @@ import type { CollectionType } from "@/types/collection";
 import type { DropdownMenuItem } from "@/components/ui/SDropdownMenu.vue";
 import * as player from "@/core/player";
 import { useStatusStore } from "@/stores/status";
+import { queueLength } from "@/stores/queue";
 import { useCopyText } from "@/composables/useCopyText";
 import { toast } from "@/composables/useToast";
 import { getTrackShareUrl } from "@/utils/format/shareUrl";
 import IconPlay from "~icons/lucide/play";
+import IconListStart from "~icons/lucide/list-start";
 import IconListEnd from "~icons/lucide/list-end";
 import IconListPlus from "~icons/lucide/list-plus";
 import IconFolderOpen from "~icons/lucide/folder-open";
@@ -44,9 +46,9 @@ export interface TrackMenuOptions {
 }
 
 /**
- * 歌曲操作菜单
- * @param track - 当前操作的歌曲
- * @param options - 配置项
+ * Build shared song actions for lists and player controls.
+ * @param track - Track currently targeted by the menu.
+ * @param options - Available actions and the track’s playback source.
  */
 export const useTrackMenu = (
   track: Ref<Track | null | undefined>,
@@ -73,6 +75,12 @@ export const useTrackMenu = (
       {
         key: "playNext",
         label: t("songList.context.playNext"),
+        icon: markRaw(IconListStart),
+        show: showPlay,
+      },
+      {
+        key: "addToQueue",
+        label: t("songList.context.addToQueue"),
         icon: markRaw(IconListEnd),
         show: showPlay,
       },
@@ -164,6 +172,7 @@ export const useTrackMenu = (
     return base;
   });
 
+  /** Dispatch the selected action using the latest track, queue length, and context. */
   const handleSelect = async (key: string): Promise<void> => {
     const current = track.value;
     if (!current) return;
@@ -174,6 +183,10 @@ export const useTrackMenu = (
       case "playNext":
         player.insertToQueue(current, undefined, options.playbackContext?.value);
         toast.success(t("songList.toast.addedToNext"));
+        break;
+      case "addToQueue":
+        player.insertToQueue(current, queueLength.value, options.playbackContext?.value);
+        toast.success(t("songList.toast.addedToQueue"));
         break;
       case "addToPlaylist":
         options.onAddToPlaylist?.(current);

@@ -113,3 +113,56 @@ describe("queue reordering during playback", () => {
     expect(queue.queueEntries.value[status.playIndex]).toBe(current);
   });
 });
+
+describe("single-song queue actions", () => {
+  it("keeps Play Next directly after the current entry", () => {
+    const next = { ...tracks[0], id: "next" };
+    player.insertToQueue(next);
+    expect(queue.queue.value.map((track) => track.id)).toEqual(["a", "b", "next", "c", "d"]);
+    expect(status.currentTrack?.id).toBe("b");
+    expect(status.position).toBe(42000);
+  });
+
+  it.each([false, true])("appends to the end without changing playback, shuffle=%s", (shuffle) => {
+    if (shuffle) {
+      queue.shuffleQueue(status.playIndex);
+      status.playIndex = 0;
+    }
+    const before = queue.queue.value.map((track) => track.id);
+    const context = { originType: "page" as const, originId: "library" };
+    const added = { ...tracks[0], id: "added" };
+    player.insertToQueue(added, queue.queueLength.value, context);
+    expect(queue.queue.value.map((track) => track.id)).toEqual([...before, "added"]);
+    expect(queue.queueEntries.value.at(-1)?.context).toEqual(context);
+    expect(status.currentTrack?.id).toBe("b");
+    expect(status.position).toBe(42000);
+    expect(status.state).toBe("playing");
+    expect(mocks.load).not.toHaveBeenCalled();
+    expect(mocks.play).not.toHaveBeenCalled();
+    if (shuffle) expect(queue.originalQueue.value?.at(-1)?.track.id).toBe("added");
+  });
+
+  it.each([0, 1, 3])(
+    "moves an existing song to the tail without duplicating or restarting it, index=%s",
+    (index) => {
+      player.insertToQueue(tracks[index], queue.queueLength.value);
+      expect(queue.queue.value.at(-1)?.id).toBe(tracks[index].id);
+      expect(queue.queue.value).toHaveLength(tracks.length);
+      expect(status.currentTrack?.id).toBe("b");
+      expect(status.position).toBe(42000);
+      expect(mocks.load).not.toHaveBeenCalled();
+      expect(mocks.play).not.toHaveBeenCalled();
+    },
+  );
+
+  it("adds to an empty queue without starting playback", () => {
+    queue.setQueue([]);
+    status.playIndex = -1;
+    status.state = "stopped";
+    player.insertToQueue(tracks[0], queue.queueLength.value);
+    expect(queue.queue.value).toEqual([tracks[0]]);
+    expect(status.playIndex).toBe(-1);
+    expect(status.state).toBe("stopped");
+    expect(mocks.load).not.toHaveBeenCalled();
+  });
+});
