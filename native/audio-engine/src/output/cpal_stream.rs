@@ -44,6 +44,8 @@ where
     T: SizedSample + Sample + FromSample<f32>,
 {
     let mut xruns = 0_u64;
+    let mut current_gain: Option<f32> = None;
+    let channels = usize::from(config.channels).max(1);
     let stream = {
         let _props_guard =
             super::pipewire::pipewire_props::Guard::set_stream_props(config.sample_rate);
@@ -52,14 +54,23 @@ where
             config,
             move |data: &mut [T], _| {
                 source.begin_callback();
-                let gain = f32::from_bits(volume.load(Ordering::Relaxed));
                 if stopped.load(Ordering::Acquire) {
                     data.fill(T::EQUILIBRIUM);
+                    current_gain = None;
                     return;
                 }
-                for output in data {
-                    *output = T::from_sample(source.next().unwrap_or(0.0) * gain);
+                // New streams start at the requested gain; only live changes need a ramp.
+                let target = f32::from_bits(volume.load(Ordering::Relaxed));
+                let from = current_gain.unwrap_or(target);
+                let step = (target - from) / data.len().div_ceil(channels).max(1) as f32;
+                let mut gain = from;
+                for frame in data.chunks_mut(channels) {
+                    gain += step;
+                    for output in frame {
+                        *output = T::from_sample(source.next().unwrap_or(0.0) * gain);
+                    }
                 }
+                current_gain = Some(target);
             },
             move |error| {
                 if !output_error_requires_rebuild(error.kind()) {

@@ -80,7 +80,18 @@ const loadCollection = async (): Promise<void> => {
       signal: myAbort.signal,
       onUpdate: (next) => {
         if (myAbort.signal.aborted) return;
-        collection.value = next;
+        collection.value =
+          type === "album" && next
+            ? {
+                ...next,
+                tracks: next.tracks.toSorted(
+                  (left, right) =>
+                    (left.disc ?? 1) - (right.disc ?? 1) ||
+                    (left.track ?? Number.MAX_SAFE_INTEGER) -
+                      (right.track ?? Number.MAX_SAFE_INTEGER),
+                ),
+              }
+            : next;
       },
     });
   } catch (err) {

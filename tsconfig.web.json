@@ -1,6 +1,14 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
-  "include": ["src/env.d.ts", "src/**/*", "src/**/*.vue", "electron/preload/*.d.ts", "shared/**/*"],
+  "include": [
+    "auto-imports.d.ts",
+    "components.d.ts",
+    "src/env.d.ts",
+    "src/**/*",
+    "src/**/*.vue",
+    "electron/preload/*.d.ts",
+    "shared/**/*"
+  ],
   "compilerOptions": {
     "tsBuildInfoFile": "node_modules/.cache/tsconfig.web.tsbuildinfo",
     "paths": {

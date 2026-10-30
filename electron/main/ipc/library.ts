@@ -1,5 +1,6 @@
 import { ipcMain, dialog } from "electron";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { store } from "@main/store";
 import {
   getAllTracks,
@@ -183,9 +184,21 @@ export const registerLibraryIpc = (): void => {
     }
     const dir = result.filePaths[0];
     const dirs = store.get("library.scanDirs") as string[];
-    if (dirs.includes(dir)) {
+    const canonical = await fs.realpath(dir);
+    const existing = await Promise.all(
+      dirs.map((value) => fs.realpath(value).catch(() => path.resolve(value))),
+    );
+    if (existing.includes(canonical)) {
       return { success: false, error: ErrorCode.SCAN_DIR_EXISTS };
     }
+    const nested = existing.some((value) => {
+      const relative = path.relative(value, canonical);
+      const reverse = path.relative(canonical, value);
+      return [relative, reverse].some(
+        (part) => part !== ".." && !part.startsWith(`..${path.sep}`) && !path.isAbsolute(part),
+      );
+    });
+    if (nested) return { success: false, error: ErrorCode.SCAN_DIR_NESTED };
     dirs.push(dir);
     store.set("library.scanDirs", dirs);
     libraryLog.info(`添加扫描目录: ${dir}`);

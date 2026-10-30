@@ -126,6 +126,10 @@ export interface Track {
   genres?: string[];
   /** 曲目编号 */
   track?: number;
+  /** One-based album disc number. Missing disc numbers belong to disc 1. */
+  disc?: number;
+  /** Optional disc subtitle from file or server metadata. */
+  discTitle?: string;
   /** 时长（毫秒） */
   duration: number;
   /** 封面 */

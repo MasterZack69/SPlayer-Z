@@ -276,8 +276,44 @@ const filteredItems = computed(() => {
   );
 });
 
+/** Preserve disc order and tagged track numbers across album searches. */
+const albumDiscs = computed(() => {
+  if (props.collectionType !== "album") return null;
+  const groups = Map.groupBy(props.items, (track) => track.disc ?? 1);
+  for (const tracks of groups.values()) {
+    tracks.sort(
+      (left, right) =>
+        (left.track ?? Number.MAX_SAFE_INTEGER) - (right.track ?? Number.MAX_SAFE_INTEGER),
+    );
+  }
+  if (groups.size < 2) return null;
+  const trackNumbers = new Map<string, number>();
+  for (const tracks of groups.values()) {
+    tracks.forEach((track, position) => trackNumbers.set(track.id, track.track ?? position + 1));
+  }
+  return { groups, trackNumbers };
+});
+
+/** Attach disc headings to real tracks so playback and selection indexes stay aligned. */
+const discLayout = computed(() => {
+  const discs = albumDiscs.value;
+  if (!discs || (props.enableSort && sortField.value !== "none")) return null;
+  const items: Track[] = [];
+  const headers = new Map<number, { disc: number; title?: string; count: number }>();
+  const visibleIds = new Set(filteredItems.value.map((track) => track.id));
+  for (const [disc, albumTracks] of [...discs.groups].sort(([left], [right]) => left - right)) {
+    const tracks = albumTracks.filter((track) => visibleIds.has(track.id));
+    if (!tracks.length) continue;
+    const title = albumTracks.find((track) => track.discTitle)?.discTitle;
+    headers.set(items.length, { disc, title, count: albumTracks.length });
+    items.push(...tracks);
+  }
+  return { items, headers };
+});
+
 /** 排序后列表 */
 const sortedItems = computed(() => {
+  if (discLayout.value) return discLayout.value.items;
   if (!props.enableSort || sortField.value === "none") return filteredItems.value;
   const result = [...filteredItems.value];
   const field = sortField.value;
@@ -352,6 +388,21 @@ const { deleteConfirmOpen, deleteDialogTitle, deleteDialogContent } = batch;
 
 /** Whether compact song rows are enabled */
 const isCompactList = computed(() => settings.appearance.songListStyle === "compact");
+
+/** Base height shared by both row layouts. */
+const rowHeight = computed(() => (isCompactList.value ? 56 : 88));
+
+/** Disc headings have a fixed height independent of row density. */
+const DISC_HEADER_HEIGHT = 40;
+
+/** Supply stable exact heights without measuring album headings in the DOM. */
+const discItemHeights = computed(() => {
+  const layout = discLayout.value;
+  if (!layout) return undefined;
+  return layout.items.map(
+    (_track, index) => rowHeight.value + (layout.headers.has(index) ? DISC_HEADER_HEIGHT : 0),
+  );
+});
 
 /**
  * Build song-row classes
@@ -477,10 +528,11 @@ defineExpose({
           <SVirtualList
             ref="virtualListRef"
             :items="sortedItems"
-            :item-height="isCompactList ? 56 : 88"
+            :item-height="rowHeight"
+            :item-fixed="!discLayout"
+            :exact-item-heights="discItemHeights"
             :padding-bottom="isFloatingPlayerBar ? PLAYER_BAR_GAP : 80"
             :get-item-key="(item: Track) => item.id"
-            item-fixed
             height="100%"
             @scroll="onScroll"
             @reach-bottom="emit('reachBottom')"
@@ -715,6 +767,32 @@ defineExpose({
             </template>
             <!-- 列表项 -->
             <template #default="{ item, index }: { item: Track; index: number }">
+              <div
+                v-if="discLayout?.headers.has(index)"
+                class="mx-6 h-10 flex items-center gap-3 text-on-surface-variant"
+                :class="!isCompactList && index > 0 ? 'pb-3' : ''"
+              >
+                <IconLucideDisc3
+                  class="size-4 translate-y-px shrink-0 text-primary/70"
+                  aria-hidden="true"
+                />
+                <h2
+                  class="min-w-0 flex-1 truncate text-sm font-semibold"
+                  :title="discLayout.headers.get(index)!.title"
+                >
+                  {{ t("collection.disc", { disc: discLayout.headers.get(index)!.disc }) }}
+                  <span
+                    v-if="discLayout.headers.get(index)!.title"
+                    class="font-normal text-on-surface-variant/70"
+                  >
+                    · {{ discLayout.headers.get(index)!.title }}
+                  </span>
+                </h2>
+                <span class="shrink-0 text-xs tabular-nums text-on-surface-variant/50">
+                  {{ t("common.totalSongs", { count: discLayout.headers.get(index)!.count }) }}
+                </span>
+              </div>
+
               <div :class="isCompactList ? 'px-3' : 'px-3 pb-3'">
                 <div
                   data-song-item
@@ -760,7 +838,7 @@ defineExpose({
                         v-if="playingId !== item.id"
                         class="text-sm font-bold tabular-nums group-hover:opacity-0 transition-opacity duration-300"
                       >
-                        {{ index + 1 }}
+                        {{ discLayout ? albumDiscs?.trackNumbers.get(item.id) : index + 1 }}
                       </span>
                       <IconLucideMusic
                         v-else

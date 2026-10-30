@@ -20,6 +20,8 @@ interface TrackRow {
   cue_end_ms: number | null;
   title: string;
   track?: number;
+  disc?: number | null;
+  disc_title?: string | null;
   year?: number | null;
   artists: string;
   album: string | null;
@@ -60,6 +62,8 @@ const rowToTrack = (row: TrackRow): Track => {
     cueEndMs: row.cue_end_ms ?? undefined,
     title: row.title,
     track: row.track ?? undefined,
+    disc: row.disc ?? undefined,
+    discTitle: row.disc_title ?? undefined,
     year: row.year ?? undefined,
     artists: JSON.parse(row.artists) as Artist[],
     album: row.album ? (JSON.parse(row.album) as Album) : undefined,
@@ -125,16 +129,16 @@ export interface FileRecord {
 export const getFileRecords = (): FileRecord[] => {
   return getDb()
     .prepare(
-      "SELECT path, COALESCE(file_mtime, 0) as mtime, file_size as size, year_scanned FROM tracks WHERE cue_path IS NULL",
+      "SELECT path, COALESCE(file_mtime, 0) as mtime, file_size as size, year_scanned, disc_scanned FROM tracks WHERE cue_path IS NULL",
     )
     .all()
     .map((row) => {
-      const record = row as FileRecord & { year_scanned: number };
+      const record = row as FileRecord & { year_scanned: number; disc_scanned: number };
       return {
         path: record.path,
         mtime: record.mtime,
         size: record.size,
-        forceScan: record.year_scanned === 0,
+        forceScan: record.year_scanned === 0 || record.disc_scanned === 0,
       };
     });
 };
@@ -149,6 +153,8 @@ export interface UpsertTrack {
   cueEndMs?: number;
   title: string;
   track?: number;
+  disc?: number | null;
+  discTitle?: string | null;
   year?: number | null;
   artists: Artist[];
   album?: Album;
@@ -174,9 +180,9 @@ export const upsertTracks = (tracks: UpsertTrack[]): void => {
   const d = getDb();
   const stmt = d.prepare(`
     INSERT OR REPLACE INTO tracks
-      (id, path, cue_path, cue_audio_path, cue_start_ms, cue_end_ms, title, track, year, year_scanned, artists, album, genres, duration, cover, codec, sample_rate, bit_rate, channels, bits_per_sample, file_size, file_mtime, file_ctime, scanned_at)
+      (id, path, cue_path, cue_audio_path, cue_start_ms, cue_end_ms, title, track, year, year_scanned, disc, disc_title, disc_scanned, artists, album, genres, duration, cover, codec, sample_rate, bit_rate, channels, bits_per_sample, file_size, file_mtime, file_ctime, scanned_at)
     VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const now = Date.now();
   const tx = d.transaction(() => {
@@ -191,6 +197,8 @@ export const upsertTracks = (tracks: UpsertTrack[]): void => {
         t.title,
         t.track ?? null,
         t.year ?? null,
+        t.disc ?? null,
+        t.discTitle ?? null,
         JSON.stringify(t.artists),
         t.album ? JSON.stringify(t.album) : null,
         JSON.stringify(t.genres ?? []),
@@ -493,11 +501,13 @@ export const getTracksByIds = (ids: string[]): Track[] => {
 };
 
 /** Return only pending CUE rows so unchanged sheets are backfilled once, too. */
-export const getPendingYearPaths = (): Set<string> =>
+export const getPendingMetadataPaths = (): Set<string> =>
   new Set(
     (
       getDb()
-        .prepare("SELECT path FROM tracks WHERE cue_path IS NOT NULL AND year_scanned = 0")
+        .prepare(
+          "SELECT path FROM tracks WHERE cue_path IS NOT NULL AND (year_scanned = 0 OR disc_scanned = 0)",
+        )
         .all() as { path: string }[]
     ).map((row) => row.path),
   );

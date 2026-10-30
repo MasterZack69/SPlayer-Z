@@ -212,3 +212,13 @@ it("forwards an explicit Music opt-out to both genre list and collection queries
   expect(api.getGenres).toHaveBeenCalledWith(false);
   expect(api.getGenreTracks).toHaveBeenCalledWith("Music", false);
 });
+
+it("never rolls back a rejected nested directory through the destructive remove handler", async () => {
+  const store = useLibraryStore();
+  await store.initialize();
+  api.addScanDir.mockResolvedValue({ success: false, error: "SCAN_DIR_NESTED" });
+  expect(await store.addScanDir()).toEqual({ success: false, error: "SCAN_DIR_NESTED" });
+  expect(api.removeScanDir).not.toHaveBeenCalled();
+  expect(api.scan).not.toHaveBeenCalled();
+  expect(store.scanDirs).toEqual([]);
+});

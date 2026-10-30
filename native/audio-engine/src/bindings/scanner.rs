@@ -34,6 +34,9 @@ pub struct JsScannedTrack {
     pub album: Option<String>,
     /// 音轨编号
     pub track: Option<u16>,
+    /// One-based disc number and optional disc subtitle.
+    pub disc: Option<u16>,
+    pub disc_title: Option<String>,
     /// 流派原始标签文本（可能包含多个流派，由 JS 侧解析拆分）
     pub genre: Option<String>,
     /// 时长（秒）
@@ -62,6 +65,8 @@ impl From<scanner::ScannedTrack> for JsScannedTrack {
             artist: track.artist,
             album: track.album,
             track: track.track,
+            disc: track.disc,
+            disc_title: track.disc_title,
             genre: track.genre,
             duration: track.duration,
             codec: track.codec,

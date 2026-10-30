@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 
 /** 当前 schema 版本 */
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 type TableInfoRow = { name: string };
 
@@ -74,6 +74,13 @@ export const migrate = (d: Database.Database): void => {
     if (!hasColumn(d, "tracks", "year_scanned"))
       d.exec("ALTER TABLE tracks ADD COLUMN year_scanned INTEGER NOT NULL DEFAULT 0");
     v = 7;
+  }
+
+  if (v < 8) {
+    d.exec("ALTER TABLE tracks ADD COLUMN disc INTEGER");
+    d.exec("ALTER TABLE tracks ADD COLUMN disc_title TEXT");
+    d.exec("ALTER TABLE tracks ADD COLUMN disc_scanned INTEGER NOT NULL DEFAULT 0");
+    v = 8;
   }
 
   // 版本无关部分

@@ -23,7 +23,7 @@ import {
   getAllTracks,
   getAlbumList,
   getFileRecords,
-  getPendingYearPaths,
+  getPendingMetadataPaths,
   upsertTracks,
   type UpsertTrack,
 } from "./queries";
@@ -85,6 +85,29 @@ describe("one-time year backfill", () => {
     expect(getAllTracks().find((track) => track.id === "a")?.year).toBe(1999);
     expect(getAlbumList()[0].years).toEqual([1999, 2024]);
     state.db!.exec("UPDATE tracks SET year_scanned = 0 WHERE id = 'cue'");
-    expect([...getPendingYearPaths()]).toEqual(["/cue.flac"]);
+    expect([...getPendingMetadataPaths()]).toEqual(["/cue.flac"]);
+  });
+});
+
+describe("disc metadata migration", () => {
+  it("backfills existing files and CUE rows once without changing their identities", () => {
+    migrate(adapter());
+    upsertTracks([track("old"), { ...track("cue"), cuePath: "/album.cue" }]);
+    state.db!.exec("UPDATE tracks SET disc_scanned = 0");
+    expect(getFileRecords()[0].forceScan).toBe(true);
+    expect([...getPendingMetadataPaths()]).toEqual(["/cue.flac"]);
+    upsertTracks([
+      { ...track("old"), track: 7, disc: 2, discTitle: "Bonus" },
+      { ...track("cue"), cuePath: "/album.cue" },
+    ]);
+    expect(getAllTracks().find((item) => item.id === "old")).toMatchObject({
+      track: 7,
+      disc: 2,
+      discTitle: "Bonus",
+    });
+    expect(getFileRecords()[0].forceScan).toBe(false);
+    expect([...getPendingMetadataPaths()]).toEqual([]);
+    migrate(adapter());
+    expect(getFileRecords()[0].forceScan).toBe(false);
   });
 });

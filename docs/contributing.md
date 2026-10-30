@@ -11,7 +11,7 @@ Use Conventional Commits with a single-line subject, for example `fix: preserve 
 ## Development setup
 
 Use Node 24 or newer and pnpm 12, following the exact pnpm version declared in
-`package.json` and its `packageManager` field. TypeScript remains on the existing 5.9 series.
+`package.json` and its `packageManager` field. TypeScript uses the 6 series; Vue single-file components are checked with `vue-tsc`.
 The packaged runtime is Electron 44; Nix pins Electron 44 and Node 24 as well. Install Node, pnpm, Rust/Cargo, Python, and the platform native build prerequisites. Linux/Nix users can start with `nix develop`; see [Native modules](native.md).
 
 ```bash

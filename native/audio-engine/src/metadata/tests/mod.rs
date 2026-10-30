@@ -44,3 +44,24 @@ fn year_falls_through_invalid_candidates_without_using_original_dates() {
         None
     );
 }
+
+#[test]
+fn disc_and_track_numbers_accept_totals_and_common_aliases() {
+    for key in ["disc", "DISCNUMBER", "disk", "TPOS", "WM/PartOfSet"] {
+        let tags = extract_tags(&HashMap::from([
+            (key.into(), " 02/03 ".into()),
+            ("TRACK".into(), "07/12".into()),
+            ("DISCSUBTITLE".into(), " Bonus Disc ".into()),
+        ]));
+        assert_eq!(tags.disc, Some(2));
+        assert_eq!(tags.track, Some(7));
+        assert_eq!(tags.disc_title.as_deref(), Some("Bonus Disc"));
+    }
+}
+
+#[test]
+fn invalid_disc_numbers_are_unknown() {
+    for value in ["", "0", "-1", "Disc 2", "2.5", "65536"] {
+        assert_eq!(extract_tags(&HashMap::from([("disc".into(), value.into())])).disc, None);
+    }
+}

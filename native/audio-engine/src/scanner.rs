@@ -40,6 +40,9 @@ pub struct ScannedTrack {
     pub artist: Option<String>,
     pub album: Option<String>,
     pub track: Option<u16>,
+    /// One-based disc number and optional disc subtitle.
+    pub disc: Option<u16>,
+    pub disc_title: Option<String>,
     /// 流派原始标签文本（可能包含多个流派）
     pub genre: Option<String>,
     pub duration: f64,
@@ -143,6 +146,8 @@ pub(crate) fn probe_fast(path: &str, cover_cache_dir: Option<&str>) -> Option<Sc
         artist: tags.artist,
         album: tags.album,
         track: tags.track,
+        disc: tags.disc,
+        disc_title: tags.disc_title,
         genre: tags.genre,
         duration,
         codec,

@@ -370,3 +370,77 @@ describe("Music genre display preference", () => {
     wrapper.unmount();
   });
 });
+
+describe("album disc sections", () => {
+  const albumTracks: Track[] = [
+    { ...track, id: "disc2-track7", disc: 2, track: 7, discTitle: "Bonus", title: "Finale" },
+    { ...track, id: "disc1-track3", track: 3, title: "Third" },
+    { ...track, id: "disc1-track1", disc: 1, track: 1, title: "Opening" },
+    { ...track, id: "disc2-track1", disc: 2, track: 1, title: "Encore" },
+  ];
+  it("groups discs and tagged track numbers without inserting fake playback rows", () => {
+    const wrapper = mountList({ items: albumTracks, collectionType: "album" });
+    expect(wrapper.findAll("h2").map((heading) => heading.text().replace(/\s+/g, " "))).toEqual([
+      "Disc 1",
+      "Disc 2 · Bonus",
+    ]);
+    expect(
+      wrapper
+        .findAll("[data-song-item]")
+        .map((row) => row.get('[data-song-column="index"]').text()),
+    ).toEqual(["1", "3", "1", "7"]);
+    expect(wrapper.findComponent(VirtualList).props("items")).toHaveLength(4);
+    wrapper.unmount();
+  });
+  it("retains disc title, original track number and album disc count when searching", () => {
+    const wrapper = mountList({
+      items: albumTracks,
+      collectionType: "album",
+      searchQuery: "Finale",
+    });
+    expect(wrapper.get("h2").text().replace(/\s+/g, " ")).toBe("Disc 2 · Bonus");
+    expect(wrapper.get('[data-song-item] [data-song-column="index"]').text()).toBe("7");
+    expect(wrapper.text()).toContain("2 songs");
+    wrapper.unmount();
+  });
+  it("does not add sections to non-album or single-disc lists", () => {
+    for (const props of [
+      { items: albumTracks },
+      { items: albumTracks.slice(0, 1), collectionType: "album" },
+    ]) {
+      const wrapper = mountList(props);
+      expect(wrapper.find("h2").exists()).toBe(false);
+      wrapper.unmount();
+    }
+  });
+  it("keeps double-click playback indexes aligned with real tracks across disc headings", async () => {
+    const wrapper = mountList({ items: albumTracks, collectionType: "album" });
+    await wrapper.findAll("[data-song-item]")[2].trigger("dblclick");
+    const player = await import("@/core/player");
+    expect(player.playFrom).toHaveBeenLastCalledWith(
+      [albumTracks[2], albumTracks[1], albumTracks[3], albumTracks[0]],
+      { startIndex: 2, context: undefined },
+    );
+    wrapper.unmount();
+  });
+  it("lets explicit sorting override disc grouping", async () => {
+    const wrapper = mountList({ items: albumTracks, collectionType: "album", enableSort: true });
+    await wrapper.findAllComponents(RadioGroup)[0].vm.$emit("update:value", "title");
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find("h2").exists()).toBe(false);
+    expect(
+      (wrapper.findComponent(VirtualList).props("items") ?? []).map((item: Track) => item.title),
+    ).toEqual(["Encore", "Finale", "Opening", "Third"]);
+    wrapper.unmount();
+  });
+  it("updates exact virtual heights when changing row density", async () => {
+    const wrapper = mountList({ items: albumTracks, collectionType: "album" });
+    expect(wrapper.findComponent(VirtualList).attributes("exact-item-heights")).toBe(
+      "128,88,128,88",
+    );
+    appearance.songListStyle = "compact";
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findComponent(VirtualList).attributes("exact-item-heights")).toBe("96,56,96,56");
+    wrapper.unmount();
+  });
+});

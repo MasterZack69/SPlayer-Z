@@ -147,7 +147,7 @@ const drawCovered = (
 };
 
 /**
- * 把选中歌词绘制成一张海报 PNG（自动解析当前封面）
+ * Render selected lyrics and the current cover as a PNG poster.
  * @param options - Track, lyric lines, background, and export font settings
  * @returns PNG Blob
  */
@@ -157,35 +157,44 @@ export const createLyricPoster = async (options: LyricPosterOptions): Promise<Bl
   const lyricFont = `${fonts.lyric ? `${fonts.lyric}, ` : ""}${globalFont}`;
 
   /**
-   * Resolve fonts by language, using the same font for measurement and drawing
-   * @param text - Original text, translation, or romanization
-   * @param style - Canvas font size and style
-   * @param language - Original language identified by the player
-   * @returns A canvas-compatible font descriptor
+   * Resolve the original language, detecting it only when no language was supplied.
+   * @param text - Original lyric text.
+   * @param language - Language already identified by the player.
+   * @returns Resolved lyric language.
+   */
+  const languageForText = (text: string, language?: LyricLanguage): LyricLanguage | undefined => {
+    if (language) return language;
+    const detected: LyricLine[] = [
+      {
+        words: [{ word: text, startTime: 0, endTime: 0 }],
+        translatedLyric: "",
+        romanLyric: "",
+        startTime: 0,
+        endTime: 0,
+        isBG: false,
+        isDuet: false,
+      },
+    ];
+    applyLyricLanguages(detected);
+    return detected[0].language;
+  };
+
+  /**
+   * Resolve one language-specific font for both measurement and drawing.
+   * @param text - Original, translated or romanized text.
+   * @param style - Canvas font size and weight.
+   * @param language - Original language identified by the player.
+   * @returns Canvas-compatible font descriptor.
    */
   const fontForText = (text: string, style: string, language?: LyricLanguage): string => {
-    if (!language) {
-      const detected: LyricLine[] = [
-        {
-          words: [{ word: text, startTime: 0, endTime: 0 }],
-          translatedLyric: "",
-          romanLyric: "",
-          startTime: 0,
-          endTime: 0,
-          isBG: false,
-          isDuet: false,
-        },
-      ];
-      applyLyricLanguages(detected);
-      language = detected[0].language;
-    }
-    const family = language
+    const resolvedLanguage = languageForText(text, language);
+    const family = resolvedLanguage
       ? {
           "zh-CN": fonts.chinese,
           ja: fonts.japanese,
           ko: fonts.korean,
           "und-Latn": fonts.latin,
-        }[language]
+        }[resolvedLanguage]
       : undefined;
     return `${style} ${family ? `${family}, ` : ""}${lyricFont}`;
   };
@@ -197,6 +206,8 @@ export const createLyricPoster = async (options: LyricPosterOptions): Promise<Bl
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("无法创建画布上下文");
+  // Canvas language is not declared by the current DOM typings.
+  const textContext = ctx as CanvasRenderingContext2D & { lang: string };
 
   // Wait for fonts before measuring to avoid fallback widths on the first export
   await Promise.all([
@@ -216,16 +227,28 @@ export const createLyricPoster = async (options: LyricPosterOptions): Promise<Bl
 
   // 预折行并量算高度
   const layout = lines.map((line) => {
+    const mainLanguage = languageForText(line.text, line.language);
     const mainFont = fontForText(line.text, "bold 34px", line.language);
     const translationFont = fontForText(line.translation ?? "", "24px");
     const romajiFont = fontForText(line.romaji ?? "", "italic 22px");
+    textContext.lang = mainLanguage ?? "inherit";
     ctx.font = mainFont;
     const main = wrapText(ctx, line.text || " ", CONTENT_WIDTH);
+    textContext.lang = "inherit";
     ctx.font = translationFont;
     const translation = line.translation ? wrapText(ctx, line.translation, CONTENT_WIDTH) : [];
     ctx.font = romajiFont;
     const romaji = line.romaji ? wrapText(ctx, line.romaji, CONTENT_WIDTH) : [];
-    return { main, translation, romaji, mainFont, translationFont, romajiFont, duet: !!line.duet };
+    return {
+      main,
+      translation,
+      romaji,
+      mainFont,
+      translationFont,
+      romajiFont,
+      mainLanguage,
+      duet: !!line.duet,
+    };
   });
 
   let lyricsHeight = 0;
@@ -287,11 +310,13 @@ export const createLyricPoster = async (options: LyricPosterOptions): Promise<Bl
     const textX = block.duet ? WIDTH - PAD_X : PAD_X;
     ctx.textAlign = block.duet ? "right" : "left";
     ctx.fillStyle = "#ffffff";
+    textContext.lang = block.mainLanguage ?? "inherit";
     ctx.font = block.mainFont;
     for (const text of block.main) {
       ctx.fillText(text, textX, y);
       y += LYRIC_LH;
     }
+    textContext.lang = "inherit";
     if (block.translation.length) {
       y += SUBLINE_GAP;
       ctx.fillStyle = "rgba(255, 255, 255, 0.6)";

@@ -64,6 +64,9 @@ pub struct Tags {
     pub artist: Option<String>,
     pub album: Option<String>,
     pub track: Option<u16>,
+    /// One-based disc number and optional disc subtitle.
+    pub disc: Option<u16>,
+    pub disc_title: Option<String>,
     pub comment: Option<String>,
     /// 流派原始标签文本
     pub genre: Option<String>,
@@ -86,7 +89,18 @@ pub fn extract_tags(dict: &HashMap<String, String>) -> Tags {
         .or_else(|| dict_get(dict, "album_artist"))
         .map(ToString::to_string);
     let album = dict_get(dict, "album").map(ToString::to_string);
-    let track = dict_get(dict, "track").and_then(|s| s.parse().ok());
+    let track = dict_get(dict, "track").and_then(parse_number);
+    let disc = ["disc", "discnumber", "disk", "TPOS", "WM/PartOfSet"]
+        .iter()
+        .find_map(|key| dict_get(dict, key).and_then(parse_number));
+    let disc_title = ["discsubtitle", "disc_subtitle", "TSST"]
+        .iter()
+        .find_map(|key| {
+            dict_get(dict, key)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+        })
+        .map(ToString::to_string);
     let comment = dict_get(dict, "comment").map(ToString::to_string);
     // 不同容器的流派键名不一致：ID3 为 genre/TCON，Vorbis 为 GENRE，部分工具写 style
     let genre = dict_get(dict, "genre")
@@ -113,9 +127,23 @@ pub fn extract_tags(dict: &HashMap<String, String>) -> Tags {
         artist,
         album,
         track,
+        disc,
+        disc_title,
         comment,
         genre,
     }
+}
+
+/// Parse a positive track/disc number, optionally followed by a total.
+/// @param value - Container metadata such as `2/3`.
+fn parse_number(value: &str) -> Option<u16> {
+    value
+        .split('/')
+        .next()?
+        .trim()
+        .parse::<u16>()
+        .ok()
+        .filter(|number| *number > 0)
 }
 
 /// 大小写不敏感查找：原 ffmpeg-next 的 Dictionary::get 默认 case-insensitive，

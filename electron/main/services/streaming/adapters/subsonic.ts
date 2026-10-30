@@ -22,6 +22,8 @@ interface SubsonicSong {
   artistId?: string;
   album?: string;
   albumId?: string;
+  discNumber?: number;
+  track?: number;
   duration?: number;
   bitRate?: number;
   samplingRate?: number;
@@ -42,6 +44,8 @@ interface SubsonicAlbum {
   songCount?: number;
   year?: number;
   displayArtist?: string;
+  /** Optional disc subtitles from OpenSubsonic. */
+  discTitles?: { disc: number; title: string }[];
   song?: SubsonicSong[];
 }
 
@@ -177,6 +181,8 @@ const toTrack = (config: StreamingRuntimeConfig, song: SubsonicSong): Track => {
     year: validYear(song.year),
     artists,
     album: song.album ? { id: song.albumId, name: song.album, serverId: config.id } : undefined,
+    disc: Number.isInteger(song.discNumber) && song.discNumber! > 0 ? song.discNumber : undefined,
+    track: song.track || undefined,
     duration: Math.round((song.duration ?? 0) * 1000),
     cover: coverUrl(config, song.coverArt, 300),
     coverOriginal: coverUrl(config, song.coverArt, 1500),
@@ -438,7 +444,14 @@ export const subsonicAdapter: StreamingAdapter = {
    */
   async getAlbumSongs(config, albumId) {
     const result = await callApi<{ album?: SubsonicAlbum }>(config, "getAlbum", { id: albumId });
-    return (result.album?.song ?? []).map((song) => toTrack(config, song));
+    const discTitles = new Map(
+      result.album?.discTitles?.map((disc) => [disc.disc, disc.title.trim()]),
+    );
+    return (result.album?.song ?? []).map((song) => {
+      const track = toTrack(config, song);
+      const discTitle = track.disc && discTitles.get(track.disc);
+      return discTitle ? { ...track, discTitle } : track;
+    });
   },
 
   /**

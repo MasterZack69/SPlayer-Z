@@ -12,6 +12,8 @@ use crate::dsp::fft::FftAnalyzer;
 pub const TRANSITION_DECISION_QUIET: u8 = 1;
 const TRANSITION_DECISION_DEADLINE: u8 = 2;
 const TRANSITION_DECISION_SOURCE_END: u8 = 3;
+/// Bound incoming silence scanning to eight frames per output frame.
+const INTRO_SCAN_FRAMES: u64 = 8;
 
 /// 混音后的柔性峰值保护，避免两首相关音频在等功率曲线中硬削波
 fn soft_ceiling(sample: f32) -> f32 {
@@ -143,7 +145,7 @@ impl TransitionSource {
     pub fn new(shared: Arc<Shared>, fft: Arc<FftAnalyzer>) -> Self {
         let channels = u64::from(shared.channels());
         let energy_window_samples = (u64::from(shared.sample_rate()) / 20).max(1) * channels;
-        let max_intro_samples = u64::from(shared.sample_rate()) * u64::from(shared.channels()) * 2;
+        let max_intro_samples = u64::from(shared.sample_rate()) * u64::from(shared.channels()) * 8;
         fft.set_sample_rate(shared.sample_rate());
         Self {
             speed_ratio: 1.0,
@@ -235,26 +237,32 @@ impl TransitionSource {
         transition.timeline_elapsed += self.speed_ratio;
         let frame_start = (transition.elapsed - 1) % self.channels == 0;
         if !transition.intro_done && frame_start {
-            let mut audible = false;
-            let mut complete = true;
-            for sample in &mut transition.command.intro_frame {
-                let Some(value) = transition.command.next.next() else {
-                    complete = false;
-                    break;
-                };
-                if transition.command.next.is_underrun() {
-                    complete = false;
+            let intro_limit = self
+                .max_intro_samples
+                .min((transition.command.latest_sample * INTRO_SCAN_FRAMES).max(self.channels));
+            for _ in 0..INTRO_SCAN_FRAMES {
+                let mut audible = false;
+                let mut complete = true;
+                for sample in &mut transition.command.intro_frame {
+                    let Some(value) = transition.command.next.next() else {
+                        complete = false;
+                        break;
+                    };
+                    if transition.command.next.is_underrun() {
+                        complete = false;
+                        break;
+                    }
+                    *sample = value;
+                    audible |= value.abs() >= 0.0015;
+                }
+                if !complete {
                     break;
                 }
-                *sample = value;
-                audible |= value.abs() >= 0.0015;
-            }
-            if complete {
                 transition.intro_scanned += self.channels;
-                let intro_limit = self
-                    .max_intro_samples
-                    .min(transition.command.latest_sample.max(self.channels));
                 transition.intro_done = audible || transition.intro_scanned >= intro_limit;
+                if transition.intro_done {
+                    break;
+                }
             }
         }
         if transition.timeline_elapsed < transition.command.earliest_sample as f64 {

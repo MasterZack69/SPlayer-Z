@@ -8,7 +8,7 @@ import {
   upsertTracks,
   deleteTracksByPaths,
   getFileRecords,
-  getPendingYearPaths,
+  getPendingMetadataPaths,
   getCueTrackPathsByDirs,
   hasTracksMissingGenres,
   type UpsertTrack,
@@ -20,6 +20,7 @@ import { parseArtists, parseAlbum, parseGenres } from "@main/utils/metadata";
 import { getCoverCacheDir } from "@main/utils/config";
 import { libraryLog } from "@main/utils/logger";
 import { getCueAudioPath, parseCueSheet, extractCuePath } from "./cue";
+import type { Track } from "@shared/types/player";
 import { readFileAutoEncoding } from "@main/utils/encoding";
 
 let scanning = false;
@@ -41,6 +42,8 @@ export const scannedToUpsert = (track: JsScannedTrack): UpsertTrack => {
     path: track.path,
     title: track.title || track.path.split(/[/\\]/).pop() || track.path,
     track: track.track,
+    disc: track.disc,
+    discTitle: track.discTitle,
     year: track.year,
     artists: parseArtists(track.artist ?? ""),
     album: parseAlbum(track.album ?? ""),
@@ -59,7 +62,7 @@ export const scannedToUpsert = (track: JsScannedTrack): UpsertTrack => {
 };
 
 /**
- * Refresh CUE virtual tracks, including pending year backfills.
+ * Refresh CUE virtual tracks, including pending year and disc metadata backfills.
  * @param cueFiles - Discovered sheet paths.
  * @param dirs - Configured library directories.
  * @param unavailableDirs - Offline directories whose records must be preserved.
@@ -71,7 +74,7 @@ const syncCueTracks = async (
   unavailableDirs: string[] = [],
 ): Promise<number> => {
   const allTracks = getAllTracks();
-  const pendingYearPaths = getPendingYearPaths();
+  const pendingMetadataPaths = getPendingMetadataPaths();
   // 真实音频文件
   const audioByPath = new Map(
     allTracks.flatMap((track) =>
@@ -79,13 +82,16 @@ const syncCueTracks = async (
     ),
   );
   // 跳过未变化的 CUE
-  const existingByCue = new Map<string, { mtime: number; paths: string[] }>();
+  const existingByCue = new Map<string, { mtime: number; paths: string[]; tracks: Track[] }>();
   for (const track of allTracks) {
     if (!track.cuePath || !track.path) continue;
     const key = pathKey(track.cuePath);
     const group = existingByCue.get(key);
-    if (group) group.paths.push(track.path);
-    else existingByCue.set(key, { mtime: track.mtime ?? -1, paths: [track.path] });
+    if (group) {
+      group.paths.push(track.path);
+      group.tracks.push(track);
+    } else
+      existingByCue.set(key, { mtime: track.mtime ?? -1, paths: [track.path], tracks: [track] });
   }
 
   const upserts: UpsertTrack[] = [];
@@ -99,7 +105,16 @@ const syncCueTracks = async (
       if (
         existing &&
         existing.mtime === cueStat.mtimeMs &&
-        !existing.paths.some((p) => pendingYearPaths.has(p))
+        !existing.paths.some((p) => pendingMetadataPaths.has(p)) &&
+        !existing.tracks.some((track) => {
+          const audio = track.cueAudioPath && audioByPath.get(pathKey(track.cueAudioPath));
+          return (
+            audio &&
+            (track.disc !== audio.disc ||
+              track.discTitle !== audio.discTitle ||
+              track.year !== audio.year)
+          );
+        })
       ) {
         for (const trackPath of existing.paths) nextPaths.add(trackPath);
         continue;
@@ -127,6 +142,8 @@ const syncCueTracks = async (
           album: cueTrack.album,
           genres: cueTrack.genres,
           year: audio.year,
+          disc: audio.disc,
+          discTitle: audio.discTitle,
           duration: cueTrack.duration,
           cover: audio.cover,
           codec: audio.quality?.codec,

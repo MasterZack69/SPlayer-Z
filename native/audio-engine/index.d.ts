@@ -316,6 +316,9 @@ export interface JsScannedTrack {
   album?: string
   /** 音轨编号 */
   track?: number
+  /** One-based disc number and optional disc subtitle. */
+  disc?: number
+  discTitle?: string
   /** 流派原始标签文本（可能包含多个流派，由 JS 侧解析拆分） */
   genre?: string
   /** 时长（秒） */

@@ -516,6 +516,7 @@ const toggleLyric = (): void => {
               </span>
               <SSlider
                 :model-value="position"
+                :glow="status.transitioning"
                 :min="0"
                 :max="duration"
                 :step="100"

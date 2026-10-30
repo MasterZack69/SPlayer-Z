@@ -2,6 +2,7 @@ import { shallowMount, flushPromises } from "@vue/test-utils";
 import { createI18n } from "vue-i18n";
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Track } from "@shared/types/player";
 import type { Collection as CollectionData } from "@/types/collection";
 import en from "@/i18n/locales/en-US.json";
 
@@ -13,6 +14,7 @@ const fixture = vi.hoisted(() => ({
   type: "album",
   description: undefined as string | undefined,
   years: [] as number[],
+  tracks: undefined as Track[] | undefined,
 }));
 vi.mock("vue-router", () => ({
   useRoute: () => ({
@@ -36,14 +38,16 @@ vi.mock("@/services/collection", () => ({
       title: "Test Album",
       description: fixture.description,
       artists: [{ name: "Test Artist" }],
-      tracks: fixture.years.map((year, i) => ({
-        id: String(i),
-        title: "Track",
-        source: "local",
-        artists: [],
-        duration: 1000,
-        year,
-      })),
+      tracks:
+        fixture.tracks ??
+        fixture.years.map((year, i) => ({
+          id: String(i),
+          title: "Track",
+          source: "local",
+          artists: [],
+          duration: 1000,
+          year,
+        })),
     });
   },
 }));
@@ -93,6 +97,7 @@ const mountPage = async () => {
 beforeEach(() => {
   fixture.type = "album";
   fixture.years = [];
+  fixture.tracks = undefined;
   fixture.description = undefined;
 });
 
@@ -142,5 +147,41 @@ it("shows every distinct album year with slash separators", async () => {
   fixture.years = [2024, 1999, 2024];
   const wrapper = await mountPage();
   expect(wrapper.get("[data-album-years]").text()).toBe("1999 / 2024");
+  wrapper.unmount();
+});
+
+it("plays album discs and tagged track numbers in the same order as the song list", async () => {
+  fixture.tracks = [
+    {
+      id: "bonus",
+      source: "local",
+      title: "Bonus",
+      artists: [],
+      duration: 1000,
+      disc: 2,
+      track: 1,
+    },
+    { id: "second", source: "local", title: "Second", artists: [], duration: 1000, track: 2 },
+    {
+      id: "first",
+      source: "local",
+      title: "First",
+      artists: [],
+      duration: 1000,
+      disc: 1,
+      track: 1,
+    },
+  ];
+  const wrapper = await mountPage();
+  await wrapper
+    .findAll("button")
+    .find((button) => button.text().includes(en.common.playAll))!
+    .trigger("click");
+  const player = await import("@/core/player");
+  expect(vi.mocked(player.playFrom).mock.lastCall?.[0].map((track) => track.id)).toEqual([
+    "first",
+    "second",
+    "bonus",
+  ]);
   wrapper.unmount();
 });

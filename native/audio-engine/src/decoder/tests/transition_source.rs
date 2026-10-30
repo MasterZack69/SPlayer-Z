@@ -332,3 +332,25 @@ fn changing_speed_preserves_gain_and_scales_remaining_fade() {
     }
     assert!(signals.completed.load(Ordering::Acquire));
 }
+
+#[test]
+fn long_intro_silence_is_skipped_before_the_deadline() {
+    let first = buffered(vec![0.6; 2_000]);
+    let mut second_samples = vec![0.0; 3_000];
+    second_samples.extend(vec![0.5; 1_000]);
+    let second = buffered(second_samples);
+    let fft = Arc::new(FftAnalyzer::new());
+    let mut source = TransitionSource::new(first, Arc::clone(&fft));
+    let signals = source
+        .control()
+        .queue(second, plan(500, 100, 0.025, 3))
+        .expect("accept the next track");
+    source.begin_callback();
+
+    let output: Vec<f32> = (0..700).map(|_| source.next().unwrap()).collect();
+    assert!(output[550] > 0.5 && output[550] < 0.8);
+    assert!(output[650..]
+        .iter()
+        .all(|sample| (*sample - 0.5).abs() < 0.001));
+    assert!(signals.completed.load(Ordering::Acquire));
+}

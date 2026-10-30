@@ -78,3 +78,19 @@ Comfortable remains the default. Both styles keep the same columns, sorting, yea
 and playback actions. Narrow windows automatically collapse the sidebar and simplify
 the player bar without changing your saved sidebar preference. During track transitions,
 the seek bar glows briefly to indicate that playback is switching tracks.
+
+### Multi-disc albums
+
+Albums containing more than one disc are grouped by disc number in the default song-list
+order. Each section shows its disc number, optional subtitle, and full disc track count.
+Tagged track numbers are retained when searching within an album. Choosing another sort
+field displays one continuous sorted list instead.
+
+Local disc metadata is read from common disc-number tags, including `DISCNUMBER`, `disc`,
+and ID3 `TPOS`; values such as `2/3` use the first number. Disc subtitles use `DISCSUBTITLE`
+or ID3 `TSST`. Files without a disc number belong to disc 1. Existing libraries receive a
+one-time metadata refresh during scanning. Jellyfin, Emby and Subsonic disc numbers are
+also supported; OpenSubsonic disc subtitles are shown when supplied by the server.
+
+The volume slider uses a decibel-based curve with a gradual taper to silence at the bottom.
+Saved actual volume is preserved across upgrades, though its displayed percentage may change.

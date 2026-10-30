@@ -273,3 +273,30 @@ describe("流媒体协议契约", () => {
     expect(new URL(fetchMock.mock.calls[1][0]).searchParams.get("time")).toBe("123456");
   });
 });
+
+describe("album disc metadata", () => {
+  it.each(["jellyfin", "emby"] as const)("preserves %s disc and track numbers", async (type) => {
+    fetchMock
+      .mockResolvedValueOnce(
+        response({ Items: [{ Id: "a", Name: "Song", ParentIndexNumber: 2, IndexNumber: 7 }] }),
+      )
+      .mockResolvedValue(response({ Items: [] }));
+    const tracks = await jellyfinAdapter.getAlbumSongs({ ...config, type }, "album");
+    expect(tracks[0]).toMatchObject({ disc: 2, track: 7, originalId: "a", serverId: config.id });
+  });
+  it("preserves OpenSubsonic disc subtitles and track numbers", async () => {
+    fetchMock.mockResolvedValue(
+      response({
+        "subsonic-response": {
+          status: "ok",
+          album: {
+            discTitles: [{ disc: 2, title: " Bonus " }],
+            song: [{ id: "a", title: "Song", discNumber: 2, track: 7 }],
+          },
+        },
+      }),
+    );
+    const tracks = await subsonicAdapter.getAlbumSongs(config, "album");
+    expect(tracks[0]).toMatchObject({ disc: 2, discTitle: "Bonus", track: 7 });
+  });
+});
