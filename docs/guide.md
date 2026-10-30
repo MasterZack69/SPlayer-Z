@@ -92,5 +92,5 @@ or ID3 `TSST`. Files without a disc number belong to disc 1. Existing libraries 
 one-time metadata refresh during scanning. Jellyfin, Emby and Subsonic disc numbers are
 also supported; OpenSubsonic disc subtitles are shown when supplied by the server.
 
-The volume slider uses a decibel-based curve with a gradual taper to silence at the bottom.
+The volume slider uses a power curve that approximates perceived loudness; its midpoint is about −10 dB and zero is silent.
 Saved actual volume is preserved across upgrades, though its displayed percentage may change.

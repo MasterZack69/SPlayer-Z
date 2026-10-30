@@ -7,6 +7,9 @@ import AMLLLyrics from "./AMLLLyrics.vue";
 vi.mock("@/stores/settings", () => ({
   useSettingsStore: () => ({ lyric: { amllNormalizeSpaces: true } }),
 }));
+vi.mock("@/stores/media", () => ({
+  useMediaStore: () => ({ lyricAuthors: [], lyricSongwriters: [] }),
+}));
 vi.mock("@/stores/status", () => ({ useStatusStore: () => ({ lyricOffsetMs: 0 }) }));
 vi.mock("@/services/playback", () => ({ getCurrentTime: () => 1500 }));
 vi.mock("./LyricCredit.vue", () => ({ default: { template: "<span />" } }));

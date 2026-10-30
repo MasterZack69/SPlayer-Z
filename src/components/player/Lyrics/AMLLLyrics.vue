@@ -5,6 +5,7 @@ import {
   type LyricLineMouseEvent,
 } from "@applemusic-like-lyrics/core";
 import { useSettingsStore } from "@/stores/settings";
+import { useMediaStore } from "@/stores/media";
 import { useStatusStore } from "@/stores/status";
 import { getCurrentTime } from "@/services/playback";
 import "@applemusic-like-lyrics/core/style.css";
@@ -71,6 +72,12 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const settings = useSettingsStore();
+const media = useMediaStore();
+const showCredits = computed(
+  () =>
+    settings.lyric.showCredits &&
+    (media.lyricAuthors.length > 0 || media.lyricSongwriters.length > 0),
+);
 const status = useStatusStore();
 
 const wrapperRef = ref<HTMLDivElement | null>(null);
@@ -402,7 +409,7 @@ defineExpose({
 
 <template>
   <div ref="wrapperRef" class="amll-lyrics-container" :class="contentVisible ? 'is-visible' : ''" />
-  <Teleport v-if="bottomLineEl" :to="bottomLineEl">
+  <Teleport v-if="bottomLineEl && showCredits" :to="bottomLineEl">
     <slot name="bottom">
       <LyricCredit />
     </slot>

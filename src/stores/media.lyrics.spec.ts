@@ -118,3 +118,28 @@ describe("TTML playback timing integration", () => {
     expect(media.parsedLyric).toEqual([]);
   });
 });
+
+describe("lyric songwriter metadata", () => {
+  beforeEach(() => setActivePinia(createPinia()));
+
+  it("retains lyric-file songwriters and clears them on replacement, reset and clear", () => {
+    const media = useMediaStore();
+    const content = `<tt xmlns="http://www.w3.org/ns/ttml"
+      xmlns:itunes="http://music.apple.com/lyric-ttml-internal">
+      <head><metadata><itunes:songwriters><itunes:songwriter>Writer</itunes:songwriter></itunes:songwriters></metadata></head>
+      <body><div><p begin="1s" end="3s">Lyrics</p></div></body></tt>`;
+    media.setLyric(source, { content });
+    expect(media.lyricSongwriters).toEqual(["Writer"]);
+    media.setLyric({ source: "external", format: "lrc" }, { content: "[00:01.00]Other lyrics" });
+    expect(media.lyricSongwriters).toEqual([]);
+    media.setLyric(source, { content });
+    media.resetLyricState();
+    expect(media.lyricSongwriters).toEqual([]);
+    media.setLyric(source, { content });
+    media.clear();
+    expect(media.lyricSongwriters).toEqual([]);
+    media.setLyric(source, { content });
+    media.setLyric(source, { content: "invalid lyrics" });
+    expect(media.lyricSongwriters).toEqual([]);
+  });
+});

@@ -23,6 +23,12 @@ const lyricCategory: SettingCategory = {
           defaultValue: true,
         },
         {
+          key: "showLyricCredits",
+          type: "switch",
+          binding: { store: "settings", path: "lyric.showCredits" },
+          defaultValue: true,
+        },
+        {
           key: "cjkTransform",
           type: "select",
           binding: { store: "settings", path: "lyric.cjkTransform" },

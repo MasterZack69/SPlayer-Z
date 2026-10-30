@@ -56,6 +56,10 @@ Italic text is slanted with clearance at the end so the following text does not 
 
 Formatting markers do not become sung words or change lyric timing. The renderer preserves text-to-word offsets and applies styles to the relevant spans. Uppercasing is a presentation choice, not a rewrite of the source lyric file.
 
+## Lyric credits
+
+**Settings → Lyrics → Show Lyric Credits** is on by default and shows all available lyric-file creators and songwriters below the lyrics. Credits come from the active lyric file, not an online lookup or audio-tag scan. Lyric-file creator handles link to GitHub; songwriter names are plain text. Disable the toggle to hide all credits. Missing credit types are omitted. When credits are disabled or no metadata is available, no footer scrolling target is mounted.
+
 ## Troubleshooting and development
 
 Check the sidecar filename, encoding, format, timestamps, and selected format priority. A track with no sidecar, embedded lyrics, or server lyrics will not gain lyrics through an automatic public lookup.

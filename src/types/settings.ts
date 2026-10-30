@@ -146,6 +146,8 @@ export interface LyricSettings {
   translationFontSize: number;
   /** 歌词字重（100~900） */
   fontWeight: number;
+  /** Display available lyric-file creator and songwriter credits. */
+  showCredits: boolean;
   /** 歌词字体 */
   fontFamily: string;
   /** 拉丁文字歌词字体（为空时跟随歌词字体） */

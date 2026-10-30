@@ -504,7 +504,8 @@
       "title": "歌词偏移",
       "hint": "正值为歌词提前，单位毫秒"
     },
-    "lyricCredit": "歌词制作",
+    "lyricCredit": "歌词文件制作者：",
+    "songwriterCredit": "歌曲创作者：",
     "copyLyric": {
       "title": "复制歌词",
       "contentLabel": "要复制的内容",
@@ -993,6 +994,10 @@
     "detectBackgroundLyrics": {
       "label": "自动识别背景歌词",
       "description": "根据括号识别背景人声，误判时可关闭"
+    },
+    "showLyricCredits": {
+      "label": "显示歌词署名",
+      "description": "在歌词底部显示所有可用的歌词文件制作者和歌曲创作者信息"
     },
     "cjkTransform": {
       "label": "繁简转换",

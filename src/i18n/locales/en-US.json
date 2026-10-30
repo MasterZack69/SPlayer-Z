@@ -504,7 +504,8 @@
       "title": "Lyric Offset",
       "hint": "Positive values advance lyrics, in milliseconds"
     },
-    "lyricCredit": "Lyrics by",
+    "lyricCredit": "Lyric-file creators:",
+    "songwriterCredit": "Songwriters:",
     "copyLyric": {
       "title": "Copy Lyrics",
       "contentLabel": "Content to copy",
@@ -993,6 +994,10 @@
     "detectBackgroundLyrics": {
       "label": "Auto-Detect Background Lyrics",
       "description": "Detect backing vocals from brackets. Disable this if lyrics are misdetected"
+    },
+    "showLyricCredits": {
+      "label": "Show Lyric Credits",
+      "description": "Show all available lyric-file creator and songwriter credits below the lyrics"
     },
     "cjkTransform": {
       "label": "Chinese Conversion",

@@ -239,6 +239,7 @@ export const useSettingsStore = defineStore(
       fontSize: 48,
       translationFontSize: 22,
       fontWeight: 700,
+      showCredits: true,
       fontFamily: "",
       fontFamilyLatin: "",
       fontFamilyJapanese: "",
