@@ -154,9 +154,13 @@ const playbackContext = computed<PlaybackContext>(() => ({
   originName: artist.value?.name,
 }));
 
+/** Replace the queue with the displayed songs in their current order. */
 const handlePlayAll = () => {
   if (!artist.value?.tracks.length) return;
-  player.playFrom(artist.value.tracks, { context: playbackContext.value });
+  void player.playFrom(songListRef.value?.playbackItems ?? artist.value.tracks, {
+    context: playbackContext.value,
+    shuffle: false,
+  });
 };
 
 /** 收藏歌手仅支持网易云 */

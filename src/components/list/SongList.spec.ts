@@ -444,3 +444,22 @@ describe("album disc sections", () => {
     wrapper.unmount();
   });
 });
+
+describe("displayed playback order", () => {
+  it("exposes the same filtered, sorted tracks as the rendered rows", async () => {
+    const wrapper = mountList({
+      items: [...sortTracks, { ...track, id: "middle", title: "Middle" }],
+      enableSort: true,
+      sortKey: "library",
+    });
+    const exposed = wrapper.vm as unknown as { playbackItems: readonly Track[] };
+    await setSort(wrapper, "title", "desc");
+    expect(exposed.playbackItems.map((item) => item.title)).toEqual(titles(wrapper));
+    expect(exposed.playbackItems.map((item) => item.title)).toEqual(["Zulu", "Middle", "Alpha"]);
+    await wrapper.setProps({ searchQuery: "Alpha" });
+    expect(exposed.playbackItems.map((item) => item.title)).toEqual(["Alpha"]);
+    await wrapper.setProps({ searchQuery: "missing" });
+    expect(exposed.playbackItems).toEqual([]);
+    wrapper.unmount();
+  });
+});

@@ -10,6 +10,7 @@ import SongList from "@/components/list/SongList.vue";
 import ListPlaybackActions from "@/components/list/ListPlaybackActions.vue";
 
 const { t } = useI18n();
+const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 const streaming = useStreamingStore();
 const settings = useSettingsStore();
 const { songs, loading, isConnected } = storeToRefs(streaming);
@@ -53,7 +54,7 @@ onMounted(() => {
 <template>
   <div class="flex flex-col h-full">
     <div class="shrink-0 px-5 py-2 flex items-center justify-between">
-      <ListPlaybackActions :items="visibleSongs" />
+      <ListPlaybackActions :items="songListRef?.playbackItems ?? visibleSongs" />
       <div class="flex items-center gap-2">
         <SButton
           :type="favoritesOnly ? 'primary' : 'default'"
@@ -69,7 +70,12 @@ onMounted(() => {
       </div>
     </div>
     <div v-if="visibleSongs.length > 0" class="flex-1 min-h-0">
-      <SongList :items="visibleSongs" :search-query="searchQuery" source="streaming" />
+      <SongList
+        ref="songListRef"
+        :items="visibleSongs"
+        :search-query="searchQuery"
+        source="streaming"
+      />
     </div>
     <div v-else class="flex-1 flex items-center justify-center">
       <div class="text-center text-on-surface-variant/60">

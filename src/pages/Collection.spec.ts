@@ -15,6 +15,7 @@ const fixture = vi.hoisted(() => ({
   description: undefined as string | undefined,
   years: [] as number[],
   tracks: undefined as Track[] | undefined,
+  displayed: undefined as Track[] | undefined,
 }));
 vi.mock("vue-router", () => ({
   useRoute: () => ({
@@ -72,7 +73,18 @@ vi.mock("@/services/coverTransition", () => ({
   getCoverPreview: () => undefined,
 }));
 vi.mock("@/core/player", () => ({ playFrom: vi.fn() }));
-vi.mock("@/components/list/SongList.vue", () => ({ default: { template: "<div />" } }));
+vi.mock("@/components/list/SongList.vue", () => ({
+  default: {
+    setup(_props: unknown, { expose }: { expose: (value: object) => void }) {
+      expose({
+        get playbackItems() {
+          return fixture.displayed;
+        },
+      });
+    },
+    template: "<div />",
+  },
+}));
 import Collection from "./Collection.vue";
 
 /** Mount collection headers with real translations and lightweight UI controls. */
@@ -82,6 +94,7 @@ const mountPage = async () => {
       plugins: [createI18n({ legacy: false, locale: "en-US", messages: { "en-US": en } })],
       config: { warnHandler: () => {} },
       stubs: {
+        SongList: false,
         SDropdownMenu: {
           name: "SDropdownMenu",
           props: ["items"],
@@ -104,6 +117,7 @@ beforeEach(() => {
   fixture.type = "album";
   fixture.years = [];
   fixture.tracks = undefined;
+  fixture.displayed = undefined;
   fixture.description = undefined;
 });
 
@@ -223,4 +237,23 @@ describe("collection Shuffle All", () => {
     );
     wrapper.unmount();
   });
+});
+
+it("plays the list's displayed order instead of the collection's source order", async () => {
+  fixture.years = [2020, 2021, 2022];
+  fixture.displayed = [
+    { id: "c", source: "local", title: "C", artists: [], duration: 1000 },
+    { id: "a", source: "local", title: "A", artists: [], duration: 1000 },
+  ];
+  const wrapper = await mountPage();
+  await wrapper
+    .findAll("button")
+    .find((button) => button.text().includes(en.common.playAll))!
+    .trigger("click");
+  const { playFrom } = await import("@/core/player");
+  expect(playFrom).toHaveBeenLastCalledWith(fixture.displayed, {
+    context: expect.objectContaining({ originId: "test" }),
+    shuffle: false,
+  });
+  wrapper.unmount();
 });

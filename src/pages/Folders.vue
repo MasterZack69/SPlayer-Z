@@ -130,9 +130,12 @@ const selectedTracks = computed<Track[]>(() => {
   return folder ? toRaw(folder.tracks) : [];
 });
 
+/** Replace the queue with the displayed songs in their current order. */
 const handlePlayAll = (): void => {
   if (selectedTracks.value.length === 0) return;
-  player.playFrom(selectedTracks.value);
+  void player.playFrom(songListRef.value?.playbackItems ?? selectedTracks.value, {
+    shuffle: false,
+  });
 };
 
 /** 文件夹创建为本地歌单 */

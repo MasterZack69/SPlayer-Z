@@ -19,10 +19,15 @@ const playbackContext = computed<PlaybackContext>(() => ({
 }));
 
 const searchQuery = ref("");
+const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 
+/** Replace the queue with the displayed songs in their current order. */
 const handlePlayAll = (): void => {
   if (history.tracks.length === 0) return;
-  player.playFrom(history.tracks, { context: playbackContext.value });
+  void player.playFrom(songListRef.value?.playbackItems ?? history.tracks, {
+    context: playbackContext.value,
+    shuffle: false,
+  });
 };
 
 const clearConfirmOpen = ref(false);
@@ -117,6 +122,7 @@ onMounted(() => {
     <Transition name="fade" mode="out-in" :duration="150">
       <div v-if="history.tracks.length > 0" key="list" class="flex-1 min-h-0">
         <SongList
+          ref="songListRef"
           :items="history.tracks"
           :search-query="searchQuery"
           :playback-context="playbackContext"

@@ -88,6 +88,7 @@ beforeEach(async () => {
         pause: mocks.pause,
         seek: mocks.seek,
         stop: mocks.stop,
+        syncPlayMode: vi.fn(),
       },
       download: { lookup: async () => null },
       nowPlaying: { update: vi.fn() },
@@ -250,6 +251,27 @@ describe("explicit featured-first playback", () => {
       expect(media.track?.id).toBe(tracks[2].id);
       expect(mocks.load).toHaveBeenCalledOnce();
       expect(queue.queue.value).toHaveLength(3);
+    },
+  );
+});
+
+describe("ordered Play All", () => {
+  it.each(["off", "on"] as const)(
+    "replaces the previous queue with screen order even when shuffle was %s",
+    async (shuffle) => {
+      const queue = await import("@/stores/queue");
+      const oldTrack = { ...tracks[0], id: "old-queue-entry" };
+      queue.setQueue([oldTrack, tracks[1]]);
+      status.shuffleMode = shuffle;
+      const displayed = [tracks[2], tracks[0], tracks[1]];
+      await player.playFrom(displayed, { shuffle: false });
+      expect(queue.queue.value.map((track) => track.id)).toEqual(
+        displayed.map((track) => track.id),
+      );
+      expect(status.shuffleMode).toBe("off");
+      expect(status.playIndex).toBe(0);
+      expect(media.track?.id).toBe(displayed[0].id);
+      expect(queue.queue.value.some((track) => track.id === oldTrack.id)).toBe(false);
     },
   );
 });

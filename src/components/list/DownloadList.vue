@@ -112,10 +112,10 @@ const confirmDelete = async (task: DownloadTask): Promise<void> => {
   if (confirmed) downloadStore.remove(task.taskId);
 };
 
-/** 播放全部已完成（供下载页顶栏调用） */
+/** Replace the queue with completed downloads in their displayed order. */
 const playAll = (): void => {
   if (playableTasks.value.length > 0) {
-    void player.playFrom(playableTasks.value.map(toLocalTrack));
+    void player.playFrom(playableTasks.value.map(toLocalTrack), { shuffle: false });
   }
 };
 

@@ -175,9 +175,13 @@ const playbackContext = computed<PlaybackContext | undefined>(() => {
   };
 });
 
+/** Replace the queue with the displayed songs in their current order. */
 const handlePlayAll = () => {
   if (!collection.value?.tracks.length) return;
-  player.playFrom(collection.value.tracks, { context: playbackContext.value });
+  void player.playFrom(songListRef.value?.playbackItems ?? collection.value.tracks, {
+    context: playbackContext.value,
+    shuffle: false,
+  });
 };
 
 const searchQuery = usePageSearch();

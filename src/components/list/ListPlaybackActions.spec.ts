@@ -37,10 +37,10 @@ const setup = (items = tracks) =>
 
 beforeEach(() => vi.clearAllMocks());
 describe("list playback actions", () => {
-  it("plays the current list without forcing a playback mode", async () => {
+  it("plays the displayed order with shuffle disabled", async () => {
     const wrapper = setup();
     await wrapper.findAll("button")[0].trigger("click");
-    expect(playback.playFrom).toHaveBeenCalledWith(tracks, { context });
+    expect(playback.playFrom).toHaveBeenCalledWith(tracks, { context, shuffle: false });
     wrapper.unmount();
   });
 

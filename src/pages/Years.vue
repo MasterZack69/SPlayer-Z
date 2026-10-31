@@ -2,6 +2,7 @@
 import { useLibraryStore } from "@/stores/library";
 import { useStreamingStore } from "@/stores/streaming";
 import type { PlaybackContext } from "@shared/types/player";
+import SongList from "@/components/list/SongList.vue";
 import ListPlaybackActions from "@/components/list/ListPlaybackActions.vue";
 import YearWheel from "@/components/list/YearWheel.vue";
 import { useBrowseSortStore } from "@/stores/browseSort";
@@ -13,6 +14,7 @@ import { formatTime } from "@/utils/time";
 import type { SSelectOption } from "@/components/ui/SSelect.vue";
 
 const { t } = useI18n();
+const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 const route = useRoute();
 const router = useRouter();
 const library = useLibraryStore();
@@ -135,7 +137,7 @@ onMounted(load);
             </span>
           </div>
           <ListPlaybackActions
-            :items="songs"
+            :items="songListRef?.playbackItems ?? songs"
             :context="playbackContext"
             class="mt-3 justify-center"
           />
@@ -146,6 +148,7 @@ onMounted(load);
           :class="{ 'motion-disabled': settings.reducedMotion }"
         >
           <SongList
+            ref="songListRef"
             :items="songs"
             :search-query="filter"
             enable-sort

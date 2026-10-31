@@ -14,9 +14,10 @@ const { shuffleAllItem, shuffleAll } = useShuffleAll(
   () => props.context,
 );
 
-/** Play the current scope without changing the user's playback mode. */
+/** Replace the queue and play the displayed order, independently of shuffle mode. */
 const playAll = (): void => {
-  if (props.items.length) void player.playFrom(props.items, { context: props.context });
+  if (props.items.length)
+    void player.playFrom(props.items, { context: props.context, shuffle: false });
 };
 </script>
 

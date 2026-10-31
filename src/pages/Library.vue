@@ -40,10 +40,13 @@ const handleQuickAddFolder = async (): Promise<void> => {
   await libraryStore.addScanDir();
 };
 
-// 播放全部
+/** Replace the queue with the displayed songs in their current order. */
 const handlePlayAll = (): void => {
   if (tracks.value.length === 0) return;
-  player.playFrom(tracks.value, { context: playbackContext.value });
+  void player.playFrom(songListRef.value?.playbackItems ?? tracks.value, {
+    context: playbackContext.value,
+    shuffle: false,
+  });
 };
 
 // 扫描进度百分比

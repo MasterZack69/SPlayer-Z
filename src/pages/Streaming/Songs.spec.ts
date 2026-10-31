@@ -82,7 +82,7 @@ it("收藏筛选随服务器状态更新，播放全部使用筛选后的歌曲"
   await wrapper.get('[aria-pressed="false"]').trigger("click");
   expect(wrapper.get("[data-list]").text()).toBe("a");
   await wrapper.findAll("button")[0].trigger("click");
-  expect(state.play).toHaveBeenCalledWith([store.songs[0]], { context: undefined });
+  expect(state.play).toHaveBeenCalledWith([store.songs[0]], { context: undefined, shuffle: false });
   store.songs = store.songs.map((item) => ({ ...item, favorite: false }));
   await nextTick();
   expect(wrapper.text()).toContain("暂无收藏");

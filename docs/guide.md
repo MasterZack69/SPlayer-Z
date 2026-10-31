@@ -32,6 +32,8 @@ Song tables share the same layout, including Genre where applicable. See [Librar
 
 ## Playback and lyrics
 
+**Play All** replaces the queue with the songs currently shown, in their displayed sort order, and starts with the first song. Active search filters are respected. **Shuffle All** starts a shuffled queue instead.
+
 With only one song in the queue, **Previous** returns to the beginning without changing whether playback is paused. **Next** leaves playback unchanged and displays a notice that there are no other tracks.
 
 Open **Now Playing** for the full player. Lyrics use AMLL; there is no engine selector. Local sidecar files, embedded lyrics, and lyrics supplied by your configured server are supported. See [Lyrics](lyrics.md).

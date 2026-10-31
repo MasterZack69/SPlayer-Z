@@ -500,6 +500,8 @@ const emit = defineEmits<{
 onActivated(batch.exit);
 
 defineExpose({
+  /** Tracks in exactly the filtered, sorted order rendered by this list. */
+  playbackItems: sortedItems,
   /** 进入批量管理模式 */
   enterBatch: batch.enter,
 });

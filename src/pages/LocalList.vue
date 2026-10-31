@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SongList from "@/components/list/SongList.vue";
 import ListPlaybackActions from "@/components/list/ListPlaybackActions.vue";
 import { useBrowseSortStore } from "@/stores/browseSort";
 import type { BrowseSortKey, BrowseSortMode } from "@/types/list";
@@ -24,6 +25,7 @@ import IconLucideGuitar from "~icons/lucide/guitar";
 import IconLucideArrowUpDown from "~icons/lucide/arrow-up-down";
 
 const { t } = useI18n();
+const songListRef = shallowRef<InstanceType<typeof SongList> | null>(null);
 const route = useRoute();
 const router = useRouter();
 const libraryStore = useLibraryStore();
@@ -223,7 +225,7 @@ watch(
     <template v-if="unknownGenrePage">
       <h1 class="shrink-0 px-5 py-4 text-3xl font-bold">{{ t("genre.unknown") }}</h1>
       <ListPlaybackActions
-        :items="unknownGenreTracks"
+        :items="songListRef?.playbackItems ?? unknownGenreTracks"
         :context="{
           provider: 'local',
           originType: 'genre',
@@ -234,6 +236,7 @@ watch(
       />
       <div class="flex-1 min-h-0">
         <SongList
+          ref="songListRef"
           :items="unknownGenreTracks"
           :search-query="searchQuery"
           enable-sort

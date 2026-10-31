@@ -34,9 +34,13 @@ const playbackContext = computed<PlaybackContext>(() => ({
   originName: t("liked.title"),
 }));
 
+/** Replace the queue with the displayed songs in their current order. */
 const handlePlayAll = (): void => {
   if (currentTracks.value.length === 0) return;
-  player.playFrom(currentTracks.value, { context: playbackContext.value });
+  void player.playFrom(songListRef.value?.playbackItems ?? currentTracks.value, {
+    context: playbackContext.value,
+    shuffle: false,
+  });
 };
 
 onMounted(() => {
