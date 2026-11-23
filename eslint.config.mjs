@@ -61,6 +61,8 @@ export default defineConfig(
     files: ["**/*.cjs"],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
+      // CommonJS scripts cannot annotate return types; JSDoc documents them instead.
+      "@typescript-eslint/explicit-function-return-type": "off",
     },
   },
   eslintConfigPrettier,
