@@ -323,7 +323,22 @@ const sortedItems = computed(() => {
   const toAlbumText = (track: Track): string => track.album?.name ?? "";
   const toPathText = (track: Track): string => track.path ?? "";
 
+  const compareByPath = (a: Track, b: Track): number => {
+    const byPath = textCollator.compare(toPathText(a), toPathText(b));
+    return byPath !== 0 ? byPath : textCollator.compare(a.id, b.id);
+  };
+
   const compare = (a: Track, b: Track): number => {
+    if (field === "track") {
+      const left = a.track ?? null;
+      const right = b.track ?? null;
+      // Untracked entries always sort last; equal numbers fall back to the path prefix.
+      if (left === null) return right === null ? compareByPath(a, b) : 1;
+      if (right === null) return -1;
+      const byTrack = (left - right) * direction;
+      return byTrack !== 0 ? byTrack : compareByPath(a, b);
+    }
+
     let value = 0;
     if (field === "title") value = textCollator.compare(a.title, b.title);
     else if (field === "artist") value = textCollator.compare(toArtistText(a), toArtistText(b));
@@ -339,7 +354,6 @@ const sortedItems = computed(() => {
     else if (field === "size") value = (a.fileSize ?? 0) - (b.fileSize ?? 0);
     else if (field === "mtime") value = (a.mtime ?? 0) - (b.mtime ?? 0);
     else if (field === "ctime") value = (a.ctime ?? 0) - (b.ctime ?? 0);
-    else /*(field === "track")*/ value = (a.track ?? 0) - (b.track ?? 0);
     if (value !== 0) return value * direction;
     const fallback = textCollator.compare(a.title, b.title);
     if (fallback !== 0) return fallback;
