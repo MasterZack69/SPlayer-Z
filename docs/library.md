@@ -28,8 +28,9 @@ original tags remain untouched in the index, tag editor, and music files.
 Sort choices survive app restarts until changed by the user. Artist, album, and genre browsers
 keep independent modes; the year wheel keeps its own ascending/descending preference. Song tables
 retain their field and direction independently by page category. Restoring a preference never
-reorders the playback queue. The year wheel's selected year remains session-only, separate from
-its permanently saved sort direction.
+reorders the playback queue. Sorting by track number keeps songs without a number at the end in
+either direction, and equal numbers fall back to the file path. The year wheel's selected year
+remains session-only, separate from its permanently saved sort direction.
 
 ## Artist names
 
