@@ -92,13 +92,6 @@ export const useTrackMenu = (
         show: canAddToPlaylist,
       },
       {
-        key: "editTags",
-        label: t("songList.context.editTags"),
-        icon: markRaw(IconSquarePen),
-        separator: true,
-        show: isLocal && !isCue && !!options.onEditTags,
-      },
-      {
         key: "removeFromCollection",
         label: t("collection.removeFrom", { type: t("collection.playlist") }),
         icon: markRaw(IconListMinus),
@@ -125,6 +118,12 @@ export const useTrackMenu = (
         icon: markRaw(IconMoreHorizontal),
         separator: true,
         children: [
+          {
+            key: "editTags",
+            label: t("songList.context.editTags"),
+            icon: markRaw(IconSquarePen),
+            show: isLocal && !isCue && !!options.onEditTags,
+          },
           {
             key: "showInExplorer",
             label: t("songList.context.showInExplorer"),

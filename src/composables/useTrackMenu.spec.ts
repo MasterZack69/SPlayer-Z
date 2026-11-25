@@ -61,7 +61,7 @@ beforeEach(() => {
 });
 
 describe("song menu More submenu", () => {
-  it("moves local file and search actions under More while keeping edit and delete at the top level", () => {
+  it("moves local file, edit, and search actions under More while keeping delete at the top level", () => {
     const { menu, wrapper } = setup({ onEditTags: vi.fn() });
     const visible = menu.items.value.filter((item) => item.show !== false);
     const more = visible.find((item) => item.key === "more");
@@ -70,11 +70,11 @@ describe("song menu More submenu", () => {
       "playNext",
       "addToQueue",
       "addToPlaylist",
-      "editTags",
       "deleteFile",
       "more",
     ]);
     expect(more?.children?.filter((item) => item.show !== false).map((item) => item.key)).toEqual([
+      "editTags",
       "showInExplorer",
       "copyFile",
       "copyPath",

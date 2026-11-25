@@ -32,6 +32,10 @@ These are local library and playback statistics, not online recommendations. Emp
 
 Song tables share the same layout, including Genre where applicable. See [Library and metadata](library.md), [Search](search.md), and [Media servers](streaming.md).
 
+Right-click a song or use the three-dot menu on player bar for track actions. Playback and playlist actions
+appear directly; **Edit Metadata** for local files, open location, copy file or path, search by
+name, and copy details are grouped under **More**.
+
 The X button and system window-close actions such as **Alt+F4** use the same close preference: quit the app, hide it to the tray, or ask when the choice is not remembered. Cancelling the prompt leaves the window open.
 
 ## Playback and lyrics
