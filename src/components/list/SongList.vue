@@ -373,7 +373,7 @@ const playingIndex = computed(() => {
 /** 虚拟列表引用 */
 const virtualListRef = shallowRef<SVirtualListExposed | null>(null);
 
-/** 定位到当前播放歌曲；分碟列表需要让出吸顶标题条的位置 */
+/** Scrolls to the currently playing track; disc layouts offset the sticky header height */
 const scrollToPlaying = (): void => {
   if (playingIndex.value < 0) return;
   const list = virtualListRef.value;
@@ -847,7 +847,7 @@ defineExpose({
                 </div>
               </div>
             </template>
-            <!-- 滚动吸顶分碟标题 -->
+            <!-- Sticky disc heading while scrolling -->
             <template v-if="stickyDiscHeader" #sticky>
               <div
                 class="mr-1.5 pb-1 bg-app"
@@ -883,7 +883,7 @@ defineExpose({
                 </div>
               </div>
             </template>
-            <!-- 列表项 -->
+            <!-- List row -->
             <template #default="{ item, index }: { item: Track; index: number }">
               <div v-if="discLayout?.headers.has(index)" class="pb-1">
                 <div :class="discHeaderClass">

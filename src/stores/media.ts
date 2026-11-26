@@ -82,10 +82,15 @@ export const useMediaStore = defineStore("media", () => {
   };
 
   /**
-   * 把 audio-engine 解析出的元数据合并到当前 Track 上
-   * 保留身份字段（id/source/serverId/originalId/platform/path）
-   * 对未设置/空值的展示字段做兜底填充（duration），音质以引擎实际解码结果为准
-   * streaming 源的 cover/title/artist/album 已经是服务器返回的权威值，绝不被引擎覆盖
+   * Merges metadata decoded by audio-engine into the current track.
+   *
+   * Identity fields (id/source/serverId/originalId/platform/path) are preserved, missing
+   * display fields fall back to the decoded values (duration), and quality prefers the
+   * engine's decoded value, keeping the list estimate only when decoding reports none. For
+   * streaming sources the server-provided
+   * cover/title/artist/album are authoritative and are never overwritten by the engine.
+   * @param info - Decoded media info from the engine
+   * @param newDetail - Refreshed track detail, if any
    */
   const enrichTrack = (info: MediaInfo, newDetail?: TrackDetail): void => {
     if (!track.value) return;

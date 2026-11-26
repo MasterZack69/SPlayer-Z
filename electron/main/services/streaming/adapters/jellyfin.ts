@@ -38,9 +38,9 @@ interface JellyItem {
   IndexNumber?: number;
   ProductionYear?: number;
   ChildCount?: number;
-  /** 媒体条目标签（如 iTunes 脏标 ITUNESADVISORY） */
+  /** Item tags, e.g. the iTunes advisory tag `ITUNESADVISORY` */
   Tags?: string[];
-  /** 脏标识别用的官方分级（如 Explicit） */
+  /** Official rating used for explicit detection, e.g. `Explicit` */
   OfficialRating?: string;
   ImageTags?: { Primary?: string };
   MediaSources?: {
@@ -206,10 +206,12 @@ const imageUrl = (
 };
 
 /**
- * 判断 Jellyfin/Emby 条目标签是否标记 Explicit
- * MusicTags 等插件按「名称:值」写入条目标签，ITUNESADVISORY:1 为脏标、:2 为 clean
- * @param tag - 服务端条目标签
- * @returns 标签是否表示显式内容
+ * Checks whether a Jellyfin/Emby item tag marks explicit content.
+ *
+ * Plugins such as MusicTags write item tags as `name:value`, where `ITUNESADVISORY:1` is
+ * explicit and `:2` is clean.
+ * @param tag - Server item tag
+ * @returns Whether the tag indicates explicit content
  */
 const isExplicitTag = (tag: string): boolean => {
   const [rawName, rawValue] = tag.split(":", 2);
@@ -232,10 +234,8 @@ const toTrack = (config: StreamingRuntimeConfig, item: JellyItem): Track => {
   const imageTag = item.ImageTags?.Primary ?? item.AlbumPrimaryImageTag;
   const coverId = item.ImageTags?.Primary ? item.Id : item.AlbumId;
   const title = item.Name ?? "";
-  /**
-   * 脏标识别：Tags 命中约定值、官方分级包含 Explicit 或标题带 Explicit 后缀；
-   * ParentalRatingValue 为 0 表示未分级，不能用
-   */
+  // Explicit detection: a matching tag, an official rating containing "Explicit", or an
+  // "Explicit" title suffix. ParentalRatingValue 0 means unrated, so it cannot be used.
   const explicitFromTitle = isExplicitLabel(title);
   const explicit =
     item.Tags?.some(isExplicitTag) ||

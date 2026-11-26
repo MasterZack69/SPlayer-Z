@@ -390,12 +390,13 @@ export const getGenreTracks = (genreName: string, ignoreMusicGenre = true): Trac
 };
 
 /**
- * 按专辑名获取全部曲目
+ * Loads every track of an album.
  *
- * 必须显式排序：曲目按并行扫描的完成顺序入库，不排序时专辑内顺序是随机的。
- * 缺音轨号的排末尾，同号时以路径兜底。
- * @param albumName - 专辑名
- * @returns 该专辑下的曲目
+ * The explicit ordering matters: rows arrive in parallel-scan completion order, so without
+ * ORDER BY the album would list its tracks in random order. Missing track numbers go last,
+ * and equal numbers fall back to the file path.
+ * @param albumName - Album name
+ * @returns Tracks of the album
  */
 export const getAlbumTracks = (albumName: string): Track[] => {
   const rows = getDb()

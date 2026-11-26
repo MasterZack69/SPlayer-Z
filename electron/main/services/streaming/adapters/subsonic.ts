@@ -34,7 +34,7 @@ interface SubsonicSong {
   coverArt?: string;
   artists?: { id?: string; name: string }[];
   displayArtist?: string;
-  /** OpenSubsonic 露骨内容状态（explicit / clean / 空） */
+  /** OpenSubsonic explicit status (`explicit` / `clean` / empty) */
   explicitStatus?: string;
 }
 

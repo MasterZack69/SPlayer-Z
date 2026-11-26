@@ -146,7 +146,7 @@ export interface Track {
   quality?: AudioQuality;
   /** 付费标记 */
   fee?: TrackFee;
-  /** 是否包含露骨内容（脏标） */
+  /** Whether the track contains explicit content (advisory tag) */
   explicit?: boolean;
   /** 云盘歌曲 */
   cloud?: boolean;
