@@ -44,12 +44,96 @@ const setItemEl = (key: string, el: Element | ComponentPublicInstance | null): v
   else itemEls.delete(key);
 };
 
+/** Navigation root, used as the coordinate space for the active indicator. */
+const navRef = shallowRef<HTMLElement | null>(null);
+/** Inline geometry of the sliding active indicator. */
+const indicatorStyle = ref<Record<string, string>>({});
+/** Whether the indicator has been placed once, so the first render does not slide. */
+const indicatorReady = ref(false);
+/** Items the indicator passes over, mapped to their shake animation delay. */
+const shakingItems = ref<Record<string, string>>({});
+
+const INDICATOR_SLIDE_MS = 320;
+const SHAKE_MS = 180;
+let shakeTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Places the active indicator over the current menu item. */
+const measureIndicator = (): void => {
+  const active = itemEls.get(props.modelValue ?? "");
+  if (!active) {
+    indicatorStyle.value = {};
+    return;
+  }
+  indicatorStyle.value = {
+    transform: `translateY(${active.offsetTop + 8}px)`,
+    height: `${Math.max(0, active.offsetHeight - 16)}px`,
+  };
+  indicatorReady.value = true;
+};
+
+/** Cancels the pass-through shake state and its cleanup timer. */
+const clearShake = (): void => {
+  if (shakeTimer) clearTimeout(shakeTimer);
+  shakeTimer = undefined;
+  shakingItems.value = {};
+};
+
+/**
+ * Shakes the items between the previous and next active entries as the indicator slides.
+ * @param previousKey - Previously active menu item key
+ * @param nextKey - Newly active menu item key
+ */
+const shakePassedItems = (previousKey: string | undefined, nextKey: string | undefined): void => {
+  clearShake();
+  if (!previousKey || !nextKey || previousKey === nextKey) return;
+  const keys = props.items
+    .filter((item) => !item.type || item.type === "item")
+    .map((item) => item.key);
+  const from = keys.indexOf(previousKey);
+  const to = keys.indexOf(nextKey);
+  if (from < 0 || to < 0) return;
+  const span = Math.abs(to - from);
+  const start = Math.min(from, to);
+  const end = Math.max(from, to);
+  const delays: Record<string, string> = {};
+  for (let index = start + 1; index < end; index++) {
+    const ratio = Math.abs(index - from) / span;
+    delays[keys[index]] = `${Math.round(ratio * (INDICATOR_SLIDE_MS - SHAKE_MS))}ms`;
+  }
+  if (Object.keys(delays).length === 0) return;
+  // Apply after the clear has been rendered so repeated navigation restarts the animation.
+  nextTick(() => {
+    shakingItems.value = delays;
+    shakeTimer = setTimeout(clearShake, INDICATOR_SLIDE_MS + 40);
+  });
+};
+
+watch(
+  () => [props.modelValue, props.items, props.collapsed, props.size],
+  () => nextTick(measureIndicator),
+  { immediate: true },
+);
+
+watch(
+  () => props.modelValue,
+  (next, previous) => {
+    nextTick(() => {
+      measureIndicator();
+      shakePassedItems(previous, next);
+    });
+  },
+);
+
 onMounted(() => {
+  nextTick(measureIndicator);
+  useResizeObserver(navRef, () => nextTick(measureIndicator));
   if (!props.centerActiveOnMount) return;
   const key = props.modelValue;
   if (!key) return;
   nextTick(() => itemEls.get(key)?.scrollIntoView({ block: "center" }));
 });
+
+onUnmounted(clearShake);
 
 const sizeClass = computed(() => {
   const collapsed = props.collapsed;
@@ -88,7 +172,20 @@ const handleSelect = (item: SMenuItem) => {
 </script>
 
 <template>
-  <nav class="flex flex-col gap-1">
+  <nav
+    ref="navRef"
+    class="relative flex flex-col gap-1"
+    :style="{ '--s-menu-shake-ms': `${SHAKE_MS}ms` }"
+  >
+    <div
+      v-if="indicatorStyle.height"
+      aria-hidden="true"
+      class="pointer-events-none absolute left-0 top-0 z-1 w-0.75 rounded-full bg-primary"
+      :class="
+        indicatorReady && 'transition-[transform,height] duration-320 ease-[cubic-bezier(0.4,0,0.2,1)]'
+      "
+      :style="indicatorStyle"
+    />
     <template v-for="item in items" :key="item.key">
       <!-- 分隔线 -->
       <SDivider v-if="item.type === 'divider'" class="mx-1" />
@@ -118,7 +215,9 @@ const handleSelect = (item: SMenuItem) => {
               ? 'bg-primary/10 text-primary'
               : 'text-on-surface/80 hover:bg-on-surface/5',
             item.disabled ? 'opacity-40 pointer-events-none' : '',
+            shakingItems[item.key] ? 's-menu-shake' : '',
           ]"
+          :style="shakingItems[item.key] ? { animationDelay: shakingItems[item.key] } : undefined"
           @click="handleSelect(item)"
         >
           <SImg
@@ -148,14 +247,28 @@ const handleSelect = (item: SMenuItem) => {
           >
             <component :is="item.trailing" />
           </div>
-          <Transition name="fade">
-            <span
-              v-if="modelValue === item.key"
-              class="absolute left-0 top-2 bottom-2 w-0.75 rounded-full bg-primary"
-            />
-          </Transition>
         </div>
       </STooltip>
     </template>
   </nav>
 </template>
+
+<style scoped>
+.s-menu-shake {
+  animation: s-menu-shake var(--s-menu-shake-ms, 180ms) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes s-menu-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+}
+
+:global(html[data-reduced-motion]) .s-menu-shake {
+  animation: none;
+}
+</style>
