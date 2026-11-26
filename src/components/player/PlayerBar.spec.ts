@@ -85,7 +85,7 @@ const mountBar = async (layout = "default") => {
             props: ["items"],
             emits: ["select"],
             template:
-              '<div><button v-for="item in items.filter(i => i.show !== false)" :key="item.key" :data-action="item.key" @click="$emit(\'select\', item.key)">{{ item.label }}</button></div>',
+              '<div><template v-for="item in items.filter(i => i.show !== false)" :key="item.key"><button :data-action="item.key" @click="$emit(\'select\', item.key)">{{ item.label }}</button><button v-for="child in (item.children || []).filter(i => i.show !== false)" :key="child.key" :data-action="child.key" @click="$emit(\'select\', child.key)">{{ child.label }}</button></template></div>',
           },
           SDialog: {
             props: ["open", "title"],
@@ -100,6 +100,10 @@ const mountBar = async (layout = "default") => {
           PlayerTimeInfo: true,
           Toolbar: true,
           PlaylistPickerDialog: true,
+          TagEditorDialog: {
+            props: ["open", "track"],
+            template: '<div v-if="open" data-tag-editor />',
+          },
         },
       },
     },
@@ -124,6 +128,15 @@ afterEach(() => {
   for (const item of dialogs) settle(item.id, false);
   dialogs.splice(0);
   wrapper?.unmount();
+});
+
+describe("player-bar track menu", () => {
+  it("opens the tag editor from More for local tracks", async () => {
+    await mountBar();
+    expect(wrapper.find("[data-tag-editor]").exists()).toBe(false);
+    await wrapper.get('[data-action="editTags"]').trigger("click");
+    expect(wrapper.find("[data-tag-editor]").exists()).toBe(true);
+  });
 });
 
 describe("player-bar file deletion", () => {

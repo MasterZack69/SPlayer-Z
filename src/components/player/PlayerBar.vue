@@ -47,6 +47,10 @@ const {
   openPicker,
 } = usePlaylistPicker();
 
+/** Tag editor dialog state */
+const tagEditorOpen = ref(false);
+const tagEditorTrack = shallowRef<Track | null>(null);
+
 /**
  * Confirm deletion of the selected local file, then remove it from playback.
  * @param track - Track selected when the menu action was invoked.
@@ -78,6 +82,10 @@ const { items: menuItems, handleSelect: onMenuSelect } = useTrackMenu(toRef(medi
   hidePlayActions: true,
   onAddToPlaylist: (track) => openPicker([track]),
   onDeleteFile: (track) => void deleteTrackFile(track),
+  onEditTags: (track) => {
+    tagEditorTrack.value = track;
+    tagEditorOpen.value = true;
+  },
   onDownload: (track, quality) => void enqueueDownload(track, { quality }),
 });
 </script>
@@ -224,4 +232,5 @@ const { items: menuItems, handleSelect: onMenuSelect } = useTrackMenu(toRef(medi
     </div>
   </div>
   <PlaylistPickerDialog v-model:open="pickerOpen" :mode="pickerMode" :tracks="pickerTracks" />
+  <TagEditorDialog v-model:open="tagEditorOpen" :track="tagEditorTrack" />
 </template>
