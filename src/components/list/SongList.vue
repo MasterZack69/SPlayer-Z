@@ -373,9 +373,16 @@ const playingIndex = computed(() => {
 /** 虚拟列表引用 */
 const virtualListRef = shallowRef<SVirtualListExposed | null>(null);
 
-/** 定位到当前播放歌曲 */
+/** 定位到当前播放歌曲；分碟列表需要让出吸顶标题条的位置 */
 const scrollToPlaying = (): void => {
-  if (playingIndex.value >= 0) virtualListRef.value?.scrollToIndex(playingIndex.value);
+  if (playingIndex.value < 0) return;
+  const list = virtualListRef.value;
+  if (!list) return;
+  if (discLayout.value && !discLayout.value.headers.has(playingIndex.value)) {
+    list.scrollTo(Math.max(0, list.getItemTop(playingIndex.value) - DISC_HEADER_HEIGHT));
+    return;
+  }
+  list.scrollToIndex(playingIndex.value);
 };
 
 /** 当前滚动位置 */
@@ -407,7 +414,25 @@ const isCompactList = computed(() => settings.appearance.songListStyle === "comp
 const rowHeight = computed(() => (isCompactList.value ? 56 : 88));
 
 /** Disc headings have a fixed height independent of row density. */
-const DISC_HEADER_HEIGHT = 40;
+const DISC_HEADER_HEIGHT = 36;
+
+/** Disc heading strip: the transparent border keeps it the same box height as the sticky copy. */
+const discHeaderClass = computed(() =>
+  isCompactList.value
+    ? "mx-3 pl-3 pr-4 h-8 rounded-lg bg-on-surface/[0.04] flex items-center gap-3 text-on-surface-variant"
+    : "mx-3 pl-3 pr-6 h-8 rounded-lg bg-on-surface/[0.04] flex items-center gap-3 text-on-surface-variant border-2 border-solid border-transparent",
+);
+
+/**
+ * Width of the visible duration/size columns.
+ * @returns The style placing the disc's song count over those columns, or undefined when hidden.
+ */
+const discCountStyle = computed(() => {
+  const columns = (["duration", "size"] as const).filter((column) => isColumnVisible(column));
+  if (columns.length === 0) return undefined;
+  const widths = columns.map((column) => SONG_LIST_COLUMN_WIDTHS[column]);
+  return { width: `calc(${widths.join(" + ")} + ${(columns.length - 1) * 0.75}rem)` };
+});
 
 /** Supply stable exact heights without measuring album headings in the DOM. */
 const discItemHeights = computed(() => {
@@ -417,6 +442,47 @@ const discItemHeights = computed(() => {
     (_track, index) => rowHeight.value + (layout.headers.has(index) ? DISC_HEADER_HEIGHT : 0),
   );
 });
+
+/** Top offset of each disc section, used to drive the sticky heading. */
+const discSections = computed(() => {
+  const layout = discLayout.value;
+  if (!layout) return [];
+  const sections: Array<{ disc: number; title?: string; count: number; top: number }> = [];
+  let order = 0;
+  for (const [startIndex, header] of layout.headers) {
+    sections.push({
+      ...header,
+      top: startIndex * rowHeight.value + order * DISC_HEADER_HEIGHT,
+    });
+    order++;
+  }
+  return sections;
+});
+
+/** Index of the disc currently pinned at the top, -1 when none applies. */
+const stickyDiscIndex = computed(() => {
+  const sections = discSections.value;
+  if (sections.length === 0 || scrollTop.value <= 0) return -1;
+  for (let i = sections.length - 1; i >= 0; i--) {
+    if (sections[i].top <= scrollTop.value) return i;
+  }
+  return 0;
+});
+
+/** Vertical push-back of the pinned heading while the next disc scrolls over it. */
+const stickyDiscOffset = computed(() => {
+  const idx = stickyDiscIndex.value;
+  if (idx < 0) return 0;
+  const next = discSections.value[idx + 1];
+  if (!next) return 0;
+  const distance = next.top - scrollTop.value;
+  return distance < DISC_HEADER_HEIGHT ? distance - DISC_HEADER_HEIGHT : 0;
+});
+
+/** Disc heading rendered in the sticky layer. */
+const stickyDiscHeader = computed(() =>
+  stickyDiscIndex.value >= 0 ? discSections.value[stickyDiscIndex.value] : null,
+);
 
 /**
  * Build song-row classes
@@ -781,32 +847,71 @@ defineExpose({
                 </div>
               </div>
             </template>
+            <!-- 滚动吸顶分碟标题 -->
+            <template v-if="stickyDiscHeader" #sticky>
+              <div
+                class="mr-1.5 pb-1 bg-app"
+                :style="
+                  stickyDiscOffset ? { transform: `translateY(${stickyDiscOffset}px)` } : undefined
+                "
+              >
+                <div :class="discHeaderClass">
+                  <div
+                    class="shrink-0 flex items-center justify-center"
+                    :class="showIndex ? 'w-8' : ''"
+                  >
+                    <IconLucideDisc3 class="size-4 text-primary/70" aria-hidden="true" />
+                  </div>
+                  <h2
+                    class="min-w-0 flex-1 truncate text-sm font-semibold leading-4"
+                    :title="stickyDiscHeader.title"
+                  >
+                    {{ t("collection.disc", { disc: stickyDiscHeader.disc }) }}
+                    <span
+                      v-if="stickyDiscHeader.title"
+                      class="font-normal text-on-surface-variant/70"
+                    >
+                      · {{ stickyDiscHeader.title }}
+                    </span>
+                  </h2>
+                  <span
+                    class="shrink-0 text-xs leading-4 whitespace-nowrap text-center tabular-nums text-on-surface-variant/50"
+                    :style="discCountStyle"
+                  >
+                    {{ t("common.totalSongs", { count: stickyDiscHeader.count }) }}
+                  </span>
+                </div>
+              </div>
+            </template>
             <!-- 列表项 -->
             <template #default="{ item, index }: { item: Track; index: number }">
-              <div
-                v-if="discLayout?.headers.has(index)"
-                class="mx-6 h-10 flex items-center gap-3 text-on-surface-variant"
-                :class="!isCompactList && index > 0 ? 'pb-3' : ''"
-              >
-                <IconLucideDisc3
-                  class="size-4 translate-y-px shrink-0 text-primary/70"
-                  aria-hidden="true"
-                />
-                <h2
-                  class="min-w-0 flex-1 truncate text-sm font-semibold"
-                  :title="discLayout.headers.get(index)!.title"
-                >
-                  {{ t("collection.disc", { disc: discLayout.headers.get(index)!.disc }) }}
-                  <span
-                    v-if="discLayout.headers.get(index)!.title"
-                    class="font-normal text-on-surface-variant/70"
+              <div v-if="discLayout?.headers.has(index)" class="pb-1">
+                <div :class="discHeaderClass">
+                  <div
+                    class="shrink-0 flex items-center justify-center"
+                    :class="showIndex ? 'w-8' : ''"
                   >
-                    · {{ discLayout.headers.get(index)!.title }}
+                    <IconLucideDisc3 class="size-4 text-primary/70" aria-hidden="true" />
+                  </div>
+                  <h2
+                    class="min-w-0 flex-1 truncate text-sm font-semibold leading-4"
+                    :title="discLayout.headers.get(index)!.title"
+                  >
+                    {{ t("collection.disc", { disc: discLayout.headers.get(index)!.disc }) }}
+                    <span
+                      v-if="discLayout.headers.get(index)!.title"
+                      class="font-normal text-on-surface-variant/70"
+                    >
+                      · {{ discLayout.headers.get(index)!.title }}
+                    </span>
+                  </h2>
+                  <span
+                    class="shrink-0 text-xs leading-4 whitespace-nowrap text-center tabular-nums text-on-surface-variant/50"
+                    :style="discCountStyle"
+                  >
+                    {{ t("common.totalSongs", { count: discLayout.headers.get(index)!.count }) }}
                   </span>
-                </h2>
-                <span class="shrink-0 text-xs tabular-nums text-on-surface-variant/50">
-                  {{ t("common.totalSongs", { count: discLayout.headers.get(index)!.count }) }}
-                </span>
+                </div>
               </div>
 
               <div :class="isCompactList ? 'px-3' : 'px-3 pb-3'">
