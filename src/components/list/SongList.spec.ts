@@ -15,9 +15,10 @@ beforeEach(() => {
   appearance.songListColumnOrder = [...SONG_LIST_COLUMNS];
   appearance.songListHiddenColumns = [];
   preset.ignoreMusicGenre = true;
+  preset.hideExplicitTag = false;
   setActivePinia(createPinia());
 });
-const preset = reactive({ ignoreMusicGenre: true });
+const preset = reactive({ ignoreMusicGenre: true, hideExplicitTag: false });
 const appearance = reactive({
   songListStyle: "comfortable",
   songListColumnOrder: [...SONG_LIST_COLUMNS],
@@ -91,6 +92,7 @@ const VirtualList = defineComponent({
     (props, { slots }) =>
     () =>
       h("div", [
+        slots.sticky?.(),
         slots.header?.(),
         ...(props.items as Track[]).map((item, index) => slots.default?.({ item, index })),
       ]),
@@ -443,6 +445,37 @@ describe("album disc sections", () => {
     expect(wrapper.findComponent(VirtualList).attributes("exact-item-heights")).toBe("92,56,92,56");
     wrapper.unmount();
   });
+
+  const scrollTo = async (wrapper: ReturnType<typeof mountList>, top: number) => {
+    wrapper.findComponent(VirtualList).vm.$emit("scroll", { target: { scrollTop: top } });
+    await wrapper.vm.$nextTick();
+  };
+
+  it("pins the current disc heading and pushes it back under the next one", async () => {
+    const wrapper = mountList({ items: albumTracks, collectionType: "album" });
+    expect(wrapper.find("[data-sticky-disc]").exists()).toBe(false);
+
+    await scrollTo(wrapper, 100);
+    expect(wrapper.get("[data-sticky-disc]").text()).toContain("Disc 1");
+    expect(wrapper.get("[data-sticky-disc]").attributes("style")).toBeUndefined();
+
+    await scrollTo(wrapper, 212);
+    expect(wrapper.get("[data-sticky-disc]").text().replace(/\s+/g, " ")).toContain(
+      "Disc 2 · Bonus",
+    );
+
+    await scrollTo(wrapper, 200);
+    expect(wrapper.get("[data-sticky-disc]").text()).toContain("Disc 1");
+    expect(wrapper.get("[data-sticky-disc]").attributes("style")).toContain("translateY(-24px)");
+    wrapper.unmount();
+  });
+
+  it("never pins a heading for lists without disc grouping", async () => {
+    const wrapper = mountList({ items: albumTracks, collectionType: "collection" });
+    await scrollTo(wrapper, 150);
+    expect(wrapper.find("[data-sticky-disc]").exists()).toBe(false);
+    wrapper.unmount();
+  });
 });
 
 describe("displayed playback order", () => {
@@ -460,6 +493,25 @@ describe("displayed playback order", () => {
     expect(exposed.playbackItems.map((item) => item.title)).toEqual(["Alpha"]);
     await wrapper.setProps({ searchQuery: "missing" });
     expect(exposed.playbackItems).toEqual([]);
+    wrapper.unmount();
+  });
+});
+
+describe("explicit badges", () => {
+  const label = () => `[aria-label="${en.songList.explicitTagLabel}"]`;
+
+  it("marks explicit tracks and hides the mark when the preference is on", async () => {
+    const wrapper = mountList({
+      items: [
+        { ...track, id: "clean", title: "Clean" },
+        { ...track, id: "explicit", title: "Explicit", explicit: true },
+      ],
+    });
+    expect(wrapper.findAll(label())).toHaveLength(1);
+
+    preset.hideExplicitTag = true;
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findAll(label())).toHaveLength(0);
     wrapper.unmount();
   });
 });

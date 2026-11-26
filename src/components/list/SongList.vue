@@ -850,6 +850,7 @@ defineExpose({
             <!-- Sticky disc heading while scrolling -->
             <template v-if="stickyDiscHeader" #sticky>
               <div
+                data-sticky-disc
                 class="mr-1.5 pb-1 bg-app"
                 :style="
                   stickyDiscOffset ? { transform: `translateY(${stickyDiscOffset}px)` } : undefined

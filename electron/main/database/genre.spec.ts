@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ db: null as DatabaseSync | null }));
 vi.mock("./index", () => ({ getDb: () => state.db! }));
 import { GENRE_ALIASES } from "@shared/utils/genre";
-import { getGenreList, getGenreTracks, getLibraryStats } from "./queries";
+import { getAlbumTracks, getGenreList, getGenreTracks, getLibraryStats } from "./queries";
 
 beforeEach(() => {
   state.db = new DatabaseSync(":memory:");
@@ -111,3 +111,26 @@ it.each(["Music", "music", "MUSIC", "mUsIc", " music "])(
     expect(getLibraryStats(false).genreCount).toBe(4);
   },
 );
+
+describe("album track ordering", () => {
+  it("orders by track number, falls back to path, and puts missing numbers last", () => {
+    state.db!.exec("ALTER TABLE tracks ADD COLUMN track INTEGER");
+    const insert = state.db!.prepare(
+      "INSERT INTO tracks (id, path, album, track) VALUES (?, ?, ?, ?)",
+    );
+    const album = JSON.stringify({ name: "Ordered" });
+    insert.run("missing", "/b.flac", album, null);
+    insert.run("three", "/a.flac", album, 3);
+    insert.run("one-b", "/b.flac", album, 1);
+    insert.run("one-a", "/a.flac", album, 1);
+    insert.run("two", "/c.flac", album, 2);
+
+    expect(getAlbumTracks("Ordered").map((track) => track.id)).toEqual([
+      "one-a",
+      "one-b",
+      "two",
+      "three",
+      "missing",
+    ]);
+  });
+});
