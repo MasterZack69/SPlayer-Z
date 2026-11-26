@@ -9,6 +9,7 @@ build
 .eslintcache
 .claude
 .agents
+.mlai
 docs/superpowers
 skills-lock.json
 *.log*
