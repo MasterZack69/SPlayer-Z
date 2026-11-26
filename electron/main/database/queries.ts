@@ -389,11 +389,19 @@ export const getGenreTracks = (genreName: string, ignoreMusicGenre = true): Trac
   return rows.map(rowToTrack);
 };
 
-/** 按专辑名获取全部曲目 */
+/**
+ * 按专辑名获取全部曲目
+ *
+ * 必须显式排序：曲目按并行扫描的完成顺序入库，不排序时专辑内顺序是随机的。
+ * 缺音轨号的排末尾，同号时以路径兜底。
+ * @param albumName - 专辑名
+ * @returns 该专辑下的曲目
+ */
 export const getAlbumTracks = (albumName: string): Track[] => {
   const rows = getDb()
     .prepare(
-      `SELECT * FROM tracks WHERE json_extract(album, '$.name') = ? AND ${excludeCueContainer()}`,
+      `SELECT * FROM tracks WHERE json_extract(album, '$.name') = ? AND ${excludeCueContainer()}
+       ORDER BY track IS NULL, track, path`,
     )
     .all(albumName) as TrackRow[];
   return rows.map(rowToTrack);
