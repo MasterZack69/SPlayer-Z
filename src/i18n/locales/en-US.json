@@ -561,6 +561,7 @@
     "size": "Size",
     "duration": "Duration",
     "noResults": "No matching songs",
+    "explicitTagLabel": "Explicit content",
     "sort": {
       "mode": "Sort Mode",
       "order": "Sort Order",
@@ -871,6 +872,10 @@
     "hideQualityTag": {
       "label": "Hide Quality Tag",
       "description": "Don't show quality tags in song list"
+    },
+    "hideExplicitTag": {
+      "label": "Hide Explicit Tag",
+      "description": "Don't show Explicit tags"
     },
     "ignoreMusicGenre": {
       "label": "Ignore “Music” Genre",

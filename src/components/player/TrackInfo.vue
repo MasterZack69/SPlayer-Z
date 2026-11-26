@@ -2,6 +2,7 @@
 import { setPlayerExpanded } from "@/services/playerTransition";
 import type { Artist } from "@shared/types/player";
 import { useMediaStore } from "@/stores/media";
+import { useSettingsStore } from "@/stores/settings";
 import { navigateToArtist } from "@/utils/navigate";
 import { getValidArtists } from "@shared/utils/track";
 import PlayerBarLyric from "./PlayerBarLyric.vue";
@@ -15,6 +16,7 @@ withDefaults(
 );
 
 const media = useMediaStore();
+const settings = useSettingsStore();
 
 /** Current displayable artists. */
 const artists = computed(() => getValidArtists(media.track?.artists));
@@ -60,6 +62,12 @@ const isArtistLinkable = (artist: Artist): boolean => {
           >
             {{ media.track.title }}
           </SMarquee>
+          <IconSpExplicit
+            v-if="media.track.explicit && !settings.preset.hideExplicitTag"
+            :aria-label="$t('songList.explicitTagLabel')"
+            class="shrink-0 text-on-surface-variant/55"
+            :class="compact ? 'size-3.5' : 'size-4'"
+          />
           <slot name="title-trailing" />
         </div>
         <PlayerBarLyric :compact="compact">

@@ -18,6 +18,9 @@ vi.mock("@/stores/media", () => ({
     },
   }),
 }));
+vi.mock("@/stores/settings", () => ({
+  useSettingsStore: () => ({ preset: { hideExplicitTag: true } }),
+}));
 vi.mock("@/composables/useFavorite", () => ({
   useFavorite: () => ({ isSupported: () => true, isLiked: () => false }),
 }));

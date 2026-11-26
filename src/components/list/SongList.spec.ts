@@ -436,11 +436,11 @@ describe("album disc sections", () => {
   it("updates exact virtual heights when changing row density", async () => {
     const wrapper = mountList({ items: albumTracks, collectionType: "album" });
     expect(wrapper.findComponent(VirtualList).attributes("exact-item-heights")).toBe(
-      "128,88,128,88",
+      "124,88,124,88",
     );
     appearance.songListStyle = "compact";
     await wrapper.vm.$nextTick();
-    expect(wrapper.findComponent(VirtualList).attributes("exact-item-heights")).toBe("96,56,96,56");
+    expect(wrapper.findComponent(VirtualList).attributes("exact-item-heights")).toBe("92,56,92,56");
     wrapper.unmount();
   });
 });
