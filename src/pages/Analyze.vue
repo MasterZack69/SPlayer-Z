@@ -577,12 +577,15 @@ onBeforeUnmount(() => {
   height: 30px;
   border: 1px solid #43536b;
   border-radius: 9px;
+  background: #202839;
   color: white;
   font-size: 19px;
   line-height: 1;
+  cursor: pointer;
 }
 .zoom-controls button:disabled {
   opacity: 0.35;
+  cursor: not-allowed;
 }
 .zoom-controls button:not(:disabled):hover {
   background: #33445d;
