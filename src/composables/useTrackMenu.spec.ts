@@ -4,6 +4,7 @@ import { createI18n } from "vue-i18n";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlaybackContext, Track } from "@shared/types/player";
 import en from "@/i18n/locales/en-US.json";
+import { analysisTrack } from "@/services/analysisSelection";
 import { useTrackMenu, type TrackMenuOptions } from "./useTrackMenu";
 
 const mocks = vi.hoisted(() => ({
@@ -57,11 +58,12 @@ beforeEach(() => {
     api: { system: { showInExplorer: mocks.showInExplorer, copyTrackFile: mocks.copyTrackFile } },
   });
   mocks.length.value = 3;
+  analysisTrack.value = null;
   track.value = { id: "song", source: "local", title: "Song", artists: [], duration: 180000 };
 });
 
 describe("song menu More submenu", () => {
-  it("moves local file, edit, and search actions under More while keeping delete at the top level", () => {
+  it("includes Analyze and local file actions under More while keeping delete at the top level", () => {
     const { menu, wrapper } = setup({ onEditTags: vi.fn() });
     const visible = menu.items.value.filter((item) => item.show !== false);
     const more = visible.find((item) => item.key === "more");
@@ -74,6 +76,7 @@ describe("song menu More submenu", () => {
       "more",
     ]);
     expect(more?.children?.filter((item) => item.show !== false).map((item) => item.key)).toEqual([
+      "analyze",
       "editTags",
       "showInExplorer",
       "copyFile",
@@ -84,11 +87,12 @@ describe("song menu More submenu", () => {
     wrapper.unmount();
   });
 
-  it("retains search but hides local-only actions for server tracks", () => {
+  it("retains Analyze and search but hides local-only actions for server tracks", () => {
     track.value!.source = "streaming";
     const { menu, wrapper } = setup();
     const more = menu.items.value.find((item) => item.key === "more");
     expect(more?.children?.filter((item) => item.show !== false).map((item) => item.key)).toEqual([
+      "analyze",
       "searchSame",
       "copyTitle",
       "copyId",
@@ -105,11 +109,14 @@ describe("song menu More submenu", () => {
     };
     mocks.copyTrackFile.mockResolvedValue(true);
     const { menu, wrapper } = setup();
+    await menu.handleSelect("analyze");
     await menu.handleSelect("showInExplorer");
     await menu.handleSelect("copyFile");
     await menu.handleSelect("copyPath");
     await menu.handleSelect("searchSame");
     expect(mocks.showInExplorer).toHaveBeenCalledWith("/music/album.flac");
+    expect(analysisTrack.value).toEqual(track.value);
+    expect(mocks.push).toHaveBeenCalledWith({ name: "analyze" });
     expect(mocks.copyTrackFile).toHaveBeenCalledWith(track.value);
     expect(mocks.success).toHaveBeenCalledWith("Copied");
     expect(mocks.copy).toHaveBeenCalledWith("/music/album.flac");
