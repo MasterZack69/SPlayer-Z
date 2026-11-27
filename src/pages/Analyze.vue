@@ -34,6 +34,20 @@ const metrics = computed(() => {
     { label: t("analysis.clips"), value: data.clippedSamples.toLocaleString() },
   ];
 });
+const verdictDetail = computed(() => {
+  const data = result.value;
+  if (!data) return "";
+  if (data.verdict === "genuine" && data.cutoffHz) {
+    return t("analysis.contentReaches", { frequency: formatFrequency(data.cutoffHz) });
+  }
+  return t("analysis.verdictDetails." + data.verdict);
+});
+const evidenceLevel = computed(() => {
+  const score = result.value?.verdictConfidence ?? 0;
+  if (score >= 80) return t("analysis.evidenceLevels.strong");
+  if (score >= 55) return t("analysis.evidenceLevels.moderate");
+  return t("analysis.evidenceLevels.limited");
+});
 const timeRange = computed(() => {
   const duration = result.value?.durationMs ?? 0;
   const span = duration / zoom.value;
@@ -236,19 +250,26 @@ onBeforeUnmount(() => {
             <div>
               <span class="eyebrow">{{ t("analysis.verdict") }}</span>
               <h2>{{ t("analysis.verdicts." + result.verdict) }}</h2>
-              <p>{{ t("analysis.verdictDetails." + result.verdict) }}</p>
+              <p>{{ verdictDetail }}</p>
             </div>
             <div class="verdict-evidence">
               <span v-if="result.cutoffHz">
-                {{ t("analysis.cutoff") }} · {{ formatFrequency(result.cutoffHz) }}
+                {{
+                  t(
+                    result.verdict === "genuine" || result.verdict === "hiRes"
+                      ? "analysis.observedEdge"
+                      : "analysis.cutoff",
+                  )
+                }}
+                · {{ formatFrequency(result.cutoffHz) }}
               </span>
-              <span v-if="result.sectionsJudged">
+              <span v-if="result.verdictConfidence && result.sectionsJudged">
                 {{ t("analysis.sections") }} · {{ result.sectionsAgreeing }}/{{
                   result.sectionsJudged
                 }}
               </span>
               <span v-if="result.verdictConfidence">
-                {{ t("analysis.confidence") }} · {{ result.verdictConfidence }}%
+                {{ t("analysis.confidence") }} · {{ evidenceLevel }}
               </span>
             </div>
           </section>

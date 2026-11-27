@@ -6,7 +6,7 @@ use ffmpeg_audio::{AudioError, HttpCancelHandle, ResampleOptions, SeekMode};
 use parking_lot::Mutex;
 use rustfft::{num_complex::Complex, FftPlanner};
 
-use crate::analysis_verdict::SpectrumEvidence;
+use crate::analysis_verdict::{SpectrumEvidence, UpsampleScan};
 use crate::decoder::reader::open_source;
 
 pub(crate) static ANALYSIS_GENERATION: AtomicU64 = AtomicU64::new(0);
@@ -104,6 +104,7 @@ pub(crate) fn analyze(
     let info = reader.source_info().clone();
     let rate = info.sample_rate.max(0) as u32;
     ensure!(rate > 0 && info.channels > 0, "Audio stream has no samples");
+    let channels = info.channels as usize;
     let duration_ms = if end_ms > start_ms {
         end_ms - start_ms
     } else {
@@ -122,7 +123,7 @@ pub(crate) fn analyze(
     let mut converter = reader.build_resampler(
         ResampleOptions::new()
             .sample_rate(info.sample_rate)
-            .channels(1)
+            .channels(info.channels)
             .format::<f32>(),
     )?;
     let fft = FftPlanner::<f32>::new().plan_fft_forward(FFT_SIZE);
@@ -130,7 +131,9 @@ pub(crate) fn analyze(
         .map(|index| 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / FFT_SIZE as f32).cos())
         .collect();
     let mut frame = vec![Complex::new(0.0, 0.0); FFT_SIZE];
-    let mut samples = Vec::<f32>::with_capacity(FFT_SIZE * 2);
+    let mut auth_frame = vec![Complex::new(0.0, 0.0); FFT_SIZE];
+    let mut auth_power = vec![0.0_f64; FFT_SIZE / 2];
+    let mut samples = Vec::<f32>::with_capacity(FFT_SIZE * 2 * channels);
     let mut spectrogram = vec![0_u8; COLUMNS * BINS];
     let mut band_sum = vec![0.0_f64; BINS];
     let mut evidence = SpectrumEvidence::new(FFT_SIZE / 2);
@@ -138,6 +141,7 @@ pub(crate) fn analyze(
     let mut peak = 0.0_f64;
     let mut squares = 0.0_f64;
     let mut clipped = 0_u64;
+    let mut sample_count = 0_u64;
     let mut count = 0_u64;
     let mut window_start = 0_u64;
     let max_samples = if duration_ms > 0.0 {
@@ -150,6 +154,14 @@ pub(crate) fn analyze(
     } else {
         max_samples.div_ceil(HOP_SIZE as u64)
     };
+    let auth_stride = expected_windows.div_ceil(1200).max(1);
+    let sampled_columns = expected_windows.div_ceil(auth_stride).min(1200);
+    let section_count = (sampled_columns / 6).min(24);
+    let mut upsample = UpsampleScan::new(if max_samples == u64::MAX {
+        0
+    } else {
+        max_samples
+    });
 
     loop {
         if ANALYSIS_GENERATION.load(Ordering::Relaxed) != generation {
@@ -161,36 +173,63 @@ pub(crate) fn analyze(
             Err(error) => return Err(error.into()),
         };
         converter.process::<f32>(Some(&decoded))?;
-        for &sample in converter.output_as::<f32>() {
+        for decoded_frame in converter.output_as::<f32>().chunks_exact(channels) {
             if count >= max_samples {
                 break;
             }
-            let value = f64::from(sample);
-            if value.is_finite() {
-                let absolute = value.abs();
-                peak = peak.max(absolute);
-                squares += value * value;
-                if absolute >= 0.99996 {
-                    clipped += 1;
+            upsample.add(decoded_frame[0], count);
+            for &sample in decoded_frame {
+                upsample.observe_depth(sample);
+                let value = f64::from(sample);
+                if value.is_finite() {
+                    let absolute = value.abs();
+                    peak = peak.max(absolute);
+                    squares += value * value;
+                    if absolute >= 0.99996 {
+                        clipped += 1;
+                    }
+                    samples.push(sample);
+                } else {
+                    samples.push(0.0);
                 }
-                samples.push(sample);
-            } else {
-                samples.push(0.0);
+                sample_count += 1;
             }
             count += 1;
         }
-        while samples.len() >= FFT_SIZE {
-            for (target, (&sample, &weight)) in frame.iter_mut().zip(samples.iter().zip(&window)) {
-                *target = Complex::new(sample * weight, 0.0);
+        while samples.len() >= FFT_SIZE * channels {
+            for (index, target) in frame.iter_mut().enumerate() {
+                let mixed = samples[index * channels..(index + 1) * channels]
+                    .iter()
+                    .copied()
+                    .sum::<f32>()
+                    / channels as f32;
+                *target = Complex::new(mixed * window[index], 0.0);
             }
             fft.process(&mut frame);
             let window_index = window_start / HOP_SIZE as u64;
-            let section = if expected_windows > 0 {
-                (window_index * 24 / expected_windows).min(23) as usize
-            } else {
-                0
-            };
-            evidence.add(&frame, section);
+            if window_index % auth_stride == 0 && (expected_windows > 0 || window_index < 1200) {
+                auth_power.fill(0.0);
+                for channel in 0..channels {
+                    for (index, target) in auth_frame.iter_mut().enumerate() {
+                        *target =
+                            Complex::new(samples[index * channels + channel] * window[index], 0.0);
+                    }
+                    fft.process(&mut auth_frame);
+                    for (bin, value) in auth_frame.iter().take(FFT_SIZE / 2).enumerate() {
+                        let amplitude = f64::from(value.norm()) * 4.0 / FFT_SIZE as f64;
+                        auth_power[bin] += amplitude * amplitude / channels as f64;
+                    }
+                }
+                let section = if section_count >= 2 {
+                    Some(
+                        (window_index * section_count / expected_windows).min(section_count - 1)
+                            as usize,
+                    )
+                } else {
+                    None
+                };
+                evidence.add(&auth_power, section, rate);
+            }
             let column = if expected_windows > 1 {
                 ((window_start / HOP_SIZE as u64) * (COLUMNS - 1) as u64 / (expected_windows - 1))
                     .min((COLUMNS - 1) as u64) as usize
@@ -207,7 +246,7 @@ pub(crate) fn analyze(
                 band_sum[mapped] += amplitude * amplitude;
             }
             band_count += 1;
-            samples.drain(..HOP_SIZE);
+            samples.drain(..HOP_SIZE * channels);
             window_start += HOP_SIZE as u64;
         }
         if count >= max_samples {
@@ -215,8 +254,14 @@ pub(crate) fn analyze(
         }
     }
     ensure!(count > 0, "No audio samples were decoded");
-    let rms = (squares / count as f64).sqrt();
-    let verdict = evidence.assess(rate, info.codec_name.as_deref().unwrap_or_default());
+    let rms = (squares / sample_count as f64).sqrt();
+    let verdict = evidence.assess(
+        rate,
+        info.codec_name.as_deref().unwrap_or_default(),
+        info.bits_per_sample.max(0) as u32,
+        upsample.effective_bits(),
+        upsample.finding(rate),
+    );
     let reference = band_sum.iter().copied().fold(0.0_f64, f64::max);
     let threshold = (reference * 1e-6).max(1e-12);
     let upper_band_hz = if band_count > 0 && reference > 1e-9 {

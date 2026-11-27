@@ -2012,13 +2012,20 @@
     "description": "Measured levels and frequency content.",
     "verdict": "Spectrum verdict",
     "cutoff": "Cutoff",
+    "observedEdge": "Observed edge",
     "sections": "Sections agreeing",
-    "confidence": "Confidence",
+    "confidence": "Evidence",
+    "evidenceLevels": {
+      "strong": "Strong",
+      "moderate": "Moderate",
+      "limited": "Limited"
+    },
+    "contentReaches": "Content reaches about {frequency}. Nothing points to a lossy or upsampled source.",
     "verdicts": {
-      "inconclusive": "Inconclusive",
-      "lossyCodec": "Lossy codec",
-      "genuine": "Full-band audio",
-      "hiRes": "Full-band high-rate audio",
+      "inconclusive": "Unclear",
+      "lossyCodec": "Lossy format",
+      "genuine": "Lossless",
+      "hiRes": "Hi-Res",
       "rolloff": "Gradual roll-off",
       "bandLimited": "Band-limited",
       "possibleLossySource": "Possible lossy source",
@@ -2026,15 +2033,15 @@
       "upsampled": "Likely upsampled"
     },
     "verdictDetails": {
-      "inconclusive": "The spectrum does not provide enough consistent evidence for a source judgement.",
+      "inconclusive": "There is too little audible signal to judge the source.",
       "lossyCodec": "The file uses a lossy audio codec.",
-      "genuine": "Frequency content reaches the upper part of this file's band.",
-      "hiRes": "Frequency content reaches the upper part of this high-rate file. Sample rate alone does not prove high-resolution source material.",
+      "genuine": "Nothing in the measured audio points to a lossy or upsampled source.",
+      "hiRes": "Content above 24 kHz or a noise floor below 16-bit level verifies high-resolution detail.",
       "rolloff": "The upper frequencies fade gradually; the cause cannot be determined from this shape.",
       "bandLimited": "A sharp edge is visible, but the evidence does not establish its cause.",
       "possibleLossySource": "A consistent sharp cutoff resembles a lossy source, though mastering filters can produce similar edges.",
       "lossySource": "A low, steep cutoff with supporting evidence across the track suggests a lossy source.",
-      "upsampled": "A steep, empty, stable edge near a common source Nyquist suggests upsampling."
+      "upsampled": "Sample interpolation or a corroborated source-rate cutoff indicates upsampling."
     },
     "loading": "Reading the audio…",
     "loadingDetail": "The track is decoded separately from playback.",

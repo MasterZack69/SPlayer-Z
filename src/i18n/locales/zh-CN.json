@@ -2011,13 +2011,20 @@
     "eyebrow": "音轨分析",
     "verdict": "频谱判断",
     "cutoff": "截止频率",
+    "observedEdge": "观察到的边缘",
     "sections": "一致片段",
-    "confidence": "置信度",
+    "confidence": "证据强度",
+    "evidenceLevels": {
+      "strong": "强",
+      "moderate": "中",
+      "limited": "有限"
+    },
+    "contentReaches": "音频内容延伸到约 {frequency}。没有证据表明音源经过有损编码或升采样。",
     "verdicts": {
-      "inconclusive": "无法判断",
-      "lossyCodec": "有损编码",
-      "genuine": "全频带音频",
-      "hiRes": "全频带高采样率音频",
+      "inconclusive": "不明确",
+      "lossyCodec": "有损格式",
+      "genuine": "无损",
+      "hiRes": "高解析度",
       "rolloff": "渐进衰减",
       "bandLimited": "频带受限",
       "possibleLossySource": "可能来自有损音源",
@@ -2025,15 +2032,15 @@
       "upsampled": "很可能经过升采样"
     },
     "verdictDetails": {
-      "inconclusive": "频谱没有提供足够且一致的证据，无法判断音源。",
+      "inconclusive": "可听信号太少，无法判断音源。",
       "lossyCodec": "该文件使用有损音频编码。",
-      "genuine": "频率内容延伸到文件频带的上部。",
-      "hiRes": "频率内容延伸到高采样率文件频带的上部。采样率本身不能证明音源是高解析度。",
+      "genuine": "实测音频中没有证据表明音源经过有损编码或升采样。",
+      "hiRes": "24 kHz 以上的内容或低于 16 位水平的噪声底，证实音频包含高解析度细节。",
       "rolloff": "高频逐渐衰减，无法仅凭这种形态确定原因。",
       "bandLimited": "可见明显的截止边缘，但证据不足以确定原因。",
       "possibleLossySource": "稳定的明显截止类似有损音源，但母带滤波也可能产生类似边缘。",
       "lossySource": "低频率且陡峭的截止边缘，加上跨片段的证据，表明音源可能经过有损编码。",
-      "upsampled": "在常见音源奈奎斯特频率附近出现陡峭、干净且稳定的边缘，表明可能经过升采样。"
+      "upsampled": "采样插值特征或有佐证的原始采样率截止边缘表明音频经过升采样。"
     },
     "description": "查看这首歌曲的频率分布和实测电平。",
     "loading": "正在读取音频…",
