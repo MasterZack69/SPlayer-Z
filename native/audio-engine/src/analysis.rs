@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use anyhow::{bail, ensure, Result};
-use ffmpeg_audio::{AudioError, HttpCancelHandle, ResampleOptions, SeekMode};
+use ffmpeg_audio::{sys, AudioError, HttpCancelHandle, ResampleOptions, SeekMode};
 use parking_lot::Mutex;
 use rustfft::{num_complex::Complex, FftPlanner};
 
@@ -143,6 +143,7 @@ pub(crate) fn analyze(
     let mut clipped = 0_u64;
     let mut sample_count = 0_u64;
     let mut count = 0_u64;
+    let mut corrupt_packets = 0_u32;
     let mut window_start = 0_u64;
     let max_samples = if duration_ms > 0.0 {
         (duration_ms * rate as f64 / 1000.0).ceil() as u64
@@ -168,8 +169,19 @@ pub(crate) fn analyze(
             bail!("Analysis cancelled");
         }
         let decoded = match reader.receive_frame() {
-            Ok(Some(decoded)) => decoded,
+            Ok(Some(decoded)) => {
+                corrupt_packets = 0;
+                decoded
+            }
             Ok(None) | Err(AudioError::Eof) => break,
+            Err(error @ AudioError::FFmpeg(sys::AVERROR_INVALIDDATA, _)) => {
+                // The decoder has consumed the damaged packet, so the next read can continue.
+                corrupt_packets += 1;
+                if corrupt_packets >= 32 {
+                    return Err(error.into());
+                }
+                continue;
+            }
             Err(error) => return Err(error.into()),
         };
         converter.process::<f32>(Some(&decoded))?;
