@@ -9,6 +9,7 @@ import { queueLength } from "@/stores/queue";
 import { useCopyText } from "@/composables/useCopyText";
 import { toast } from "@/composables/useToast";
 import { getTrackShareUrl } from "@/utils/format/shareUrl";
+import { analysisTrack } from "@/services/analysisSelection";
 import IconPlay from "~icons/lucide/play";
 import IconListStart from "~icons/lucide/list-start";
 import IconListEnd from "~icons/lucide/list-end";
@@ -21,6 +22,7 @@ import IconListMinus from "~icons/lucide/list-minus";
 import IconCloudOff from "~icons/lucide/cloud-off";
 import IconSearch from "~icons/lucide/search";
 import IconMoreHorizontal from "~icons/lucide/more-horizontal";
+import IconAudioLines from "~icons/lucide/audio-lines";
 
 export interface TrackMenuOptions {
   /** 集合类型 */
@@ -119,6 +121,12 @@ export const useTrackMenu = (
         separator: true,
         children: [
           {
+            key: "analyze",
+            label: t("songList.context.analyze"),
+            icon: markRaw(IconAudioLines),
+            show: source === "local" || source === "streaming",
+          },
+          {
             key: "editTags",
             label: t("songList.context.editTags"),
             icon: markRaw(IconSquarePen),
@@ -175,6 +183,10 @@ export const useTrackMenu = (
     const current = track.value;
     if (!current) return;
     switch (key) {
+      case "analyze":
+        analysisTrack.value = toRaw(current);
+        await router.push({ name: "analyze" });
+        break;
       case "play":
         player.playNow(current, options.playbackContext?.value);
         break;

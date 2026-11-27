@@ -20,6 +20,8 @@ Recognition capture and Windows taskbar modules have been deleted. Do not re-ena
 
 Loading and cancellation use generation ownership so a late decoder result cannot replace a newer track. Streaming HTTP sources and authentication resolution must preserve cancellation and avoid exposing credentials to the renderer.
 
+Track analysis uses a separate FFmpeg decoder on a Rust worker thread, leaving playback state untouched. The native worker returns a bounded linear-frequency spectrogram, level measurements, format details, and an observed upper spectral band. Its Rust verdict follows Specty's broad spectrum-shape and section-agreement rules: a cutoff alone is described as band-limited unless supporting signs agree across the track. The verdict is evidence about the decoded audio, not proof of its provenance. Main-process IPC resolves authorized media-server sources and keeps authenticated URLs out of the renderer. Leaving the page cancels the analysis generation.
+
 JavaScript-facing times are milliseconds. Rust works in seconds internally; conversion occurs at the main-process boundary.
 
 ## Build prerequisites

@@ -7,6 +7,8 @@
 )))]
 compile_error!("SPlayer supports only x86_64 and aarch64 Linux");
 
+mod analysis;
+mod analysis_verdict;
 mod bindings;
 mod decoder;
 mod dsp;

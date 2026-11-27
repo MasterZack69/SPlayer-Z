@@ -85,6 +85,11 @@ const router = createRouter({
           component: () => import("@/pages/Search.vue"),
         },
         {
+          path: "analyze",
+          name: "analyze",
+          component: () => import("@/pages/Analyze.vue"),
+        },
+        {
           path: "streaming",
           component: () => import("@/pages/Streaming/Index.vue"),
           redirect: "/streaming/songs",

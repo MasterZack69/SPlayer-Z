@@ -12,6 +12,7 @@ import { registerCacheIpc } from "./cache";
 import { registerStatsIpc } from "./stats";
 import { registerPlaylistIpc } from "./playlist";
 import { registerOpenccIpc } from "./opencc";
+import { registerAnalysisIpc } from "./analysis";
 
 /**
  * 注册所有 IPC 处理
@@ -32,4 +33,5 @@ export const registerIpcHandlers = (onStartupComplete: () => void): void => {
   registerLastfmIpc();
   registerCacheIpc();
   registerStatsIpc();
+  registerAnalysisIpc();
 };

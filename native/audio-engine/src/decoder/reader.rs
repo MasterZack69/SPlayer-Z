@@ -34,7 +34,7 @@ impl DecoderData {
 
 /// 根据 source 协议打开音频：http(s) 走延迟 Range 源，其他走本地 File
 ///
-pub(super) fn open_source(
+pub(crate) fn open_source(
     source: &str,
     cancel_handle: HttpCancelHandle,
 ) -> Result<(AudioReader, Option<HttpCancelHandle>)> {

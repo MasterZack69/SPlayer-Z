@@ -42,6 +42,10 @@ const getInstallType = (): "appimage" | "package" =>
 
 // 暴露给渲染进程的自定义 API
 const api = {
+  analysis: {
+    analyze: (track: Track) => ipcRenderer.invoke("analysis:analyze", track),
+    cancel: (): Promise<void> => ipcRenderer.invoke("analysis:cancel"),
+  },
   config: {
     get: (keyPath: string) => ipcRenderer.invoke("config:get", keyPath),
     set: (keyPath: string, value: unknown) => ipcRenderer.invoke("config:set", keyPath, value),

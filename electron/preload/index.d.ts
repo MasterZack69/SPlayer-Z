@@ -24,11 +24,13 @@ import { CommentsApi } from "@shared/types/comment";
 import { AiModelApi } from "@shared/types/ai";
 import { PlaylistApi } from "@shared/types/playlist";
 import { OpenccApi } from "@shared/types/opencc";
+import { AnalysisApi } from "@shared/types/analysis";
 
 declare global {
   interface Window {
     electron: ElectronAPI;
     api: {
+      analysis: AnalysisApi;
       config: ConfigApi;
       player: PlayerApi;
       system: {

@@ -1,6 +1,6 @@
 pub(crate) mod input;
 mod processing;
-mod reader;
+pub(crate) mod reader;
 use processing::run_dsp_safely;
 use reader::{build_resamplers, open_source, run_decoding_loop};
 
